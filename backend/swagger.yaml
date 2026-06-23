@@ -1,0 +1,461 @@
+openapi: 3.0.0
+info:
+  title: Smart LMS API
+  version: 1.0.0
+  description: REST API documentation for Smart Learning Management System
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+tags:
+  - name: Auth
+    description: Authentication & authorization
+  - name: Users
+    description: User management (Admin)
+  - name: Courses
+    description: Course management
+  - name: Enrollments
+    description: Student enrollment management
+  - name: Lectures
+    description: Live class / lecture management
+  - name: Analytics
+    description: Dashboard statistics
+  - name: Health
+    description: Server health check
+
+paths:
+  # ── Health ──
+  /api/health:
+    get:
+      summary: Health check
+      tags: [Health]
+      responses:
+        '200':
+          description: Server is running
+
+  # ── Auth ──
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, email, password, role]
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [ADMIN, TEACHER, STUDENT]
+      responses:
+        '201':
+          description: User registered successfully
+
+  /api/auth/login:
+    post:
+      summary: Login user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful, returns JWT token
+
+  /api/auth/refresh:
+    post:
+      summary: Refresh access token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: New access token returned
+
+  /api/auth/me:
+    get:
+      summary: Get current logged-in user
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user details
+
+  # ── Users ──
+  /api/users:
+    get:
+      summary: Get all users
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      description: Accessible by ADMIN and TEACHER roles
+      responses:
+        '200':
+          description: List of users
+
+  /api/users/teacher:
+    post:
+      summary: Create a teacher
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      description: Admin only
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                employeeCode:
+                  type: string
+                specialization:
+                  type: string
+      responses:
+        '201':
+          description: Teacher created
+
+  /api/users/student:
+    post:
+      summary: Create a student
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      description: Admin and Teacher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                enrollmentNumber:
+                  type: string
+      responses:
+        '201':
+          description: Student created
+
+  /api/users/{id}/status:
+    patch:
+      summary: Update user active status
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      description: Admin only
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: User status updated
+
+  # ── Courses ──
+  /api/courses:
+    get:
+      summary: Get all courses
+      tags: [Courses]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of courses
+    post:
+      summary: Create a new course
+      tags: [Courses]
+      security:
+        - BearerAuth: []
+      description: Admin only
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                teacherId:
+                  type: string
+      responses:
+        '201':
+          description: Course created
+
+  /api/courses/my-courses:
+    get:
+      summary: Get teacher's own courses
+      tags: [Courses]
+      security:
+        - BearerAuth: []
+      description: Teacher only
+      responses:
+        '200':
+          description: List of teacher's courses
+
+  /api/courses/{id}:
+    put:
+      summary: Update a course
+      tags: [Courses]
+      security:
+        - BearerAuth: []
+      description: Admin only
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Course updated
+    delete:
+      summary: Delete a course
+      tags: [Courses]
+      security:
+        - BearerAuth: []
+      description: Admin only
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Course deleted
+
+  # ── Enrollments ──
+  /api/enrollments:
+    post:
+      summary: Enroll a student in a course
+      tags: [Enrollments]
+      security:
+        - BearerAuth: []
+      description: Admin only
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                studentId:
+                  type: string
+                courseId:
+                  type: string
+      responses:
+        '201':
+          description: Student enrolled
+
+  /api/enrollments/my-courses:
+    get:
+      summary: Get student's enrolled courses
+      tags: [Enrollments]
+      security:
+        - BearerAuth: []
+      description: Student only
+      responses:
+        '200':
+          description: List of enrolled courses
+
+  /api/enrollments/course/{courseId}/students:
+    get:
+      summary: Get all students enrolled in a course
+      tags: [Enrollments]
+      security:
+        - BearerAuth: []
+      description: Admin and Teacher
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of enrolled students
+
+  /api/enrollments/{courseId}/students/{studentId}:
+    delete:
+      summary: Unenroll a student from a course
+      tags: [Enrollments]
+      security:
+        - BearerAuth: []
+      description: Admin only
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: studentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Student unenrolled
+
+  # ── Lectures ──
+  /api/lectures/course/{courseId}:
+    post:
+      summary: Create a new lecture (schedule a live class)
+      tags: [Lectures]
+      security:
+        - BearerAuth: []
+      description: Teacher only. Generates a Jitsi meeting ID.
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Lecture scheduled
+    get:
+      summary: Get all lectures for a course
+      tags: [Lectures]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: courseId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of lectures
+
+  /api/lectures/{id}:
+    get:
+      summary: Get lecture details (with Jitsi JWT token)
+      tags: [Lectures]
+      security:
+        - BearerAuth: []
+      description: Returns lecture info and a signed Jitsi JWT token for joining the live class.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lecture details with jitsiToken
+
+  # ── Analytics ──
+  /api/analytics/admin:
+    get:
+      summary: Get admin dashboard statistics
+      tags: [Analytics]
+      security:
+        - BearerAuth: []
+      description: Admin only
+      responses:
+        '200':
+          description: Admin stats
+
+  /api/analytics/teacher:
+    get:
+      summary: Get teacher dashboard statistics
+      tags: [Analytics]
+      security:
+        - BearerAuth: []
+      description: Teacher only
+      responses:
+        '200':
+          description: Teacher stats
+
+  /api/analytics/student:
+    get:
+      summary: Get student dashboard statistics
+      tags: [Analytics]
+      security:
+        - BearerAuth: []
+      description: Student only
+      responses:
+        '200':
+          description: Student stats

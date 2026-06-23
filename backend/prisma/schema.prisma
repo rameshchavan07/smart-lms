@@ -1,63 +1,225 @@
 generator client {
-provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-provider = "postgresql"
-url      = env("DATABASE_URL")
-}
-
-enum UserRole {
-ADMIN
-TEACHER
-STUDENT
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-id            String   @id @default(uuid())
+  id            String            @id @default(uuid())
+  firstName     String            @db.VarChar(100)
+  lastName      String            @db.VarChar(100)
+  email         String            @unique @db.VarChar(255)
+  passwordHash  String
+  role          UserRole
+  profileImage  String?
+  googleId      String?           @db.VarChar(255)
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  auditLogs     AuditLog[]
+  driveFiles    GoogleDriveFile[]
+  notifications Notification[]
+  refreshTokens RefreshToken[]
+  student       Student?
+  teacher       Teacher?
 
-firstName     String
-lastName      String
-
-email         String   @unique
-passwordHash  String
-
-role          UserRole
-
-isActive      Boolean  @default(true)
-
-googleId      String?
-profileImage  String?
-
-teacher       Teacher?
-student       Student?
-
-createdAt     DateTime @default(now())
-updatedAt     DateTime @updatedAt
+  @@index([email])
 }
 
 model Teacher {
-id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  employeeCode   String    @unique @db.VarChar(50)
+  specialization String?   @db.VarChar(255)
+  qualification  String?   @db.VarChar(255)
+  joiningDate    DateTime? @db.Date
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  courses        Course[]
+  user           User      @relation(fields: [userId], references: [id])
 
-userId         String   @unique
-
-specialization String?
-
-user User @relation(fields: [userId], references: [id])
-
-createdAt DateTime @default(now())
-updatedAt DateTime @updatedAt
+  @@index([employeeCode])
 }
 
 model Student {
-id               String   @id @default(uuid())
+  id               String                 @id @default(uuid())
+  userId           String                 @unique
+  studentCode      String?                @db.VarChar(50)
+  enrollmentNumber String                 @unique @db.VarChar(100)
+  academicYear     String?                @db.VarChar(50)
+  admissionDate    DateTime?              @db.Date
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  submissions      AssignmentSubmission[]
+  attendance       Attendance[]
+  enrollments      Enrollment[]
+  user             User                   @relation(fields: [userId], references: [id])
 
-userId           String   @unique
+  @@index([enrollmentNumber])
+}
 
-enrollmentNumber String   @unique
+model Course {
+  id             String          @id @default(uuid())
+  title          String          @db.VarChar(255)
+  description    String?
+  thumbnailUrl   String?
+  teacherId      String?
+  status         CourseStatus    @default(DRAFT)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  assignments    Assignment[]
+  teacher        Teacher?        @relation(fields: [teacherId], references: [id])
+  enrollments    Enrollment[]
+  lectures       Lecture[]
+  studyMaterials StudyMaterial[]
 
-user User @relation(fields: [userId], references: [id])
+  @@index([teacherId])
+}
 
-createdAt DateTime @default(now())
-updatedAt DateTime @updatedAt
+model Enrollment {
+  id         String   @id @default(uuid())
+  studentId  String
+  courseId   String
+  enrolledAt DateTime @default(now())
+  course     Course   @relation(fields: [courseId], references: [id])
+  student    Student  @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, courseId])
+}
+
+model Lecture {
+  id           String       @id @default(uuid())
+  courseId     String
+  title        String       @db.VarChar(255)
+  description  String?
+  meetingUrl   String?
+  recordingUrl String?
+  startTime    DateTime
+  endTime      DateTime
+  createdBy    String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  attendance   Attendance[]
+  course       Course       @relation(fields: [courseId], references: [id])
+
+  @@index([courseId])
+}
+
+model Attendance {
+  id        String           @id @default(uuid())
+  lectureId String
+  studentId String
+  joinTime  DateTime?
+  leaveTime DateTime?
+  status    AttendanceStatus
+  lecture   Lecture          @relation(fields: [lectureId], references: [id])
+  student   Student          @relation(fields: [studentId], references: [id])
+
+  @@index([lectureId])
+  @@index([studentId])
+}
+
+model Assignment {
+  id          String                 @id @default(uuid())
+  courseId    String
+  title       String                 @db.VarChar(255)
+  description String?
+  dueDate     DateTime
+  totalMarks  Int
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  course      Course                 @relation(fields: [courseId], references: [id])
+  submissions AssignmentSubmission[]
+
+  @@index([courseId])
+}
+
+model AssignmentSubmission {
+  id           String     @id @default(uuid())
+  assignmentId String
+  studentId    String
+  fileUrl      String
+  marks        Int?
+  feedback     String?
+  submittedAt  DateTime   @default(now())
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  student      Student    @relation(fields: [studentId], references: [id])
+
+  @@index([assignmentId])
+  @@index([studentId])
+}
+
+model StudyMaterial {
+  id         String   @id @default(uuid())
+  courseId   String
+  title      String   @db.VarChar(255)
+  fileUrl    String
+  fileType   String   @db.VarChar(50)
+  uploadedBy String
+  uploadedAt DateTime @default(now())
+  course     Course   @relation(fields: [courseId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String   @db.VarChar(255)
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model GoogleDriveFile {
+  id          String   @id @default(uuid())
+  driveFileId String   @unique
+  fileName    String   @db.VarChar(255)
+  fileUrl     String
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [uploadedBy], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String   @db.VarChar(255)
+  entityType String   @db.VarChar(100)
+  entityId   String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum CourseStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
 }
