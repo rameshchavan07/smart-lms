@@ -1,109 +1,252 @@
 import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
+import prisma from '../config/db';
 
-// Define the scope for Google Drive API
-const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+let driveClient: any = null;
 
-// We wrap initialization in a function so it doesn't crash the server if credentials.json is missing initially
-let driveService: any = null;
+/**
+ * Initialize Google Drive client.
+ * Priority:
+ *   1. OAuth2 with refresh token (personal account - uses your 5TB storage) ✅
+ *   2. Service account with delegation (Google Workspace only)
+ *   3. Service account only (Shared Drives only)
+ */
+const getDriveClient = () => {
+  if (driveClient) return driveClient;
 
-const initializeDriveService = () => {
-  if (driveService) return driveService;
-  
+  // --- Option 1: OAuth2 with Refresh Token (RECOMMENDED for personal accounts) ---
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+
+  if (clientId && clientSecret && refreshToken) {
+    try {
+      const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, 'urn:ietf:wg:oauth:2.0:oob');
+      oauth2Client.setCredentials({ refresh_token: refreshToken });
+      driveClient = google.drive({ version: 'v3', auth: oauth2Client });
+      console.log('[GoogleDrive] ✅ Using OAuth2 (personal account - full 5TB storage)');
+      return driveClient;
+    } catch (err: any) {
+      console.error('[GoogleDrive] OAuth2 init failed:', err.message);
+    }
+  }
+
+  // --- Option 2: Service Account ---
   const credentialsPath = path.join(process.cwd(), 'credentials.json');
-  
   if (!fs.existsSync(credentialsPath)) {
-    console.warn('Google Drive credentials.json not found! File uploads to Drive will fail.');
+    console.warn('[GoogleDrive] ⚠️  No OAuth2 tokens and no credentials.json found!');
+    console.warn('[GoogleDrive]    Run: node getGoogleToken.js to set up OAuth2');
     return null;
   }
 
   try {
     const auth = new google.auth.GoogleAuth({
       keyFile: credentialsPath,
-      scopes: SCOPES,
+      scopes: ['https://www.googleapis.com/auth/drive'],
     });
-
-    driveService = google.drive({ version: 'v3', auth });
-    return driveService;
-  } catch (error) {
-    console.error('Failed to initialize Google Drive API:', error);
+    driveClient = google.drive({ version: 'v3', auth });
+    console.log('[GoogleDrive] Using Service Account (note: requires Shared Drive for uploads)');
+    return driveClient;
+  } catch (err: any) {
+    console.error('[GoogleDrive] Service Account init failed:', err.message);
     return null;
   }
 };
 
 /**
- * Uploads a file to Google Drive
- * @param filePath Path to the temporary file
- * @param fileName Original name of the file
- * @param mimeType MIME type of the file
- * @returns Object containing fileId and webViewLink
+ * Extracts a human-readable error from Google API errors
  */
-export const uploadFileToDrive = async (filePath: string, fileName: string, mimeType: string) => {
-  const drive = initializeDriveService();
-  
+const getGoogleErrorMessage = (error: any): string => {
+  const googleError = error?.response?.data?.error;
+  if (googleError) {
+    const code = googleError.code || error?.response?.status;
+    const message = googleError.message || 'Unknown Google API error';
+    const reason = googleError.errors?.[0]?.reason || '';
+
+    if (reason === 'storageQuotaExceeded') {
+      return 'Storage quota exceeded. Set up OAuth2 by running: node getGoogleToken.js';
+    }
+    if (code === 403) return `Permission denied (403): ${message}`;
+    if (code === 404) return `Not found (404): Check your GOOGLE_DRIVE_FOLDER_ID in .env`;
+    if (code === 401) return `Authentication failed (401): Re-run node getGoogleToken.js`;
+    return `Google API [${code}]: ${message}`;
+  }
+  if (error?.code === 'ENOENT') return `Temp file not found: ${error.path}`;
+  return error?.message || 'Unknown error';
+};
+
+interface PathComponent {
+  path: string; // e.g. "courses/c1"
+  name: string; // e.g. "Course - Math"
+}
+
+/**
+ * Resolves a hierarchical path (e.g. "courses/c1/Teachers/t1") to a Google Drive folder ID.
+ * Automatically creates intermediate folders if they don't exist in Google Drive.
+ * Caches folder mappings in the GoogleDriveFolder table to prevent duplicate lookups.
+ */
+export const getOrCreateFolderId = async (
+  pathComponents: PathComponent[]
+): Promise<string> => {
+  const drive = getDriveClient();
   if (!drive) {
-    throw new Error('Google Drive API is not configured. Missing credentials.json.');
+    throw new Error('Google Drive API not configured. Run: node getGoogleToken.js to set up.');
   }
 
-  // Use the folder ID from env if provided, otherwise upload to root
-  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+  // Start with the root folder ID from environment
+  let parentFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID || 'root';
+
+  for (const component of pathComponents) {
+    const { path: currentPath, name: folderName } = component;
+
+    // Check database cache first
+    let cachedFolder = await prisma.googleDriveFolder.findUnique({
+      where: { path: currentPath },
+    });
+
+    if (cachedFolder) {
+      parentFolderId = cachedFolder.driveFolderId;
+      continue;
+    }
+
+    // Not cached, create in Google Drive
+    console.log(`[GoogleDrive] Folder not found in cache for path "${currentPath}". Creating in Drive: "${folderName}" under parent "${parentFolderId}"...`);
+    
+    try {
+      const folderMetadata = {
+        name: folderName,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: parentFolderId !== 'root' ? [parentFolderId] : [],
+      };
+
+      const response = await drive.files.create({
+        requestBody: folderMetadata,
+        fields: 'id',
+        supportsAllDrives: true,
+      });
+
+      const newFolderId = response.data.id;
+      if (!newFolderId) {
+        throw new Error(`Failed to retrieve ID of created folder: ${folderName}`);
+      }
+
+      // Set public read permission on the folder so inner files can inherit or be accessible
+      try {
+        await drive.permissions.create({
+          fileId: newFolderId,
+          supportsAllDrives: true,
+          requestBody: { role: 'reader', type: 'anyone' },
+        });
+      } catch (err: any) {
+        console.warn(`[GoogleDrive] Could not set folder permissions for "${folderName}":`, err.message);
+      }
+
+      // Save to database cache
+      cachedFolder = await prisma.googleDriveFolder.create({
+        data: {
+          driveFolderId: newFolderId,
+          path: currentPath,
+          folderName,
+        },
+      });
+
+      parentFolderId = newFolderId;
+      console.log(`[GoogleDrive] ✅ Created and cached folder: "${folderName}" (ID: ${newFolderId})`);
+    } catch (error: any) {
+      console.error(`[GoogleDrive] ❌ Failed to create folder "${folderName}":`, error.message);
+      throw new Error(`Failed to create Google Drive folder "${folderName}": ${getGoogleErrorMessage(error)}`);
+    }
+  }
+
+  return parentFolderId;
+};
+
+/**
+ * Uploads a file to Google Drive
+ */
+export const uploadFileToDrive = async (
+  filePath: string,
+  fileName: string,
+  mimeType: string,
+  parentFolderId?: string
+) => {
+  const drive = getDriveClient();
+
+  if (!drive) {
+    throw new Error(
+      'Google Drive not configured. Run: node getGoogleToken.js in the backend folder to set up.'
+    );
+  }
+
+  const folderId = parentFolderId || process.env.GOOGLE_DRIVE_FOLDER_ID;
   const parents = folderId ? [folderId] : [];
 
-  const fileMetadata = {
-    name: fileName,
-    parents,
-  };
+  console.log(`[GoogleDrive] Uploading "${fileName}" (${mimeType}) → folder: ${folderId || 'root'}`);
 
-  const media = {
-    mimeType,
-    body: fs.createReadStream(filePath),
-  };
+  let fileId: string;
 
   try {
     const file = await drive.files.create({
-      requestBody: fileMetadata,
-      media,
+      requestBody: { name: fileName, parents },
+      media: { mimeType, body: fs.createReadStream(filePath) },
       fields: 'id, webViewLink',
+      supportsAllDrives: true,
     });
 
-    // Make the file publicly accessible to anyone with the link
+    fileId = file.data.id;
+    console.log('[GoogleDrive] ✅ Uploaded, File ID:', fileId);
+  } catch (error: any) {
+    const msg = getGoogleErrorMessage(error);
+    console.error('[GoogleDrive] ❌ Upload failed:', msg);
+    throw new Error(msg);
+  }
+
+  // Set file as publicly readable
+  try {
     await drive.permissions.create({
-      fileId: file.data.id,
-      requestBody: {
-        role: 'reader',
-        type: 'anyone',
-      },
+      fileId,
+      supportsAllDrives: true,
+      requestBody: { role: 'reader', type: 'anyone' },
     });
+    console.log('[GoogleDrive] ✅ File set to public reader');
+  } catch (error: any) {
+    console.warn('[GoogleDrive] ⚠️ Could not set public permission:', getGoogleErrorMessage(error));
+  }
 
-    // Get the updated file with webContentLink (direct download link) and webViewLink
+  // Get final links
+  try {
     const result = await drive.files.get({
-      fileId: file.data.id,
+      fileId,
       fields: 'id, webViewLink, webContentLink',
+      supportsAllDrives: true,
     });
-
+    console.log('[GoogleDrive] ✅ Done. View link:', result.data.webViewLink);
     return {
       fileId: result.data.id,
       webViewLink: result.data.webViewLink,
       webContentLink: result.data.webContentLink,
     };
-  } catch (error) {
-    console.error('Error uploading file to Drive:', error);
-    throw new Error('Failed to upload file to Google Drive');
+  } catch {
+    // Return fallback links if get() fails
+    return {
+      fileId,
+      webViewLink: `https://drive.google.com/file/d/${fileId}/view`,
+      webContentLink: `https://drive.google.com/uc?id=${fileId}`,
+    };
   }
 };
 
 /**
  * Deletes a file from Google Drive
- * @param fileId The ID of the file in Google Drive
  */
 export const deleteFileFromDrive = async (fileId: string) => {
-  const drive = initializeDriveService();
+  const drive = getDriveClient();
   if (!drive) return;
-
   try {
-    await drive.files.delete({ fileId });
-  } catch (error) {
-    console.error('Error deleting file from Drive:', error);
+    await drive.files.delete({ fileId, supportsAllDrives: true });
+    console.log('[GoogleDrive] ✅ File deleted:', fileId);
+  } catch (error: any) {
+    console.error('[GoogleDrive] ❌ Delete failed:', getGoogleErrorMessage(error));
   }
 };

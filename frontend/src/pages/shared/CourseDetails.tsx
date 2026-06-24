@@ -31,8 +31,10 @@ interface LectureData {
 interface MaterialData {
   id: string;
   title: string;
+  description: string | null;
   fileUrl: string;
   fileType: string;
+  fileSize: number | null;
   uploadedAt: string;
 }
 
@@ -53,6 +55,15 @@ const CourseDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const formatFileSize = (bytes: number | null) => {
+    if (bytes === null || bytes === undefined) return '';
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
   
   const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students'>('lectures');
   
@@ -72,6 +83,7 @@ const CourseDetails: React.FC = () => {
   const [materialsLoading, setMaterialsLoading] = useState(true);
   const [showUploadMaterial, setShowUploadMaterial] = useState(false);
   const [materialTitle, setMaterialTitle] = useState('');
+  const [materialDescription, setMaterialDescription] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -146,6 +158,7 @@ const CourseDetails: React.FC = () => {
     setUploadSuccess(null);
     const formData = new FormData();
     formData.append('title', materialTitle || selectedFile.name);
+    formData.append('description', materialDescription);
     formData.append('file', selectedFile);
 
     try {
@@ -158,6 +171,7 @@ const CourseDetails: React.FC = () => {
       setUploadSuccess(`"${selectedFile.name}" uploaded successfully to Google Drive!`);
       setShowUploadMaterial(false);
       setMaterialTitle('');
+      setMaterialDescription('');
       setSelectedFile(null);
       fetchMaterials();
     } catch (error: any) {
@@ -420,6 +434,16 @@ const CourseDetails: React.FC = () => {
                   />
                 </div>
                 <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Description (optional)</label>
+                  <textarea 
+                    placeholder="Enter document description (optional)" 
+                    value={materialDescription} 
+                    onChange={(e) => setMaterialDescription(e.target.value)} 
+                    rows={2}
+                    className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                  />
+                </div>
+                <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">Select File</label>
                   <div className="flex items-center justify-center w-full">
                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer bg-white hover:bg-slate-50 transition">
@@ -484,8 +508,13 @@ const CourseDetails: React.FC = () => {
                     {getFileIcon(material.fileType)}
                     <div className="min-w-0">
                       <h4 className="font-bold text-slate-900 text-sm truncate">{material.title}</h4>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Uploaded {new Date(material.uploadedAt).toLocaleDateString()}
+                      {material.description && (
+                        <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed bg-slate-100/50 p-1.5 rounded border border-slate-100 max-w-md">
+                          {material.description}
+                        </p>
+                      )}
+                      <p className="text-xs text-slate-400 mt-1.5">
+                        {material.fileSize ? `${formatFileSize(material.fileSize)} • ` : ''}Uploaded {new Date(material.uploadedAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>

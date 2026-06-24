@@ -75,7 +75,7 @@ This document tracks the implementation progress of the **Smart LMS** applicatio
 - [ ] Advanced controls (Moderator tools, attendance hooks, stream status indicators)
 
 ### Phase 7: Study Materials (100% Complete)
-- [x] Google Drive API Helper configuration ([googleDriveService.ts](file:///d:/New%20folder/smart-lms/backend/src/services/googleDriveService.ts))
+- [x] Google Drive API Helper configuration ([googleDriveService.ts](file:///d:/New%20folder/smart-lms/backend/src/services/googleDriveService.ts)) — *Updated to OAuth2 refresh token authentication for personal Drive storage integration*
 - [x] Backend upload endpoint with Multer middleware
 - [x] File validation (Supported formats: PDF, DOCX, PPTX, ZIP)
 - [x] DB integration to link StudyMaterial model with Course
@@ -111,3 +111,11 @@ This document tracks the implementation progress of the **Smart LMS** applicatio
 - [ ] Input validation (Express Validator / Joi)
 - [ ] Unit & Integration testing suite
 - [ ] Deployment scripts (Vercel, Railway/Render)
+
+---
+
+## 📅 Recent Progress Log
+
+### June 24, 2026
+* **OAuth2 Authentication for Google Drive**: Transitioned the file upload storage mechanism from Service Accounts to OAuth2 with Refresh Tokens. This allows the system to seamlessly use a personal Google account's 5TB storage quota instead of service accounts' default 0GB limit.
+* **Troubleshooting & Fixes**: Fixed backend temp file race conditions where local uploaded files were deleted prior to completion of Google Drive uploads, and resolved port binding conflict bugs by cleaning up orphaned Node.js background processes on Windows.

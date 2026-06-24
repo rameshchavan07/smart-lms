@@ -5,9 +5,13 @@ coverage/
 .vscode/
 backend/uploads/
 
-# Google Service Account credentials - NEVER commit this file!
+# Google Service Account credentials - NEVER commit these!
 credentials.json
 backend/credentials.json
+oauth_credentials.json
+backend/oauth_credentials.json
+.env.google_tokens
+backend/.env.google_tokens
 
 
 # Logs

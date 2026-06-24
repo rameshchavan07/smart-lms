@@ -153,15 +153,26 @@ model AssignmentSubmission {
 }
 
 model StudyMaterial {
-  id         String   @id @default(uuid())
-  courseId   String
-  title      String   @db.VarChar(255)
-  fileUrl    String
-  fileType   String   @db.VarChar(50)
-  uploadedBy String
-  uploadedAt DateTime @default(now())
-  course     Course   @relation(fields: [courseId], references: [id])
+  id          String   @id @default(uuid())
+  courseId    String
+  title       String   @db.VarChar(255)
+  description String?
+  fileUrl     String
+  fileType    String   @db.VarChar(50)
+  fileSize    Int?
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+  course      Course   @relation(fields: [courseId], references: [id])
 }
+
+model GoogleDriveFolder {
+  id            String   @id @default(uuid())
+  driveFolderId String   @unique
+  path          String   @unique
+  folderName    String
+  createdAt     DateTime @default(now())
+}
+
 
 model Notification {
   id        String   @id @default(uuid())

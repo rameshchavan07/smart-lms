@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-import { uploadFileToDrive, deleteFileFromDrive } from '../services/googleDriveService';
+import { uploadFileToDrive, deleteFileFromDrive, getOrCreateFolderId } from '../services/googleDriveService';
 import fs from 'fs';
 
 const prisma = new PrismaClient();
@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const courseId = req.params.courseId as string;
-    const { title } = req.body;
+    const { title, description } = req.body;
 
     if (!req.file) {
       res.status(400).json({ message: 'No file uploaded' });
@@ -19,7 +19,8 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
 
     // Verify course exists and belongs to this teacher
     const teacher = await prisma.teacher.findUnique({
-      where: { userId: req.user!.id }
+      where: { userId: req.user!.id },
+      include: { user: true }
     });
 
     if (!teacher) {
@@ -40,11 +41,22 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
+    // Resolve Google Drive target folder: courses/courseId/Teachers/teacherId
+    const teacherName = `${teacher.user.firstName} ${teacher.user.lastName}`;
+    const pathComponents = [
+      { path: `courses/${courseId}`, name: `Course - ${course.title}` },
+      { path: `courses/${courseId}/Teachers`, name: 'Teachers' },
+      { path: `courses/${courseId}/Teachers/${teacher.id}`, name: teacherName },
+    ];
+
+    const targetFolderId = await getOrCreateFolderId(pathComponents);
+
     // Upload to Google Drive
     const result = await uploadFileToDrive(
       req.file.path,
       req.file.originalname,
-      req.file.mimetype
+      req.file.mimetype,
+      targetFolderId
     );
 
     // Save to GoogleDriveFile table first (tracks drive storage usage)
@@ -62,8 +74,10 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
       data: {
         courseId,
         title: title || req.file.originalname,
+        description: description || null,
         fileUrl: result.webViewLink || '',
         fileType: req.file.mimetype,
+        fileSize: req.file.size,
         uploadedBy: req.user!.id
       }
     });
