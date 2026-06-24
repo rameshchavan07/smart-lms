@@ -1,0 +1,195 @@
+import { Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { AuthRequest } from '../middleware/auth';
+import { uploadFileToDrive, deleteFileFromDrive } from '../services/googleDriveService';
+import fs from 'fs';
+
+const prisma = new PrismaClient();
+
+// Upload study material (Teacher only)
+export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const courseId = req.params.courseId as string;
+    const { title } = req.body;
+
+    if (!req.file) {
+      res.status(400).json({ message: 'No file uploaded' });
+      return;
+    }
+
+    // Verify course exists and belongs to this teacher
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId: req.user!.id }
+    });
+
+    if (!teacher) {
+      res.status(403).json({ message: 'Only teachers can upload study materials' });
+      // Cleanup file if user is unauthorized
+      fs.unlinkSync(req.file.path);
+      return;
+    }
+
+    const course = await prisma.course.findFirst({
+      where: { id: courseId, teacherId: teacher.id }
+    });
+
+    if (!course) {
+      res.status(404).json({ message: 'Course not found or you are not assigned to it' });
+      // Cleanup file if course is not found
+      fs.unlinkSync(req.file.path);
+      return;
+    }
+
+    // Upload to Google Drive
+    const result = await uploadFileToDrive(
+      req.file.path,
+      req.file.originalname,
+      req.file.mimetype
+    );
+
+    // Save to GoogleDriveFile table first (tracks drive storage usage)
+    await prisma.googleDriveFile.create({
+      data: {
+        driveFileId: result.fileId,
+        fileName: req.file.originalname,
+        fileUrl: result.webViewLink || '',
+        uploadedBy: req.user!.id,
+      }
+    });
+
+    // Save to StudyMaterial table
+    const studyMaterial = await prisma.studyMaterial.create({
+      data: {
+        courseId,
+        title: title || req.file.originalname,
+        fileUrl: result.webViewLink || '',
+        fileType: req.file.mimetype,
+        uploadedBy: req.user!.id
+      }
+    });
+
+    res.status(201).json({
+      message: 'Study material uploaded successfully',
+      studyMaterial
+    });
+
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  } finally {
+    // Ensure temporary file is always cleaned up from the local uploads/ folder
+    if (req.file && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {
+        console.error('Failed to delete temp file:', err);
+      }
+    }
+  }
+};
+
+// Get study materials for a course (Student & Teacher)
+export const getCourseMaterials = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const courseId = req.params.courseId as string;
+
+    // Verify course access
+    if (req.user!.role === 'STUDENT') {
+      const student = await prisma.student.findUnique({
+        where: { userId: req.user!.id }
+      });
+      if (!student) {
+        res.status(403).json({ message: 'Student record not found' });
+        return;
+      }
+      const enrollment = await prisma.enrollment.findUnique({
+        where: { studentId_courseId: { studentId: student.id, courseId } }
+      });
+      if (!enrollment) {
+        res.status(403).json({ message: 'You are not enrolled in this course' });
+        return;
+      }
+    } else if (req.user!.role === 'TEACHER') {
+      const teacher = await prisma.teacher.findUnique({
+        where: { userId: req.user!.id }
+      });
+      if (!teacher) {
+        res.status(403).json({ message: 'Teacher record not found' });
+        return;
+      }
+      const course = await prisma.course.findFirst({
+        where: { id: courseId, teacherId: teacher.id }
+      });
+      if (!course) {
+        res.status(403).json({ message: 'You are not assigned to this course' });
+        return;
+      }
+    }
+
+    const materials = await prisma.studyMaterial.findMany({
+      where: { courseId },
+      orderBy: { uploadedAt: 'desc' }
+    });
+
+    res.json({ materials });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Delete study material (Teacher only)
+export const deleteMaterial = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+
+    const studyMaterial = await prisma.studyMaterial.findUnique({
+      where: { id }
+    });
+
+    if (!studyMaterial) {
+      res.status(404).json({ message: 'Study material not found' });
+      return;
+    }
+
+    // Verify user is teacher assigned to the course
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId: req.user!.id }
+    });
+
+    if (!teacher && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ message: 'Access denied' });
+      return;
+    }
+
+    if (req.user!.role !== 'ADMIN') {
+      const course = await prisma.course.findFirst({
+        where: { id: studyMaterial.courseId, teacherId: teacher!.id }
+      });
+
+      if (!course) {
+        res.status(403).json({ message: 'You cannot delete materials from a course you do not teach' });
+        return;
+      }
+    }
+
+    // Find and delete from Google Drive
+    const driveFile = await prisma.googleDriveFile.findFirst({
+      where: { fileUrl: studyMaterial.fileUrl }
+    });
+
+    if (driveFile) {
+      await deleteFileFromDrive(driveFile.driveFileId);
+      await prisma.googleDriveFile.delete({
+        where: { id: driveFile.id }
+      });
+    }
+
+    // Delete from DB
+    await prisma.studyMaterial.delete({
+      where: { id }
+    });
+
+    res.json({ message: 'Study material deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

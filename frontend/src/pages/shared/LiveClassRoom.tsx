@@ -49,6 +49,8 @@ const LiveClassRoom: React.FC = () => {
     );
   }
 
+  const isJaaS = !!import.meta.env.VITE_JITSI_APP_ID && !import.meta.env.VITE_JITSI_APP_ID.includes('vpaas-magic-cookie');
+
   return (
     <div className="flex flex-col h-screen bg-slate-900">
       {/* Header */}
@@ -74,9 +76,9 @@ const LiveClassRoom: React.FC = () => {
       {/* Jitsi Wrapper */}
       <div className="flex-1 w-full bg-black relative">
         <JitsiMeeting
-          domain={import.meta.env.VITE_JITSI_APP_ID ? "8x8.vc" : "meet.jit.si"}
-          roomName={import.meta.env.VITE_JITSI_APP_ID ? `${import.meta.env.VITE_JITSI_APP_ID}/${meetingUrl}` : meetingUrl}
-          jwt={jwtToken || undefined}
+          domain={isJaaS ? "8x8.vc" : "meet.jit.si"}
+          roomName={isJaaS ? `${import.meta.env.VITE_JITSI_APP_ID}/${meetingUrl}` : meetingUrl}
+          jwt={isJaaS ? (jwtToken || undefined) : undefined}
           configOverwrite={{
             startWithAudioMuted: true,
             disableModeratorIndicator: true,

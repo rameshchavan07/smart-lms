@@ -5,6 +5,7 @@ import courseRoutes from './courseRoutes';
 import enrollmentRoutes from './enrollmentRoutes';
 import analyticsRoutes from './analyticsRoutes';
 import lectureRoutes from './lectureRoutes';
+import studyMaterialRoutes from './studyMaterialRoutes';
 
 const router = Router();
 
@@ -15,5 +16,7 @@ router.use('/courses', courseRoutes);
 router.use('/enrollments', enrollmentRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/lectures', lectureRoutes);
+router.use('/study-materials', studyMaterialRoutes);
 
 export default router;
+

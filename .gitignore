@@ -3,6 +3,8 @@ dist/
 .env
 coverage/
 .vscode/
+backend/uploads/
+
 
 # Logs
 logs

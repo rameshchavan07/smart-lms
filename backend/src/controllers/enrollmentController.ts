@@ -4,7 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 
 const prisma = new PrismaClient();
 
-// Enroll a student in a course (Admin)
+// Enroll a student in a course (Admin / Teacher)
 export const enrollStudent = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { studentId, courseId } = req.body;
@@ -25,6 +25,17 @@ export const enrollStudent = async (req: AuthRequest, res: Response): Promise<vo
     if (!course) {
       res.status(404).json({ message: 'Course not found' });
       return;
+    }
+
+    // Teacher authorization check
+    if (req.user!.role === 'TEACHER') {
+      const teacher = await prisma.teacher.findUnique({
+        where: { userId: req.user!.id }
+      });
+      if (!teacher || course.teacherId !== teacher.id) {
+        res.status(403).json({ message: 'You are not authorized to enroll students in this course' });
+        return;
+      }
     }
 
     // Check if already enrolled
@@ -56,10 +67,30 @@ export const enrollStudent = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
-// Unenroll a student from a course (Admin)
+// Unenroll a student from a course (Admin / Teacher)
 export const unenrollStudent = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { courseId, studentId } = req.params;
+
+    // Verify course exists
+    const course = await prisma.course.findUnique({
+      where: { id: courseId as string }
+    });
+    if (!course) {
+      res.status(404).json({ message: 'Course not found' });
+      return;
+    }
+
+    // Teacher authorization check
+    if (req.user!.role === 'TEACHER') {
+      const teacher = await prisma.teacher.findUnique({
+        where: { userId: req.user!.id }
+      });
+      if (!teacher || course.teacherId !== teacher.id) {
+        res.status(403).json({ message: 'You are not authorized to unenroll students from this course' });
+        return;
+      }
+    }
 
     await prisma.enrollment.delete({
       where: {
