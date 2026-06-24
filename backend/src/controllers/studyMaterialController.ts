@@ -68,22 +68,23 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
       }
     });
 
+    // Cleanup temp file after successful upload
+    if (req.file && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
+
     res.status(201).json({
       message: 'Study material uploaded successfully',
       studyMaterial
     });
 
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  } finally {
-    // Ensure temporary file is always cleaned up from the local uploads/ folder
+    console.error('Upload error:', error?.message || error);
+    // Cleanup temp file on error
     if (req.file && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (err) {
-        console.error('Failed to delete temp file:', err);
-      }
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
     }
+    res.status(500).json({ message: error.message || 'Upload failed' });
   }
 };
 

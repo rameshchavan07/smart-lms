@@ -74,6 +74,8 @@ const CourseDetails: React.FC = () => {
   const [materialTitle, setMaterialTitle] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
   // Enrolled Students state
   const [enrolledStudents, setEnrolledStudents] = useState<StudentEnrollmentData[]>([]);
@@ -140,6 +142,8 @@ const CourseDetails: React.FC = () => {
     if (!selectedFile) return;
 
     setUploading(true);
+    setUploadError(null);
+    setUploadSuccess(null);
     const formData = new FormData();
     formData.append('title', materialTitle || selectedFile.name);
     formData.append('file', selectedFile);
@@ -149,13 +153,17 @@ const CourseDetails: React.FC = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 120000, // 2 min timeout for large files
       });
+      setUploadSuccess(`"${selectedFile.name}" uploaded successfully to Google Drive!`);
       setShowUploadMaterial(false);
       setMaterialTitle('');
       setSelectedFile(null);
       fetchMaterials();
-    } catch (error) {
-      console.error('Failed to upload study material', error);
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Upload failed. Please try again.';
+      console.error('Failed to upload study material:', error);
+      setUploadError(msg);
     } finally {
       setUploading(false);
     }
@@ -376,7 +384,7 @@ const CourseDetails: React.FC = () => {
             <h3 className="text-lg font-bold text-slate-900">Study Materials</h3>
             {user?.role === 'TEACHER' && (
               <button 
-                onClick={() => setShowUploadMaterial(!showUploadMaterial)}
+                onClick={() => { setShowUploadMaterial(!showUploadMaterial); setUploadError(null); setUploadSuccess(null); }}
                 className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-100 transition font-medium text-sm"
               >
                 <Plus className="w-4 h-4" />
@@ -384,6 +392,18 @@ const CourseDetails: React.FC = () => {
               </button>
             )}
           </div>
+
+          {/* Success / Error Banners */}
+          {uploadSuccess && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-center gap-2">
+              <span>✅</span> {uploadSuccess}
+            </div>
+          )}
+          {uploadError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+              <span>❌</span> <strong>Upload Failed:</strong> {uploadError}
+            </div>
+          )}
 
           {showUploadMaterial && user?.role === 'TEACHER' && (
             <form onSubmit={handleUploadMaterial} className="mb-8 p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4 shadow-sm">
