@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import EnrollStudentModal from '../../components/EnrollStudentModal';
+import { getDirectDriveUrl } from '../../utils/drive';
 import { 
   Video, 
   Calendar, 
@@ -120,6 +121,7 @@ const CourseDetails: React.FC = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
+      alert('Lecture thumbnail uploaded successfully!');
       fetchLectures();
     } catch (error) {
       console.error('Failed to upload lecture thumbnail', error);
@@ -395,7 +397,7 @@ const CourseDetails: React.FC = () => {
                     <div className="relative group h-12 w-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 overflow-hidden">
                       {lecture.thumbnailUrl ? (
                         <img 
-                          src={lecture.thumbnailUrl} 
+                          src={getDirectDriveUrl(lecture.thumbnailUrl)} 
                           alt="Thumbnail" 
                           className="w-full h-full object-cover" 
                         />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
 import { BookOpen, Video, PlayCircle } from 'lucide-react';
+import { getDirectDriveUrl } from '../../utils/drive';
 
 interface EnrollmentData {
   course: {
@@ -65,7 +66,7 @@ const StudentCourses: React.FC = () => {
                 <div className="h-32 border-b border-slate-100 relative overflow-hidden bg-indigo-50">
                   {course.thumbnailUrl ? (
                     <img 
-                      src={course.thumbnailUrl} 
+                      src={getDirectDriveUrl(course.thumbnailUrl)} 
                       alt={course.title} 
                       className="w-full h-full object-cover"
                       onError={(e) => {

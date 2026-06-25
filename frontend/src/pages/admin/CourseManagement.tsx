@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import CreateCourseModal from '../../components/CreateCourseModal';
 import { BookOpen, MoreVertical, Search, ShieldAlert, Loader2 } from 'lucide-react';
+import { getDirectDriveUrl } from '../../utils/drive';
 
 interface CourseData {
   id: string;
@@ -73,6 +74,7 @@ const CourseManagement: React.FC = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
+      alert('Course thumbnail uploaded successfully!');
       fetchCourses();
     } catch (error) {
       console.error('Failed to upload thumbnail', error);
@@ -139,7 +141,7 @@ const CourseManagement: React.FC = () => {
                       <div className="flex items-center">
                         {course.thumbnailUrl ? (
                           <img 
-                            src={course.thumbnailUrl} 
+                            src={getDirectDriveUrl(course.thumbnailUrl)} 
                             alt={course.title} 
                             className="h-10 w-10 object-cover rounded-md flex-shrink-0"
                             onError={(e) => {

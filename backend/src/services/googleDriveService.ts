@@ -250,3 +250,33 @@ export const deleteFileFromDrive = async (fileId: string) => {
     console.error('[GoogleDrive] ❌ Delete failed:', getGoogleErrorMessage(error));
   }
 };
+
+/**
+ * Gets a file stream from Google Drive
+ */
+export const getFileStreamFromDrive = async (fileId: string) => {
+  const drive = getDriveClient();
+  if (!drive) {
+    throw new Error('Google Drive not configured.');
+  }
+
+  // Get file metadata to find mime type
+  const metadata = await drive.files.get({
+    fileId,
+    fields: 'mimeType, name',
+    supportsAllDrives: true,
+  });
+
+  // Get file content as a stream
+  const response = await drive.files.get(
+    { fileId, alt: 'media', supportsAllDrives: true },
+    { responseType: 'stream' }
+  );
+
+  return {
+    stream: response.data,
+    mimeType: metadata.data.mimeType,
+    fileName: metadata.data.name,
+  };
+};
+
