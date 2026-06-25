@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 import { generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { AuthRequest } from '../middleware/auth';
+import { logActivity } from '../utils/auditLogger';
 
 const prisma = new PrismaClient();
 
@@ -47,6 +48,8 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       },
     });
 
+    await logActivity(user.id, 'Registered account', 'User', user.id);
+
     res.status(201).json({
       id: user.id,
       firstName: user.firstName,
@@ -78,6 +81,8 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
       });
+
+      await logActivity(user.id, 'Logged in to dashboard', 'User', user.id);
 
       res.json({
         id: user.id,
@@ -129,5 +134,25 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     res.json({ token: newToken });
   } catch (error: any) {
     res.status(401).json({ message: 'Token refresh failed' });
+  }
+};
+
+export const logoutUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { refreshToken } = req.body;
+    if (refreshToken) {
+      const savedToken = await prisma.refreshToken.findUnique({
+        where: { token: refreshToken }
+      });
+      if (savedToken) {
+        await logActivity(savedToken.userId, 'Logged out', 'User', savedToken.userId);
+        await prisma.refreshToken.deleteMany({
+          where: { token: refreshToken },
+        });
+      }
+    }
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };

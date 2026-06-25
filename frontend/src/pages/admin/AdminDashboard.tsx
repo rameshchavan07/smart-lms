@@ -14,6 +14,7 @@ interface AdminMetrics {
 const AdminDashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [recentCourses, setRecentCourses] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ const AdminDashboard: React.FC = () => {
         const { data } = await api.get('/analytics/admin');
         setMetrics(data.metrics);
         setRecentCourses(data.recentCourses);
+        setRecentActivities(data.recentActivities || []);
       } catch (error) {
         console.error('Failed to fetch admin analytics', error);
       } finally {
@@ -134,6 +136,56 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-xs text-slate-500">Draft a new class module</p>
               </div>
             </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity Feed */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <div className="p-5 border-b border-slate-100">
+          <h3 className="text-lg font-bold text-slate-800">Recent System Activities</h3>
+        </div>
+        <div className="p-6">
+          <div className="flow-root">
+            <ul className="-mb-8">
+              {recentActivities.map((activity, idx) => (
+                <li key={activity.id}>
+                  <div className="relative pb-8">
+                    {idx !== recentActivities.length - 1 ? (
+                      <span className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-slate-200" aria-hidden="true" />
+                    ) : null}
+                    <div className="relative flex space-x-3">
+                      <div>
+                        <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
+                          activity.entityType === 'Course' ? 'bg-indigo-100 text-indigo-600' :
+                          activity.entityType === 'User' ? 'bg-blue-100 text-blue-600' :
+                          activity.entityType === 'Enrollment' ? 'bg-amber-100 text-amber-600' :
+                          'bg-emerald-100 text-emerald-600'
+                        }`}>
+                          <span className="text-xs font-semibold">{activity.entityType[0]}</span>
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0 pt-1.5 flex justify-between space-x-4">
+                        <div>
+                          <p className="text-sm text-slate-600">
+                            {activity.action}{' '}
+                            <span className="font-semibold text-slate-900">
+                              by {activity.user.firstName} {activity.user.lastName} ({activity.user.role})
+                            </span>
+                          </p>
+                        </div>
+                        <div className="text-right text-xs whitespace-nowrap text-slate-400">
+                          {new Date(activity.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+              {recentActivities.length === 0 && (
+                <p className="text-slate-500 text-sm text-center py-4">No recent activities found.</p>
+              )}
+            </ul>
           </div>
         </div>
       </div>

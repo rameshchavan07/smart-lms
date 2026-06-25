@@ -39,20 +39,20 @@ This document tracks the implementation progress of the **Smart LMS** applicatio
 - [x] BCrypt Password Hashing & Route Protection Middleware
 - [ ] Google OAuth 2.0 Integration & Forgot Password Flow
 
-### Phase 2: User Management (75% Complete)
+### Phase 2: User Management (100% Complete)
 - [x] Retrieve users with pagination, role filter, and text search
 - [x] Admin can create Teacher profiles (Employee code, specialization, qualification)
 - [x] Admin can create Student profiles (Enrollment number, academic year)
 - [x] Admin can toggle User Active Status (Disable/Enable access)
-- [ ] Admin can update user profile details and delete user account
+- [x] Admin can update user profile details and delete user account
 
-### Phase 3: Course Management (80% Complete)
+### Phase 3: Course Management (100% Complete)
 - [x] Retrieve courses with pagination & search
 - [x] Admin can create courses & assign teachers
 - [x] Admin can update course details and assigned teachers
 - [x] Admin can delete courses
 - [x] Teacher can view their assigned courses
-- [ ] Course Thumbnail image upload and store in Google Drive
+- [x] Course Thumbnail image upload and store in Google Drive
 
 ### Phase 4: Student Enrollment (100% Complete)
 - [x] Admin can enroll a student in a course
@@ -60,11 +60,11 @@ This document tracks the implementation progress of the **Smart LMS** applicatio
 - [x] Admin/Teacher can view the enrollment list of a course
 - [x] Student can view their enrolled courses
 
-### Phase 5: Dashboard Development (60% Complete)
+### Phase 5: Dashboard Development (80% Complete)
 - [x] Admin Dashboard metrics (total users, teachers, students, courses, enrollments) & recent courses list
 - [x] Teacher Dashboard metrics (total courses, total students)
 - [x] Student Dashboard metrics (total enrolled courses)
-- [ ] Recent activities feed / audit log integration
+- [x] Recent activities feed / audit log integration
 - [ ] Interactive Dashboard Quick Actions (e.g. "Create Course", "Schedule Class")
 
 ### Phase 6: Live Classes (75% Complete)
@@ -105,10 +105,10 @@ This document tracks the implementation progress of the **Smart LMS** applicatio
 - [ ] Backend get/read notifications endpoint
 - [ ] Frontend real-time notification list and unread badge count
 
-### Phase 12-15: Testing, Hardening & Deployment (10% Complete)
+### Phase 12-15: Testing, Hardening & Deployment (20% Complete)
 - [x] AuditLog model schema and DB logger middleware
-- [ ] API Rate limiting
-- [ ] Input validation (Express Validator / Joi)
+- [ ] Api Rate limiting
+- [x] Input validation (Zod schema validation)
 - [ ] Unit & Integration testing suite
 - [ ] Deployment scripts (Vercel, Railway/Render)
 

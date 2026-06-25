@@ -97,6 +97,7 @@ model Lecture {
   description  String?
   meetingUrl   String?
   recordingUrl String?
+  thumbnailUrl String?
   startTime    DateTime
   endTime      DateTime
   createdBy    String

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import CreateUserModal from '../../components/CreateUserModal';
+import EditUserModal from '../../components/EditUserModal';
 import { UserPlus, MoreVertical, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -15,17 +16,19 @@ interface UserData {
 }
 
 const UserManagement: React.FC = () => {
-  const { user } = useAuth();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filterRole, setFilterRole] = useState(user?.role === 'TEACHER' ? 'STUDENT' : '');
+  const [filterRole, setFilterRole] = useState(currentUser?.role === 'TEACHER' ? 'STUDENT' : '');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       // If teacher, force fetch only students
-      const roleToFetch = user?.role === 'TEACHER' ? 'STUDENT' : filterRole;
+      const roleToFetch = currentUser?.role === 'TEACHER' ? 'STUDENT' : filterRole;
       const { data } = await api.get(`/users${roleToFetch ? `?role=${roleToFetch}` : ''}`);
       setUsers(data.users);
     } catch (error) {
@@ -48,10 +51,27 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const handleDeleteUser = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this user profile? All course links, refresh tokens, and registrations will be deleted.')) {
+      try {
+        await api.delete(`/users/${id}`);
+        fetchUsers();
+      } catch (error) {
+        console.error('Failed to delete user', error);
+        alert('Failed to delete user.');
+      }
+    }
+  };
+
+  const handleEditClick = (userToEdit: any) => {
+    setSelectedUserForEdit(userToEdit);
+    setIsEditModalOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-900">{user?.role === 'TEACHER' ? 'My Students' : 'User Management'}</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{currentUser?.role === 'TEACHER' ? 'My Students' : 'User Management'}</h1>
         <button 
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm"
@@ -62,7 +82,7 @@ const UserManagement: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        {user?.role === 'ADMIN' && (
+        {currentUser?.role === 'ADMIN' && (
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex gap-4">
             <select 
               value={filterRole} 
@@ -134,6 +154,22 @@ const UserManagement: React.FC = () => {
                       </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      {currentUser?.role === 'ADMIN' && (
+                        <>
+                          <button 
+                            onClick={() => handleEditClick(user)} 
+                            className="text-blue-500 hover:text-blue-700 transition-colors mr-3"
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteUser(user.id)} 
+                            className="text-red-400 hover:text-red-600 transition-colors mr-3"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                       <button className="text-slate-400 hover:text-blue-600 transition-colors">
                         <MoreVertical className="h-5 w-5 inline" />
                       </button>
@@ -153,6 +189,20 @@ const UserManagement: React.FC = () => {
           setIsModalOpen(false);
           fetchUsers();
         }}
+      />
+
+      <EditUserModal 
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedUserForEdit(null);
+        }}
+        onSuccess={() => {
+          setIsEditModalOpen(false);
+          setSelectedUserForEdit(null);
+          fetchUsers();
+        }}
+        userToEdit={selectedUserForEdit}
       />
     </div>
   );

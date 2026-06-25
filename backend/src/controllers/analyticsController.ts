@@ -22,6 +22,14 @@ export const getAdminStats = async (req: AuthRequest, res: Response): Promise<vo
       }
     });
 
+    const recentActivities = await prisma.auditLog.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { firstName: true, lastName: true, role: true } }
+      }
+    });
+
     res.json({
       metrics: {
         totalUsers,
@@ -30,7 +38,8 @@ export const getAdminStats = async (req: AuthRequest, res: Response): Promise<vo
         totalCourses,
         totalEnrollments
       },
-      recentCourses
+      recentCourses,
+      recentActivities
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -57,11 +66,35 @@ export const getTeacherStats = async (req: AuthRequest, res: Response): Promise<
       where: { course: { teacherId: teacher.id } }
     });
 
+    const teacherCourses = await prisma.course.findMany({
+      where: { teacherId: teacher.id },
+      select: { id: true }
+    });
+    const courseIds = teacherCourses.map(c => c.id);
+
+    const recentActivities = await prisma.auditLog.findMany({
+      where: {
+        OR: [
+          { userId: req.user!.id },
+          {
+            entityType: { in: ['Course', 'Enrollment', 'Lecture', 'StudyMaterial'] },
+            entityId: { in: courseIds }
+          }
+        ]
+      },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { firstName: true, lastName: true, role: true } }
+      }
+    });
+
     res.json({
       metrics: {
         totalCourses,
         totalStudents
-      }
+      },
+      recentActivities
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

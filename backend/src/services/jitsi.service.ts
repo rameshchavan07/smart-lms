@@ -17,7 +17,7 @@ export const generateJitsiToken = (user: { id: string, firstName: string, lastNa
     aud: 'jitsi',
     iss: 'chat',
     sub: appId,
-    room: '*', // allow any room to keep things simple, or use roomName
+    room: roomName,
     context: {
       user: {
         id: user.id,

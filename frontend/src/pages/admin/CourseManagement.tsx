@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import CreateCourseModal from '../../components/CreateCourseModal';
-import { BookOpen, MoreVertical, Search, ShieldAlert } from 'lucide-react';
+import { BookOpen, MoreVertical, Search, ShieldAlert, Loader2 } from 'lucide-react';
 
 interface CourseData {
   id: string;
   title: string;
   description: string;
   createdAt: string;
+  thumbnailUrl?: string;
   teacher?: {
     user: {
       firstName: string;
@@ -25,6 +26,7 @@ const CourseManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [uploadingCourseId, setUploadingCourseId] = useState<string | null>(null);
 
   const fetchCourses = async () => {
     setLoading(true);
@@ -54,6 +56,29 @@ const CourseManagement: React.FC = () => {
       } catch (error) {
         console.error('Failed to delete course', error);
       }
+    }
+  };
+
+  const handleThumbnailUpload = async (courseId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('thumbnail', file);
+
+    try {
+      setUploadingCourseId(courseId);
+      await api.put(`/courses/${courseId}/thumbnail`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      fetchCourses();
+    } catch (error) {
+      console.error('Failed to upload thumbnail', error);
+      alert('Failed to upload thumbnail. Please check connection and try again.');
+    } finally {
+      setUploadingCourseId(null);
     }
   };
 
@@ -112,9 +137,20 @@ const CourseManagement: React.FC = () => {
                   <tr key={course.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0 bg-indigo-100 rounded-md flex items-center justify-center text-indigo-600 font-bold text-sm">
-                          {course.title.substring(0, 2).toUpperCase()}
-                        </div>
+                        {course.thumbnailUrl ? (
+                          <img 
+                            src={course.thumbnailUrl} 
+                            alt={course.title} 
+                            className="h-10 w-10 object-cover rounded-md flex-shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = `https://placehold.co/40x40/indigo/white?text=${course.title.substring(0, 2).toUpperCase()}`;
+                            }}
+                          />
+                        ) : (
+                          <div className="h-10 w-10 flex-shrink-0 bg-indigo-100 rounded-md flex items-center justify-center text-indigo-600 font-bold text-sm">
+                            {course.title.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
                         <div className="ml-4">
                           <div className="text-sm font-medium text-slate-900">{course.title}</div>
                         </div>
@@ -133,6 +169,23 @@ const CourseManagement: React.FC = () => {
                       {new Date(course.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      {uploadingCourseId === course.id ? (
+                        <span className="inline-flex items-center gap-1 text-slate-500 mr-3">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Uploading...
+                        </span>
+                      ) : (
+                        <label className="text-blue-500 hover:text-blue-700 cursor-pointer transition-colors mr-3">
+                          Upload Image
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => handleThumbnailUpload(course.id, e)}
+                            disabled={uploadingCourseId !== null}
+                          />
+                        </label>
+                      )}
                       <button onClick={() => handleDelete(course.id)} className="text-red-400 hover:text-red-600 transition-colors mr-3">
                         Delete
                       </button>

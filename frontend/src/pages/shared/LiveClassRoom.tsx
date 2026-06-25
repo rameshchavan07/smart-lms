@@ -49,7 +49,7 @@ const LiveClassRoom: React.FC = () => {
     );
   }
 
-  const isJaaS = !!import.meta.env.VITE_JITSI_APP_ID && !import.meta.env.VITE_JITSI_APP_ID.includes('vpaas-magic-cookie');
+  const isJaaS = !!import.meta.env.VITE_JITSI_APP_ID;
 
   return (
     <div className="flex flex-col h-screen bg-slate-900">

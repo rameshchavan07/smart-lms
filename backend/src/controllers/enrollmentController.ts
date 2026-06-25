@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
+import { logActivity } from '../utils/auditLogger';
 
 const prisma = new PrismaClient();
 
@@ -61,6 +62,8 @@ export const enrollStudent = async (req: AuthRequest, res: Response): Promise<vo
       }
     });
 
+    await logActivity(req.user!.id, `Enrolled student: ${enrollment.student.user.firstName} ${enrollment.student.user.lastName} in ${enrollment.course.title}`, 'Enrollment', enrollment.id);
+
     res.status(201).json({ message: 'Student enrolled successfully', enrollment });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -92,11 +95,17 @@ export const unenrollStudent = async (req: AuthRequest, res: Response): Promise<
       }
     }
 
-    await prisma.enrollment.delete({
+    const deleted = await prisma.enrollment.delete({
       where: {
         studentId_courseId: { studentId: studentId as string, courseId: courseId as string }
+      },
+      include: {
+        student: { include: { user: { select: { firstName: true, lastName: true } } } },
+        course: { select: { title: true } }
       }
     });
+
+    await logActivity(req.user!.id, `Unenrolled student: ${deleted.student.user.firstName} ${deleted.student.user.lastName} from ${deleted.course.title}`, 'Enrollment', deleted.id);
 
     res.json({ message: 'Student unenrolled successfully' });
   } catch (error: any) {

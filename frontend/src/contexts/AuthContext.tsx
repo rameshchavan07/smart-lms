@@ -70,11 +70,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login(data); // Auto login after register
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     setUser(null);
     navigate('/login');
+    if (refreshToken) {
+      try {
+        await api.post('/auth/logout', { refreshToken });
+      } catch (error) {
+        console.error('Server logout failed', error);
+      }
+    }
   };
 
   return (

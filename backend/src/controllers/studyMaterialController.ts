@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import { uploadFileToDrive, deleteFileFromDrive, getOrCreateFolderId } from '../services/googleDriveService';
 import fs from 'fs';
+import { logActivity } from '../utils/auditLogger';
 
 const prisma = new PrismaClient();
 
@@ -81,6 +82,8 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
         uploadedBy: req.user!.id
       }
     });
+
+    await logActivity(req.user!.id, `Uploaded study material: ${studyMaterial.title} for course: ${course?.title || courseId}`, 'StudyMaterial', studyMaterial.id);
 
     // Cleanup temp file after successful upload
     if (req.file && fs.existsSync(req.file.path)) {
@@ -202,6 +205,8 @@ export const deleteMaterial = async (req: AuthRequest, res: Response): Promise<v
     await prisma.studyMaterial.delete({
       where: { id }
     });
+
+    await logActivity(req.user!.id, `Deleted study material: ${studyMaterial.title}`, 'StudyMaterial', id);
 
     res.json({ message: 'Study material deleted successfully' });
   } catch (error: any) {

@@ -26,6 +26,7 @@ interface LectureData {
   startTime: string;
   endTime: string;
   meetingUrl: string;
+  thumbnailUrl?: string;
 }
 
 interface MaterialData {
@@ -100,6 +101,29 @@ const CourseDetails: React.FC = () => {
       setLectures(data.lectures);
     } catch (error) {
       console.error('Failed to fetch lectures', error);
+    } finally {
+      setLecturesLoading(false);
+    }
+  };
+
+  const handleLectureThumbnailUpload = async (lectureId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('thumbnail', file);
+
+    try {
+      setLecturesLoading(true);
+      await api.put(`/lectures/${lectureId}/thumbnail`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      fetchLectures();
+    } catch (error) {
+      console.error('Failed to upload lecture thumbnail', error);
+      alert('Failed to upload lecture thumbnail. Please try again.');
     } finally {
       setLecturesLoading(false);
     }
@@ -368,8 +392,28 @@ const CourseDetails: React.FC = () => {
               {lectures.map((lecture) => (
                 <div key={lecture.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-slate-200 rounded-xl hover:border-blue-200 hover:bg-slate-50/50 transition">
                   <div className="flex items-start gap-4 mb-4 md:mb-0">
-                    <div className="h-12 w-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-                      <Calendar className="w-6 h-6" />
+                    <div className="relative group h-12 w-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 overflow-hidden">
+                      {lecture.thumbnailUrl ? (
+                        <img 
+                          src={lecture.thumbnailUrl} 
+                          alt="Thumbnail" 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <Calendar className="w-6 h-6" />
+                      )}
+                      
+                      {user?.role === 'TEACHER' && (
+                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity text-[10px] font-bold">
+                          Upload
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => handleLectureThumbnailUpload(lecture.id, e)} 
+                          />
+                        </label>
+                      )}
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 text-base">{lecture.title}</h4>
