@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
 import { BookOpen, Users, Video } from 'lucide-react';
+import { getDirectDriveUrl } from '../../utils/drive';
 
 interface CourseData {
   id: string;
   title: string;
   description: string;
+  thumbnailUrl?: string;
   createdAt: string;
   _count: {
     enrollments: number;
@@ -53,8 +55,20 @@ const TeacherCourses: React.FC = () => {
         ) : (
           courses.map((course) => (
             <div key={course.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-              <div className="h-32 bg-blue-50 border-b border-slate-100 p-6 flex flex-col justify-between">
-                <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+              <div className="h-32 bg-blue-50 border-b border-slate-100 relative overflow-hidden">
+                {course.thumbnailUrl ? (
+                  <img
+                    src={getDirectDriveUrl(course.thumbnailUrl)}
+                    alt={course.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : null}
+                <div className="absolute bottom-4 left-4 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 z-10">
                   <BookOpen className="w-5 h-5" />
                 </div>
               </div>

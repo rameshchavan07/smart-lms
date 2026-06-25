@@ -69,6 +69,8 @@ const StudentCourses: React.FC = () => {
                       src={getDirectDriveUrl(course.thumbnailUrl)} 
                       alt={course.title} 
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}

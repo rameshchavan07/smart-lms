@@ -203,7 +203,7 @@ export const uploadCourseThumbnail = async (req: AuthRequest, res: Response): Pr
     // Update database
     const updatedCourse = await prisma.course.update({
       where: { id: id as string },
-      data: { thumbnailUrl: `https://drive.google.com/uc?export=view&id=${uploadResult.fileId}` }
+      data: { thumbnailUrl: `https://drive.google.com/thumbnail?id=${uploadResult.fileId}&sz=w800` }
     });
 
     await logActivity(req.user!.id, `Uploaded course thumbnail for: ${course.title}`, 'Course', course.id);

@@ -232,7 +232,7 @@ export const uploadFileToDrive = async (
     return {
       fileId,
       webViewLink: `https://drive.google.com/file/d/${fileId}/view`,
-      webContentLink: `https://drive.google.com/uc?id=${fileId}`,
+      webContentLink: `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`,
     };
   }
 };

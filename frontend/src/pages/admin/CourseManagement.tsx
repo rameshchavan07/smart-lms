@@ -144,8 +144,10 @@ const CourseManagement: React.FC = () => {
                             src={getDirectDriveUrl(course.thumbnailUrl)} 
                             alt={course.title} 
                             className="h-10 w-10 object-cover rounded-md flex-shrink-0"
+                            loading="lazy"
+                            decoding="async"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://placehold.co/40x40/indigo/white?text=${course.title.substring(0, 2).toUpperCase()}`;
+                              (e.target as HTMLImageElement).style.display = 'none';
                             }}
                           />
                         ) : (
