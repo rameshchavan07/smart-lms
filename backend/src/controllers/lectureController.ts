@@ -36,7 +36,7 @@ export const createLecture = async (req: AuthRequest, res: Response): Promise<vo
     }
 
     // Generate unique Jitsi meeting ID
-    const meetingId = `smart-lms-${uuidv4()}`;
+    const meetingId = `open-learn-x-${uuidv4()}`;
 
     const lecture = await prisma.lecture.create({
       data: {
@@ -116,7 +116,7 @@ export const getLectureDetails = async (req: AuthRequest, res: Response): Promis
         email: req.user!.email,
         role: req.user!.role,
       },
-      lecture.meetingUrl || `smart-lms-${lecture.id}`
+      lecture.meetingUrl || `open-learn-x-${lecture.id}`
     );
 
     res.json({ lecture, jitsiToken });

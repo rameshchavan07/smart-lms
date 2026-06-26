@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminEmail = 'admin@smartlms.com';
+  const adminEmail = 'admin@openlearnx.com';
   const adminExists = await prisma.user.findUnique({ where: { email: adminEmail } });
 
   if (!adminExists) {
@@ -19,7 +19,7 @@ async function main() {
         isEmailVerified: true,
       },
     });
-    console.log('Admin user created: admin@smartlms.com / admin123');
+    console.log('Admin user created: admin@openlearnx.com / admin123');
   } else {
     console.log('Admin user already exists.');
   }

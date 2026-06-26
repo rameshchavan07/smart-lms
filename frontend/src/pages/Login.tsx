@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
-import { LogIn } from 'lucide-react';
+import { LogIn, Mail, Lock, Eye, EyeOff, Github, Chrome, Compass, GraduationCap, Users, Shield, Cpu, Activity, Play } from 'lucide-react';
+import { Logo } from '../components';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -37,112 +39,261 @@ const Login: React.FC = () => {
     window.location.href = `${BACKEND_URL}/api/auth/google`;
   };
 
+  // Auto-fill login credentials for testing
+  const selectQuickRole = (role: 'ADMIN' | 'TEACHER' | 'STUDENT') => {
+    if (role === 'ADMIN') {
+      setEmail('admin@openlearnx.com');
+      setPassword('admin123');
+    } else if (role === 'TEACHER') {
+      setEmail('teacher@openlearnx.com');
+      setPassword('teacher123');
+    } else if (role === 'STUDENT') {
+      setEmail('student@openlearnx.com');
+      setPassword('student123');
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6 bg-white p-10 rounded-2xl shadow-lg">
-        {/* Header */}
-        <div>
-          <div className="mx-auto h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center">
-            <LogIn className="h-6 w-6 text-indigo-600" />
+    <div className="min-h-screen flex bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
+      
+      {/* Left Column - Branding and Illustration */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700">
+        <Logo size="lg" />
+
+        <div className="space-y-6 max-w-xl">
+          <h1 className="text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+            Open. Learn.<br />
+            Grow. <span className="text-primary-500">Together.</span>
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
+            OpenLearnX is an open-source Learning Management System designed to bring teachers and students together in a modern virtual workspace.
+          </p>
+
+          {/* Core Illustration Area */}
+          <div className="relative py-4 flex justify-center">
+            <svg className="w-80 h-64 text-primary-500/20" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="30" width="160" height="110" rx="12" className="fill-slate-100 dark:fill-slate-700 stroke-slate-200 dark:stroke-slate-600" strokeWidth="4" />
+              <rect x="15" y="140" width="170" height="15" rx="5" className="fill-slate-300 dark:fill-slate-600" />
+              {/* Internal Workspace Representation */}
+              <circle cx="55" cy="70" r="15" className="fill-primary-500/20" />
+              <path d="M45 100C45 92 50 88 55 88C60 88 65 92 65 100H45Z" className="fill-primary-500" />
+              
+              <circle cx="100" cy="70" r="12" className="fill-emerald-500/20" />
+              <path d="M92 95C92 88.5 96 85 100 85C104 85 108 88.5 108 95H92Z" className="fill-success" />
+
+              <circle cx="145" cy="70" r="10" className="fill-indigo-500/20" />
+              <path d="M138 90C138 85 141.5 82 145 82C148.5 82 152 85 152 90H138Z" className="fill-indigo-500" />
+              
+              {/* Network connecting nodes */}
+              <path d="M55 55L100 58M100 58L145 60M55 55L145 60" stroke="#0066f5" strokeWidth="2" strokeDasharray="4 4" />
+            </svg>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
-            Sign in to Smart LMS
-          </h2>
+
+          {/* Quick Info Grid */}
+          <div className="grid grid-cols-4 gap-4 pt-6">
+            <div className="bg-slate-50 dark:bg-slate-805 p-3 rounded-2xl border border-slate-150 dark:border-slate-750 text-center">
+              <Cpu className="w-5 h-5 mx-auto text-primary-500 mb-1" />
+              <p className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase">Open Source</p>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-805 p-3 rounded-2xl border border-slate-150 dark:border-slate-750 text-center">
+              <Users className="w-5 h-5 mx-auto text-primary-500 mb-1" />
+              <p className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase">Multi-User</p>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-805 p-3 rounded-2xl border border-slate-150 dark:border-slate-750 text-center">
+              <Shield className="w-5 h-5 mx-auto text-primary-500 mb-1" />
+              <p className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase">Secure</p>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-805 p-3 rounded-2xl border border-slate-150 dark:border-slate-750 text-center">
+              <Activity className="w-5 h-5 mx-auto text-primary-500 mb-1" />
+              <p className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase">Analytics</p>
+            </div>
+          </div>
         </div>
 
-        {/* Google OAuth Error */}
-        {oauthError && (
-          <div className="text-amber-700 text-sm text-center bg-amber-50 border border-amber-200 p-3 rounded-lg">
-            Google sign-in failed. Please try again or use email/password.
-          </div>
-        )}
-
-        {/* Google Sign-In Button */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 border-2 border-slate-200 rounded-xl text-slate-700 font-semibold hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all duration-150"
-        >
-          {/* Google SVG icon */}
-          <svg className="h-5 w-5" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-          </svg>
-          Continue with Google
-        </button>
-
-        {/* Divider */}
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-200" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-3 bg-white text-slate-400">or sign in with email</span>
-          </div>
+        <div className="text-xs text-slate-400 font-semibold flex gap-4">
+          <span>&copy; 2026 OpenLearnX. All rights reserved.</span>
         </div>
+      </div>
 
-        {/* Email/Password Form */}
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          {error && (
-            <div className="text-red-600 text-sm text-center bg-red-50 border border-red-200 p-3 rounded-lg">
-              {error}
+      {/* Right Column - Login Card Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12">
+        <div className="max-w-md w-full bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 space-y-6">
+          <div className="lg:hidden flex justify-center mb-4">
+            <Logo size="md" />
+          </div>
+
+          <div className="text-center md:text-left space-y-1">
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+              Welcome Back!
+            </h2>
+            <p className="text-sm text-slate-400 dark:text-slate-400">
+              Sign in to your OpenLearnX account
+            </p>
+          </div>
+
+          {oauthError && (
+            <div className="text-red-750 text-xs bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 p-3 rounded-xl">
+              Google authentication failed. Please try again.
             </div>
           )}
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
-              placeholder="you@example.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-            />
-          </div>
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            {error && (
+              <div className="text-red-750 text-xs bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 p-3 rounded-xl">
+                {error}
+              </div>
+            )}
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-                Password
+            <div>
+              <label htmlFor="email" className="block text-xs font-bold text-slate-400 dark:text-slate-550 mb-1 uppercase tracking-wider">
+                Email address
               </label>
-              <Link to="/forgot-password" className="text-xs font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
-                Forgot password?
-              </Link>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Mail className="w-4 h-4" />
+                </span>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  className="pl-10 pr-4 py-2.5 w-full bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-750 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-slate-900 dark:text-white"
+                  placeholder="name@openlearnx.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                />
+              </div>
             </div>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
-              placeholder="Your password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="password" className="block text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider">
+                  Password
+                </label>
+                <Link to="/forgot-password" className="text-xs font-bold text-primary-500 hover:text-primary-655 transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Lock className="w-4 h-4" />
+                </span>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className="pl-10 pr-10 py-2.5 w-full bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-750 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-slate-900 dark:text-white"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                id="remember_me"
+                name="remember_me"
+                type="checkbox"
+                className="h-4 w-4 text-primary-500 border-slate-300 dark:border-slate-700 rounded-lg focus:ring-primary-500"
+              />
+              <label htmlFor="remember_me" className="ml-2 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Remember me
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 text-white font-bold rounded-xl shadow-md transition-all active:scale-97 cursor-pointer text-sm"
+            >
+              {loading ? 'Signing In...' : 'Sign In'}
+            </button>
+          </form>
+
+          {/* Social SSO Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+            </div>
+            <div className="relative flex justify-center text-xs font-bold uppercase">
+              <span className="px-3 bg-white dark:bg-slate-800 text-slate-400">
+                or continue with
+              </span>
+            </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-semibold rounded-xl transition-all duration-150 active:scale-95"
-          >
-            {loading ? 'Signing in...' : 'Sign in'}
-          </button>
+          {/* Social Logins */}
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="flex justify-center items-center py-2 px-4 border border-slate-205 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors cursor-pointer"
+            >
+              <Chrome className="w-4 h-4 text-red-500" />
+            </button>
+            <button
+              type="button"
+              className="flex justify-center items-center py-2 px-4 border border-slate-205 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors cursor-pointer"
+            >
+              <Github className="w-4 h-4 text-slate-900 dark:text-white" />
+            </button>
+            <button
+              type="button"
+              className="flex justify-center items-center py-2 px-4 border border-slate-205 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors cursor-pointer"
+            >
+              <Compass className="w-4 h-4 text-blue-500" />
+            </button>
+          </div>
 
-          <div className="text-center text-sm text-slate-600">
+          {/* Choose Role for Quick Testing */}
+          <div className="pt-4 border-t border-slate-150 dark:border-slate-700">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center mb-3">
+              Choose your role to continue
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => selectQuickRole('ADMIN')}
+                className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50/10 dark:hover:bg-primary-950/10 transition-all text-center cursor-pointer"
+              >
+                <Shield className="w-4 h-4 text-primary-500 mb-1" />
+                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Admin</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => selectQuickRole('TEACHER')}
+                className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50/10 dark:hover:bg-primary-950/10 transition-all text-center cursor-pointer"
+              >
+                <Users className="w-4 h-4 text-primary-500 mb-1" />
+                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Teacher</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => selectQuickRole('STUDENT')}
+                className="flex flex-col items-center p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary-500 dark:hover:border-primary-500 hover:bg-primary-50/10 dark:hover:bg-primary-950/10 transition-all text-center cursor-pointer"
+              >
+                <GraduationCap className="w-4 h-4 text-primary-500 mb-1" />
+                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Student</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center text-sm text-slate-500 pt-2">
             Don't have an account?{' '}
-            <Link to="/register" className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
-              Register here
+            <Link to="/register" className="font-bold text-primary-500 hover:text-primary-600 transition-colors">
+              Sign Up
             </Link>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

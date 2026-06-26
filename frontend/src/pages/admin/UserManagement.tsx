@@ -4,6 +4,8 @@ import CreateUserModal from '../../components/CreateUserModal';
 import EditUserModal from '../../components/EditUserModal';
 import { UserPlus, MoreVertical, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { Badge, Button, EmptyState, Modal, ConfirmDialog } from '../../components';
+import toast from 'react-hot-toast';
 
 interface UserData {
   id: string;
@@ -23,16 +25,21 @@ const UserManagement: React.FC = () => {
   const [filterRole, setFilterRole] = useState(currentUser?.role === 'TEACHER' ? 'STUDENT' : '');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
+  
+  // Custom Confirmation Dialog States
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [userIdToDelete, setUserIdToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // If teacher, force fetch only students
       const roleToFetch = currentUser?.role === 'TEACHER' ? 'STUDENT' : filterRole;
       const { data } = await api.get(`/users${roleToFetch ? `?role=${roleToFetch}` : ''}`);
       setUsers(data.users);
     } catch (error) {
       console.error('Failed to fetch users', error);
+      toast.error('Failed to load users list.');
     } finally {
       setLoading(false);
     }
@@ -45,21 +52,33 @@ const UserManagement: React.FC = () => {
   const toggleStatus = async (id: string, currentStatus: boolean) => {
     try {
       await api.patch(`/users/${id}/status`, { isActive: !currentStatus });
+      toast.success(`User status updated to ${!currentStatus ? 'Active' : 'Inactive'}`);
       fetchUsers();
     } catch (error) {
       console.error('Failed to update status', error);
+      toast.error('Failed to update user status.');
     }
   };
 
-  const handleDeleteUser = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this user profile? All course links, refresh tokens, and registrations will be deleted.')) {
-      try {
-        await api.delete(`/users/${id}`);
-        fetchUsers();
-      } catch (error) {
-        console.error('Failed to delete user', error);
-        alert('Failed to delete user.');
-      }
+  const confirmDeleteUser = (id: string) => {
+    setUserIdToDelete(id);
+    setIsConfirmOpen(true);
+  };
+
+  const handleDeleteUserExecute = async () => {
+    if (!userIdToDelete) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/users/${userIdToDelete}`);
+      toast.success('User profile deleted successfully.');
+      setIsConfirmOpen(false);
+      setUserIdToDelete(null);
+      fetchUsers();
+    } catch (error) {
+      console.error('Failed to delete user', error);
+      toast.error('Failed to delete user profile.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -71,23 +90,25 @@ const UserManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-900">{currentUser?.role === 'TEACHER' ? 'My Students' : 'User Management'}</h1>
-        <button 
+        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">
+          {currentUser?.role === 'TEACHER' ? 'My Students' : 'User Management'}
+        </h1>
+        <Button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm"
+          className="flex items-center gap-2"
         >
           <UserPlus className="w-4 h-4" />
           Add New User
-        </button>
+        </Button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
         {currentUser?.role === 'ADMIN' && (
-          <div className="p-4 border-b border-slate-200 bg-slate-50 flex gap-4">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 flex gap-4">
             <select 
               value={filterRole} 
               onChange={(e) => setFilterRole(e.target.value)}
-              className="border-slate-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm px-3 py-2 border"
+              className="border-slate-300 dark:border-slate-705 rounded-xl text-sm focus:ring-primary-500/20 focus:border-primary-500 bg-white dark:bg-slate-800 shadow-sm px-3 py-2 border transition-all text-slate-750 dark:text-slate-200"
             >
               <option value="">All Roles</option>
               <option value="TEACHER">Teachers</option>
@@ -98,17 +119,26 @@ const UserManagement: React.FC = () => {
         )}
 
         {loading ? (
-          <div className="p-8 text-center text-slate-500">Loading users...</div>
+          <div className="p-6 space-y-4">
+            <div className="skeleton h-10 w-full rounded-xl" />
+            <div className="skeleton h-10 w-full rounded-xl" />
+            <div className="skeleton h-10 w-full rounded-xl" />
+            <div className="skeleton h-10 w-full rounded-xl" />
+          </div>
         ) : users.length === 0 ? (
-          <div className="p-16 text-center">
-            <ShieldAlert className="mx-auto h-12 w-12 text-slate-300 mb-4" />
-            <h3 className="text-lg font-medium text-slate-900">No users found</h3>
-            <p className="text-slate-500 mt-1">Try adjusting your filters or adding a new user.</p>
+          <div className="p-8">
+            <EmptyState
+              icon={<ShieldAlert className="w-8 h-8 text-primary-500" />}
+              title="No users found"
+              description="Try adjusting your filters or add a new user to populate the list."
+              actionLabel="Add New User"
+              onAction={() => setIsModalOpen(true)}
+            />
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+              <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 text-left">User</th>
                   <th className="px-6 py-4 text-left">Role</th>
@@ -117,60 +147,58 @@ const UserManagement: React.FC = () => {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-slate-200">
+              <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={user.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
+                        <div className="h-10 w-10 flex-shrink-0 bg-primary-100 dark:bg-primary-955/40 text-primary-600 dark:text-primary-400 rounded-full flex items-center justify-center font-bold text-sm shadow-xs">
                           {user.firstName[0]}{user.lastName[0]}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-slate-900">{user.firstName} {user.lastName}</div>
-                          <div className="text-sm text-slate-500">{user.email}</div>
+                        <div className="ml-4 text-left">
+                          <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{user.firstName} {user.lastName}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">{user.email}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' :
-                        user.role === 'TEACHER' ? 'bg-amber-100 text-amber-800' :
-                        'bg-sky-100 text-sky-800'
-                      }`}>
+                      <Badge variant={user.role === 'ADMIN' ? 'danger' : user.role === 'TEACHER' ? 'warning' : 'info'}>
                         {user.role}
-                      </span>
+                      </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button 
                         onClick={() => toggleStatus(user.id, user.isActive)}
-                        className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full transition-colors cursor-pointer ${
-                          user.isActive ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
-                        }`}
+                        className="cursor-pointer"
                       >
-                        {user.isActive ? 'Active' : 'Inactive'}
+                        <Badge variant={user.isActive ? 'success' : 'neutral'}>
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                       {currentUser?.role === 'ADMIN' && (
                         <>
-                          <button 
+                          <Button 
+                            variant="ghost"
                             onClick={() => handleEditClick(user)} 
-                            className="text-blue-500 hover:text-blue-700 transition-colors mr-3"
+                            className="text-xs py-1.5 px-3"
                           >
                             Edit
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteUser(user.id)} 
-                            className="text-red-400 hover:text-red-600 transition-colors mr-3"
+                          </Button>
+                          <Button 
+                            variant="ghost"
+                            onClick={() => confirmDeleteUser(user.id)} 
+                            className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 py-1.5 px-3"
                           >
                             Delete
-                          </button>
+                          </Button>
                         </>
                       )}
-                      <button className="text-slate-400 hover:text-blue-600 transition-colors">
+                      <button className="text-slate-400 hover:text-primary-500 transition-colors">
                         <MoreVertical className="h-5 w-5 inline" />
                       </button>
                     </td>
@@ -187,6 +215,7 @@ const UserManagement: React.FC = () => {
         onClose={() => setIsModalOpen(false)} 
         onSuccess={() => {
           setIsModalOpen(false);
+          toast.success('New user profile created.');
           fetchUsers();
         }}
       />
@@ -200,10 +229,23 @@ const UserManagement: React.FC = () => {
         onSuccess={() => {
           setIsEditModalOpen(false);
           setSelectedUserForEdit(null);
+          toast.success('User profile updated successfully.');
           fetchUsers();
         }}
         userToEdit={selectedUserForEdit}
       />
+
+      {/* Custom Confirmation Modal */}
+      <Modal isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} title="Delete User Profile">
+        <ConfirmDialog
+          title="Confirm User Deletion"
+          message="Are you sure you want to delete this user profile? All course links, refresh tokens, and registrations will be deleted."
+          onConfirm={handleDeleteUserExecute}
+          onCancel={() => setIsConfirmOpen(false)}
+          loading={deleting}
+          danger
+        />
+      </Modal>
     </div>
   );
 };

@@ -23,7 +23,7 @@ app.use(morgan('dev'));
 // Session (required for Passport OAuth redirect flow)
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'smart-lms-session-secret',
+    secret: process.env.SESSION_SECRET || 'open-learn-x-session-secret',
     resave: false,
     saveUninitialized: false,
     cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 5 * 60 * 1000 },
@@ -49,7 +49,7 @@ try {
   console.log('Swagger YAML loaded successfully');
 } catch (err: any) {
   console.error('Failed to load swagger.yaml:', err.message);
-  swaggerDocument = { openapi: '3.0.0', info: { title: 'Smart LMS API', version: '1.0.0' }, paths: {} };
+  swaggerDocument = { openapi: '3.0.0', info: { title: 'OpenLearnX API', version: '1.0.0' }, paths: {} };
 }
 
 // Serve swagger spec as JSON
@@ -64,7 +64,7 @@ app.get('/api-docs', (req: Request, res: Response) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart LMS API Documentation</title>
+  <title>OpenLearnX API Documentation</title>
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
   <style>
     html { box-sizing: border-box; overflow-y: scroll; }
@@ -104,7 +104,7 @@ app.use('/api', routes);
 
 // Health Check Route
 app.get('/api/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'success', message: 'Smart LMS API is running' });
+  res.status(200).json({ status: 'success', message: 'OpenLearnX API is running' });
 });
 
 // Global Error Handler

@@ -67,7 +67,7 @@ const Register: React.FC = () => {
             Create an Account
           </h2>
           <p className="text-center text-sm text-slate-500 mt-1">
-            Join Smart LMS and start learning
+            Join OpenLearnX and start learning
           </p>
         </div>
 

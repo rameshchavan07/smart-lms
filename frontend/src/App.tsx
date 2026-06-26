@@ -1,7 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';
@@ -27,84 +30,110 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <AuthProvider>
-          <Routes>
-            <Route 
-              path="/live/:id" 
-              element={
-                <ProtectedRoute allowedRoles={['TEACHER', 'STUDENT']}>
-                  <LiveClassRoom />
-                </ProtectedRoute>
+      <ThemeProvider>
+        <Router>
+          <AuthProvider>
+            <Routes>
+              <Route 
+                path="/live/:id" 
+                element={
+                  <ProtectedRoute allowedRoles={['TEACHER', 'STUDENT']}>
+                    <LiveClassRoom />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/verify-email" element={<VerifyOtp />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              
+              {/* Protected Routes */}
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Admin Routes */}
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="courses" element={<CourseManagement />} />
+                <Route path="enrollments" element={<EnrollmentManagement />} />
+              </Route>
+              
+              {/* Teacher Routes */}
+              <Route 
+                path="/teacher" 
+                element={
+                  <ProtectedRoute allowedRoles={['TEACHER']}>
+                    <TeacherLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<TeacherDashboard />} />
+                <Route path="courses" element={<TeacherCourses />} />
+                <Route path="courses/:id" element={<CourseDetails />} />
+                <Route path="students" element={<UserManagement />} />
+              </Route>
+  
+              {/* Student Routes */}
+              <Route 
+                path="/student" 
+                element={
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
+                    <StudentLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<StudentDashboard />} />
+                <Route path="courses" element={<StudentCourses />} />
+                <Route path="courses/:id" element={<CourseDetails />} />
+              </Route>
+              
+              {/* Catch-all */}
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </AuthProvider>
+        </Router>
+        <Toaster 
+          position="top-right" 
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#ffffff',
+              color: '#0f172a',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              fontWeight: 500,
+              fontSize: '14px'
+            },
+            success: {
+              style: {
+                borderLeft: '4px solid #10b981'
               }
-            />
-            
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/verify-email" element={<VerifyOtp />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            
-            {/* Protected Routes */}
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Admin Routes */}
-            <Route 
-              path="/admin" 
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
-                  <AdminLayout />
-                </ProtectedRoute>
+            },
+            error: {
+              style: {
+                borderLeft: '4px solid #ef4444'
               }
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="users" element={<UserManagement />} />
-              <Route path="courses" element={<CourseManagement />} />
-              <Route path="enrollments" element={<EnrollmentManagement />} />
-            </Route>
-            
-            {/* Teacher Routes */}
-            <Route 
-              path="/teacher" 
-              element={
-                <ProtectedRoute allowedRoles={['TEACHER']}>
-                  <TeacherLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<TeacherDashboard />} />
-              <Route path="courses" element={<TeacherCourses />} />
-              <Route path="courses/:id" element={<CourseDetails />} />
-              <Route path="students" element={<UserManagement />} />
-            </Route>
-
-            {/* Student Routes */}
-            <Route 
-              path="/student" 
-              element={
-                <ProtectedRoute allowedRoles={['STUDENT']}>
-                  <StudentLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<StudentDashboard />} />
-              <Route path="courses" element={<StudentCourses />} />
-              <Route path="courses/:id" element={<CourseDetails />} />
-            </Route>
-            
-            {/* Catch-all */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </AuthProvider>
-      </Router>
+            }
+          }}
+        />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

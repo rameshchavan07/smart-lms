@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
-const APP_NAME = 'Smart LMS';
+const APP_NAME = 'OpenLearnX';
 
 // ─── HTML Templates ───────────────────────────────────────────────────────────
 

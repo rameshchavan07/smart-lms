@@ -19,7 +19,7 @@ const LiveClassRoom: React.FC = () => {
     const fetchLectureDetails = async () => {
       try {
         const { data } = await api.get(`/lectures/${id}`);
-        setMeetingUrl(data.lecture.meetingUrl || `smart-lms-${data.lecture.id}`);
+        setMeetingUrl(data.lecture.meetingUrl || `open-learn-x-${data.lecture.id}`);
         setJwtToken(data.jitsiToken || null);
         setCourseName(data.lecture.course.title);
         setLectureTitle(data.lecture.title);
@@ -91,7 +91,7 @@ const LiveClassRoom: React.FC = () => {
           }}
           userInfo={{
             displayName: `${user?.firstName} ${user?.lastName} (${user?.role})`,
-            email: user?.email || 'guest@smartlms.com'
+            email: user?.email || 'guest@openlearnx.com'
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onApiReady={(externalApi: any) => {
