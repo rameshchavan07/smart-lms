@@ -4,15 +4,33 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import YAML from 'yamljs';
 import path from 'path';
+import passport from 'passport';
+import session from 'express-session';
+import { configurePassport } from './services/passportService';
 
 const app: Application = express();
 import routes from './routes';
+
+// Configure Passport strategy
+configurePassport();
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(morgan('dev'));
+
+// Session (required for Passport OAuth redirect flow)
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'smart-lms-session-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 5 * 60 * 1000 },
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Helmet - disable CSP so Swagger UI CDN assets can load
 app.use(

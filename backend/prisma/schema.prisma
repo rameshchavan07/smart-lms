@@ -12,11 +12,12 @@ model User {
   firstName     String            @db.VarChar(100)
   lastName      String            @db.VarChar(100)
   email         String            @unique @db.VarChar(255)
-  passwordHash  String
+  passwordHash  String?
   role          UserRole
   profileImage  String?
   googleId      String?           @db.VarChar(255)
-  isActive      Boolean           @default(true)
+  isActive         Boolean           @default(true)
+  isEmailVerified  Boolean           @default(false)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   auditLogs     AuditLog[]
@@ -216,6 +217,24 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model OtpToken {
+  id        String   @id @default(uuid())
+  email     String
+  otpHash   String
+  type      OtpType
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
 }
 
 enum UserRole {

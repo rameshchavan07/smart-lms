@@ -168,8 +168,8 @@ export const uploadLectureThumbnail = async (req: AuthRequest, res: Response): P
     );
 
     // If there is an existing thumbnail, delete it from Drive
-    if ((lecture as any).thumbnailUrl) {
-      const oldFileId = extractFileIdFromUrl((lecture as any).thumbnailUrl);
+    if (lecture.thumbnailUrl) {
+      const oldFileId = extractFileIdFromUrl(lecture.thumbnailUrl);
       if (oldFileId) {
         await deleteFileFromDrive(oldFileId);
       }

@@ -57,8 +57,9 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
         });
       }
       onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create user');
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || 'Failed to create user');
     } finally {
       setLoading(false);
     }
@@ -88,7 +89,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
                   <label className="block text-sm font-medium text-slate-700 mb-1">User Role</label>
                   <select
                     value={role}
-                    onChange={(e) => setRole(e.target.value as any)}
+                    onChange={(e) => setRole(e.target.value as 'TEACHER' | 'STUDENT')}
                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
                   >
                     <option value="TEACHER">Teacher</option>

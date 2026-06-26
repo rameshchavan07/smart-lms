@@ -16,6 +16,7 @@ async function main() {
         email: adminEmail,
         passwordHash,
         role: 'ADMIN',
+        isEmailVerified: true,
       },
     });
     console.log('Admin user created: admin@smartlms.com / admin123');
