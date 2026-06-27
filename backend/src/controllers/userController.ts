@@ -230,8 +230,19 @@ export const deleteUser = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     await prisma.$transaction([
-      ...(user.student ? [prisma.student.delete({ where: { id: user.student.id } })] : []),
-      ...(user.teacher ? [prisma.teacher.delete({ where: { id: user.teacher.id } })] : []),
+      prisma.auditLog.deleteMany({ where: { userId: id as string } }),
+      prisma.notification.deleteMany({ where: { userId: id as string } }),
+      prisma.googleDriveFile.deleteMany({ where: { uploadedBy: id as string } }),
+      ...(user.student ? [
+        prisma.attendance.deleteMany({ where: { studentId: user.student.id } }),
+        prisma.assignmentSubmission.deleteMany({ where: { studentId: user.student.id } }),
+        prisma.enrollment.deleteMany({ where: { studentId: user.student.id } }),
+        prisma.student.delete({ where: { id: user.student.id } })
+      ] : []),
+      ...(user.teacher ? [
+        prisma.course.updateMany({ where: { teacherId: user.teacher.id }, data: { teacherId: null } }),
+        prisma.teacher.delete({ where: { id: user.teacher.id } })
+      ] : []),
       prisma.refreshToken.deleteMany({ where: { userId: id as string } }),
       prisma.user.delete({ where: { id: id as string } })
     ]);
