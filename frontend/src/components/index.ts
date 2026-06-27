@@ -10,3 +10,10 @@ export { default as CreateCourseModal } from './CreateCourseModal';
 export { default as CreateUserModal } from './CreateUserModal';
 export { default as EditUserModal } from './EditUserModal';
 export { default as EnrollStudentModal } from './EnrollStudentModal';
+
+// New shared components
+export { default as StatCard } from './StatCard';
+export { default as PageHeader } from './PageHeader';
+export { default as CourseCard } from './CourseCard';
+export { default as ErrorState } from './ErrorState';
+export { Skeleton, StatCardSkeleton, CourseCardSkeleton, TableRowSkeleton } from './Skeleton';

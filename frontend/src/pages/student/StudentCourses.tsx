@@ -1,108 +1,157 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
-import { Link } from 'react-router-dom';
-import { BookOpen, Video, PlayCircle } from 'lucide-react';
-import { getDirectDriveUrl } from '../../utils/drive';
+import { CourseCard, ErrorState, PageHeader } from '../../components';
+import { CourseCardSkeleton } from '../../components/Skeleton';
+import { Search, Grid, List, BookOpen } from 'lucide-react';
 
 interface EnrollmentData {
   course: {
     id: string;
     title: string;
-    description: string;
+    description?: string;
     thumbnailUrl?: string;
-    teacher?: {
-      user: {
-        firstName: string;
-        lastName: string;
-      }
-    };
-    _count: {
-      lectures: number;
-    }
-  }
+    teacher?: { user: { firstName: string; lastName: string } };
+    _count: { lectures: number };
+  };
+  progress?: number;
 }
 
 const StudentCourses: React.FC = () => {
-  const [enrollments, setEnrollments] = useState<EnrollmentData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
 
-  useEffect(() => {
-    const fetchMyCourses = async () => {
-      try {
-        const { data } = await api.get('/enrollments/my-courses');
-        setEnrollments(data.enrollments);
-      } catch (error) {
-        console.error('Failed to fetch enrolled courses', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMyCourses();
-  }, []);
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['student-enrollments'],
+    queryFn: () => api.get('/enrollments/my-courses').then(r => r.data.enrollments as EnrollmentData[]),
+    staleTime: 60_000,
+  });
 
-  if (loading) {
-    return <div className="p-8 text-center text-slate-500">Loading your courses...</div>;
-  }
+  const enrollments = data ?? [];
+  const filtered = enrollments.filter(e =>
+    e.course.title.toLowerCase().includes(search.toLowerCase()) ||
+    (e.course.description ?? '').toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">My Enrolled Courses</h1>
-        <p className="text-slate-500 mt-1">Jump right back into your active classes.</p>
+      <PageHeader
+        title="My Courses"
+        subtitle={`${enrollments.length} enrolled course${enrollments.length !== 1 ? 's' : ''}`}
+      />
+
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            placeholder="Search your courses..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="input pl-9 py-2 text-[13px] h-9"
+          />
+        </div>
+        <div className="flex items-center gap-1 p-1 rounded-lg border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <button onClick={() => setView('grid')}
+            className="p-1.5 rounded-md transition-colors"
+            style={{ background: view === 'grid' ? '#4361f0' : 'transparent', color: view === 'grid' ? 'white' : 'var(--text-muted)' }}
+            aria-label="Grid view">
+            <Grid size={15} />
+          </button>
+          <button onClick={() => setView('list')}
+            className="p-1.5 rounded-md transition-colors"
+            style={{ background: view === 'list' ? '#4361f0' : 'transparent', color: view === 'list' ? 'white' : 'var(--text-muted)' }}
+            aria-label="List view">
+            <List size={15} />
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {enrollments.length === 0 ? (
-          <div className="col-span-full p-12 bg-white rounded-xl border border-slate-200 text-center">
-            <BookOpen className="mx-auto h-12 w-12 text-slate-300 mb-4" />
-            <h3 className="text-lg font-medium text-slate-900">Not enrolled in any courses</h3>
-            <p className="text-slate-500 mt-1">Check back later once the administrator assigns you to a course.</p>
+      {/* Error */}
+      {isError && <ErrorState message="Could not load your courses" onRetry={refetch} />}
+
+      {/* Loading */}
+      {isLoading && (
+        <div className={view === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5' : 'flex flex-col gap-3'}>
+          {[...Array(6)].map((_, i) => <CourseCardSkeleton key={i} />)}
+        </div>
+      )}
+
+      {/* Empty */}
+      {!isLoading && !isError && filtered.length === 0 && (
+        <div className="card flex flex-col items-center py-20 text-center">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: 'rgba(67,97,240,0.1)' }}>
+            <BookOpen size={26} color="#4361f0" />
           </div>
-        ) : (
-          enrollments.map((record) => {
-            const course = record.course;
-            return (
-              <div key={course.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                <div className="h-32 border-b border-slate-100 relative overflow-hidden bg-indigo-50">
-                  {course.thumbnailUrl ? (
-                    <img 
-                      src={getDirectDriveUrl(course.thumbnailUrl)} 
-                      alt={course.title} 
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      decoding="async"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  ) : null}
-                  <div className="absolute bottom-4 left-4 h-10 w-10 bg-white/95 backdrop-blur shadow-sm rounded-lg flex items-center justify-center text-indigo-600 z-10">
-                    <BookOpen className="w-5 h-5" />
+          <h3 className="text-[16px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            {search ? 'No matching courses' : 'No courses enrolled yet'}
+          </h3>
+          <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
+            {search ? 'Try a different search term' : 'Your enrolled courses will appear here once an admin assigns them.'}
+          </p>
+        </div>
+      )}
+
+      {/* Grid View */}
+      {!isLoading && !isError && filtered.length > 0 && view === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {filtered.map((e, idx) => (
+            <CourseCard
+              key={e.course.id}
+              course={e.course}
+              role="student"
+              progress={e.progress}
+              colorIndex={idx}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* List View */}
+      {!isLoading && !isError && filtered.length > 0 && view === 'list' && (
+        <div className="card p-0 overflow-hidden">
+          <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+            {filtered.map((e, idx) => {
+              const course = e.course;
+              const lectures = course._count?.lectures ?? 0;
+              const teacherName = course.teacher
+                ? `${course.teacher.user.firstName} ${course.teacher.user.lastName}` : null;
+              return (
+                <div key={course.id} className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-white/2 transition-colors">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${
+                    ['from-blue-500 to-indigo-600','from-emerald-500 to-teal-600','from-violet-500 to-purple-600','from-orange-500 to-amber-600'][idx % 4]
+                  }`}>
+                    <BookOpen size={18} color="white" />
                   </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-slate-900 mb-1 truncate">{course.title}</h3>
-                  <p className="text-xs font-medium text-blue-600 mb-3">
-                    {course.teacher ? `By ${course.teacher.user.firstName} ${course.teacher.user.lastName}` : 'No teacher assigned'}
-                  </p>
-                  <p className="text-slate-500 text-sm line-clamp-2 mb-6 h-10">
-                    {course.description || 'No description provided.'}
-                  </p>
-                  <div className="flex justify-between items-center pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-1 text-sm text-slate-600">
-                      <Video className="w-4 h-4 text-slate-400" />
-                      <span>{course._count.lectures} Lectures</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{course.title}</p>
+                    {teacherName && (
+                      <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{teacherName}</p>
+                    )}
+                    {typeof e.progress === 'number' && (
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex-1 h-1.5 rounded-full overflow-hidden max-w-[120px]" style={{ background: 'var(--border)' }}>
+                          <div className="h-full rounded-full" style={{ width: `${e.progress}%`, background: '#4361f0' }} />
+                        </div>
+                        <span className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>{e.progress}%</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
+                    <div className="text-center">
+                      <p className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{lectures}</p>
+                      <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Lectures</p>
                     </div>
-                    <Link to={`/student/courses/${course.id}`} className="text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 text-sm font-medium">
-                      <PlayCircle className="w-4 h-4" /> Go to Course
-                    </Link>
                   </div>
+                  <a href={`/student/courses/${course.id}`} className="btn btn-secondary btn-sm">Continue</a>
                 </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

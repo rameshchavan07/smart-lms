@@ -1,389 +1,362 @@
-import React, { useEffect, useState } from 'react';
-import api from '../../services/api';
-import { 
-  BookOpen, 
-  Users, 
-  ClipboardList, 
-  TrendingUp, 
-  Calendar, 
-  ChevronRight, 
-  Video
-} from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Card, Badge } from '../../components';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from 'recharts';
-import { motion } from 'framer-motion';
-import toast from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import {
+  BookOpen, Users, ClipboardList, TrendingUp,
+  Video, ChevronRight, Calendar, GraduationCap
+} from 'lucide-react';
+import { StatCard, ErrorState } from '../../components';
+import { StatCardSkeleton } from '../../components/Skeleton';
 
-const COLORS = ['#22c55e', '#3b82f6', '#eab308', '#ef4444'];
+/* ── Types ──────────────────────────────── */
+interface TeacherMetrics {
+  totalCourses: number;
+  totalStudents: number;
+  pendingAssignments?: number;
+  avgClassProgress?: number;
+  progressDelta?: number;
+}
 
+interface WeeklyData {
+  day: string;
+  progress: number;
+  submissions?: number;
+}
+
+interface UpcomingClass {
+  id: string;
+  title: string;
+  courseTitle: string;
+  startTime: string;
+  duration: number; // minutes
+}
+
+interface RecentAssignment {
+  id: string;
+  title: string;
+  courseTitle: string;
+  dueDate: string;
+  submitted: number;
+  total: number;
+}
+
+interface CourseProgress {
+  id: string;
+  title: string;
+  progress: number;
+  studentCount: number;
+  color: string;
+}
+
+/* ── Fallback data (while new endpoints are added) ── */
+const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const fallbackWeeklyData: WeeklyData[] = WEEK_DAYS.map(day => ({
+  day, progress: 0, submissions: 0
+}));
+
+const PROGRESS_COLORS = ['#4361f0', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899'];
+
+/* ── Component ──────────────────────────── */
 const TeacherDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [metrics, setMetrics] = useState<{totalCourses: number, totalStudents: number} | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const { data } = await api.get('/analytics/teacher');
-        setMetrics(data.metrics);
-      } catch (error) {
-        console.error('Failed to fetch teacher analytics', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAnalytics();
-  }, []);
+  const { data: metrics, isLoading: metricsLoading, isError: metricsError, refetch } = useQuery({
+    queryKey: ['teacher-analytics'],
+    queryFn: () => api.get('/analytics/teacher').then(r => r.data.metrics as TeacherMetrics),
+    staleTime: 60_000,
+  });
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="skeleton h-14 w-80 rounded-2xl" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 skeleton rounded-2xl" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-72 skeleton rounded-2xl" />
-          <div className="h-72 skeleton rounded-2xl" />
-        </div>
-      </div>
-    );
+  const { data: weeklyData } = useQuery({
+    queryKey: ['teacher-weekly-progress'],
+    queryFn: () => api.get('/analytics/teacher/weekly').then(r => r.data.data as WeeklyData[]),
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  const { data: upcomingClasses } = useQuery({
+    queryKey: ['teacher-upcoming-classes'],
+    queryFn: () => api.get('/live-classes/upcoming?limit=3').then(r => r.data.classes as UpcomingClass[]),
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  const { data: recentAssignments } = useQuery({
+    queryKey: ['teacher-recent-assignments'],
+    queryFn: () => api.get('/assignments/teacher/recent?limit=3').then(r => r.data.assignments as RecentAssignment[]),
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  const { data: courseProgressData } = useQuery({
+    queryKey: ['teacher-course-progress'],
+    queryFn: () => api.get('/courses/my-courses?limit=4').then(r =>
+      (r.data.courses as { id: string; title: string; avgProgress?: number; _count: { enrollments: number } }[])
+        .map((c, i) => ({
+          id: c.id,
+          title: c.title,
+          progress: c.avgProgress ?? 0,
+          studentCount: c._count.enrollments,
+          color: PROGRESS_COLORS[i % PROGRESS_COLORS.length],
+        } as CourseProgress))
+    ),
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  const chartData = weeklyData ?? fallbackWeeklyData;
+  const classes = upcomingClasses ?? [];
+  const assignments = recentAssignments ?? [];
+  const courseProgress = courseProgressData ?? [];
+
+  const dateLabel = (() => {
+    const now = new Date();
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - now.getDay() + 1);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    return `${mon.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${sun.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  })();
+
+  if (metricsError) {
+    return <ErrorState message="Failed to load teacher dashboard" onRetry={refetch} />;
   }
 
-  const classOverviewData = [
-    { name: 'Mon', progress: 38 },
-    { name: 'Tue', progress: 48 },
-    { name: 'Wed', progress: 40 },
-    { name: 'Thu', progress: 75 },
-    { name: 'Fri', progress: 62 },
-    { name: 'Sat', progress: 70 },
-    { name: 'Sun', progress: 82 },
-  ];
-
-  const studentProgressData = [
-    { name: 'Excellent (90-100%)', value: 56 },
-    { name: 'Good (75-89%)', value: 94 },
-    { name: 'Average (60-74%)', value: 68 },
-    { name: 'Needs Improvement (<60%)', value: 38 },
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.08 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } }
-  };
-
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="space-y-6 text-left"
-    >
-      {/* Greetings Header */}
-      <motion.div 
-        variants={itemVariants}
-        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
-      >
+    <div className="space-y-6">
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100">
-            Welcome back, {user?.firstName || 'John'}! 👋
+          <h1 className="text-[22px] font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            Welcome back, {user?.firstName || 'Teacher'} 👋
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Here's what's happening with your courses today.</p>
+          <p className="text-[14px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            Here's what's happening in your courses today
+          </p>
         </div>
-        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs font-bold shadow-sm text-slate-700 dark:text-slate-200 cursor-pointer">
-          <Calendar className="w-4 h-4 text-slate-400 mr-1.5" />
-          May 26 - Jun 1, 2025
+        <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+          <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
+          <span className="text-[13px] font-semibold" style={{ color: 'var(--text-secondary)' }}>{dateLabel}</span>
         </div>
-      </motion.div>
-      
-      {/* KPI Cards */}
-      <motion.div 
-        variants={itemVariants}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-      >
-        <Card hover className="flex items-center">
-          <div className="h-12 w-12 rounded-xl bg-blue-50 dark:bg-blue-955/20 flex items-center justify-center text-[#2563eb] mr-4 shadow-sm border border-blue-100/50 dark:border-blue-955/20">
-            <BookOpen className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">My Courses</p>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{metrics?.totalCourses || 8}</h3>
-            <span className="text-[10px] text-slate-450 font-semibold hover:underline cursor-pointer">View all courses</span>
-          </div>
-        </Card>
-        
-        <Card hover className="flex items-center">
-          <div className="h-12 w-12 rounded-xl bg-green-50 dark:bg-green-955/20 flex items-center justify-center text-[#22c55e] mr-4 shadow-sm border border-green-100/50 dark:border-green-955/20">
-            <Users className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Students</p>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{metrics?.totalStudents || 256}</h3>
-            <span className="text-[10px] text-slate-450 font-semibold hover:underline cursor-pointer">View students</span>
-          </div>
-        </Card>
+      </div>
 
-        <Card hover className="flex items-center">
-          <div className="h-12 w-12 rounded-xl bg-purple-50 dark:bg-purple-955/20 flex items-center justify-center text-[#8b5cf6] mr-4 shadow-sm border border-purple-100/50 dark:border-purple-955/20">
-            <ClipboardList className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pending Assignments</p>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">24</h3>
-            <span className="text-[10px] text-slate-450 font-semibold hover:underline cursor-pointer">View assignments</span>
-          </div>
-        </Card>
+      {/* ── Stat Cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {metricsLoading ? (
+          [...Array(4)].map((_, i) => <StatCardSkeleton key={i} />)
+        ) : (
+          <>
+            <StatCard
+              title="My Courses" value={metrics?.totalCourses ?? 0}
+              icon={BookOpen} color="#4361f0" bg="rgba(67,97,240,0.1)"
+              subtitle="Active courses" linkTo="/teacher/courses" linkLabel="View courses"
+            />
+            <StatCard
+              title="Total Students" value={metrics?.totalStudents ?? 0}
+              icon={Users} color="#10b981" bg="rgba(16,185,129,0.1)"
+              subtitle="Across all courses" linkTo="/teacher/students" linkLabel="View students"
+            />
+            <StatCard
+              title="Pending Assignments" value={metrics?.pendingAssignments ?? 0}
+              icon={ClipboardList} color="#8b5cf6" bg="rgba(139,92,246,0.1)"
+              subtitle="Need grading"
+            />
+            <StatCard
+              title="Class Progress" value={`${metrics?.avgClassProgress ?? 0}%`}
+              icon={TrendingUp} color="#f59e0b" bg="rgba(245,158,11,0.1)"
+              trend={metrics?.progressDelta !== undefined
+                ? { value: metrics.progressDelta, positive: metrics.progressDelta >= 0, label: 'this week' }
+                : undefined}
+            />
+          </>
+        )}
+      </div>
 
-        <Card hover className="flex items-center">
-          <div className="h-12 w-12 rounded-xl bg-amber-50 dark:bg-amber-955/20 flex items-center justify-center text-amber-600 mr-4 shadow-sm border border-amber-100/50 dark:border-amber-955/20">
-            <TrendingUp className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider">Average Class Progress</p>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">72%</h3>
-            <span className="flex items-center text-[10px] font-bold text-emerald-500 mt-0.5">
-              +8% this week
+      {/* ── Chart + Upcoming Classes ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recharts Area Chart */}
+        <div className="card lg:col-span-2">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Weekly Class Overview</h2>
+            <span className="text-[12px] px-3 py-1 rounded-lg font-medium" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+              This Week
             </span>
           </div>
-        </Card>
-      </motion.div>
-
-      {/* Class Overview & My Courses & Upcoming Classes Grid */}
-      <motion.div 
-        variants={itemVariants}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-      >
-        {/* Class Overview Chart */}
-        <Card className="lg:col-span-2 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="font-extrabold text-lg text-slate-900 dark:text-slate-100">Class Overview</h3>
-            </div>
-            <select className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 focus:outline-none">
-              <option>This Week</option>
-              <option>Last Week</option>
-            </select>
-          </div>
-          <div className="h-64">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={classOverviewData}>
+              <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="classOverviewGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                  <linearGradient id="teacherGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#4361f0" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#4361f0" stopOpacity={0}    />
+                  </linearGradient>
+                  <linearGradient id="subGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#10b981" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}   />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ 
-                    borderRadius: '12px', 
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--surface)',
-                    color: 'var(--text-primary)',
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: '12px',
-                    fontWeight: 600
-                  }} 
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="day" stroke="var(--text-disabled)" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--text-disabled)" fontSize={11} tickLine={false} axisLine={false} domain={[0, 100]} />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 12, border: '1px solid var(--border)',
+                    background: 'var(--surface)', color: 'var(--text-primary)',
+                    fontSize: 12, fontWeight: 600, boxShadow: 'var(--shadow-md)'
+                  }}
+                  itemStyle={{ color: 'var(--text-secondary)' }}
                 />
-                <Area type="monotone" dataKey="progress" stroke="#2563eb" strokeWidth={2.5} fillOpacity={1} fill="url(#classOverviewGrad)" />
+                <Area type="monotone" dataKey="progress" name="Avg Progress (%)"
+                  stroke="#4361f0" strokeWidth={2.5} fillOpacity={1} fill="url(#teacherGrad)" />
+                {chartData.some(d => d.submissions) && (
+                  <Area type="monotone" dataKey="submissions" name="Submissions"
+                    stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#subGrad)" />
+                )}
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </div>
 
-        {/* My Courses split */}
-        <Card className="shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-extrabold text-slate-900 dark:text-slate-100">My Courses</h3>
-              <Link to="/teacher/courses" className="text-xs text-[#2563eb] font-bold hover:underline">View all</Link>
-            </div>
-            
-            <div className="space-y-4">
-              {[
-                { name: 'Data Structures & Algorithms', students: '120 Students', percent: 75 },
-                { name: 'Web Development', students: '98 Students', percent: 68 },
-                { name: 'Database Management Systems', students: '85 Students', percent: 82 },
-                { name: 'Python Programming', students: '110 Students', percent: 65 }
-              ].map((c, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="h-8.5 w-8.5 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 flex-shrink-0">
-                    <BookOpen className="w-4 h-4 text-[#2563eb]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between text-xs font-bold text-slate-800 dark:text-slate-100 mb-1">
-                      <p className="truncate mr-2">{c.name}</p>
-                      <span>{c.percent}%</span>
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] font-semibold text-slate-400">
-                      <span>{c.students}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                      <div className="bg-[#2563eb] h-full rounded-full" style={{ width: `${c.percent}%` }} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="text-center mt-4">
-              <Link to="/teacher/courses" className="text-xs text-slate-450 hover:text-slate-700 font-bold">+ 4 more courses</Link>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
-
-      {/* Upcoming Classes & Recent Assignments & Student Progress & Activity Feed */}
-      <motion.div 
-        variants={itemVariants}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-      >
         {/* Upcoming Classes */}
-        <Card className="shadow-sm flex flex-col justify-between">
-          <div>
-            <h3 className="font-extrabold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#2563eb]" />
-              Upcoming Classes
-            </h3>
-            <div className="space-y-3.5">
-              {[
-                { title: 'Data Structures', time: 'Today, 10:00 AM - 11:00 AM' },
-                { title: 'Web Development', time: 'Today, 01:00 PM - 02:00 PM' },
-                { title: 'Python Programming', time: 'Tomorrow, 09:00 AM - 10:30 AM' },
-                { title: 'DBMS Lab', time: 'Tomorrow, 02:00 PM - 03:30 PM' }
-              ].map((c, i) => (
-                <div key={i} className="flex justify-between items-center p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-[#f8fafc]/50 dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-850/50 transition-colors">
-                  <div className="space-y-0.5 text-left">
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">{c.title}</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">{c.time}</p>
+        <div className="card">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Upcoming Classes</h2>
+            <Link to="#" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>Calendar</Link>
+          </div>
+          {classes.length === 0 ? (
+            <div className="text-center py-8">
+              <Calendar size={28} className="mx-auto mb-2 opacity-30" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>No upcoming classes scheduled</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {classes.map((cls, i) => {
+                const start = new Date(cls.startTime);
+                const isToday = start.toDateString() === new Date().toDateString();
+                const timeLabel = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                const dayLabel = isToday ? 'Today' : start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                return (
+                  <div key={cls.id} className="flex items-start gap-3 p-3 rounded-xl border transition-colors hover:bg-gray-50 dark:hover:bg-white/3"
+                    style={{ borderColor: isToday ? '#4361f030' : 'var(--border)', background: isToday ? 'rgba(67,97,240,0.04)' : 'transparent' }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: isToday ? 'rgba(67,97,240,0.1)' : 'var(--bg-subtle)' }}>
+                      <Video size={16} color={isToday ? '#4361f0' : 'var(--text-muted)'} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{cls.courseTitle}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        {dayLabel}, {timeLabel} · {cls.duration}min
+                      </p>
+                    </div>
+                    {isToday && (
+                      <Link to={`/live/${cls.id}`} className="btn btn-primary btn-sm text-[11px] px-2 py-1">Join</Link>
+                    )}
                   </div>
-                  <button onClick={() => toast.success(`Starting live classroom for ${c.title}`)} className="h-7 w-7 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-955/20 text-[#2563eb] flex items-center justify-center cursor-pointer transition-colors shadow-sm">
-                    <Video className="w-3.5 h-3.5" />
-                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+            <Link to="#" className="text-[12px] font-semibold w-full flex items-center justify-center gap-1" style={{ color: 'var(--brand-500)' }}>
+              <GraduationCap size={13} /> Schedule a class
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Course Progress + Assignments ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Course Progress bars */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Course Progress</h2>
+            <Link to="/teacher/courses" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>View all</Link>
+          </div>
+          {courseProgress.length === 0 ? (
+            <p className="text-[13px] text-center py-8" style={{ color: 'var(--text-muted)' }}>No course data available</p>
+          ) : (
+            <div className="space-y-5">
+              {courseProgress.map(c => (
+                <div key={c.id}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[13px] font-semibold truncate mr-2" style={{ color: 'var(--text-primary)' }}>{c.title}</span>
+                    <span className="text-[13px] font-black flex-shrink-0" style={{ color: c.color }}>{c.progress}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${c.progress}%`, background: c.color }} />
+                  </div>
+                  <p className="text-[11px] mt-1 text-right" style={{ color: 'var(--text-muted)' }}>
+                    {c.studentCount} students
+                  </p>
                 </div>
               ))}
             </div>
-          </div>
-          <button onClick={() => toast.success('Redirecting to Calendar')} className="w-full mt-4 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-850 border border-slate-100 dark:border-slate-800 text-xs font-bold text-[#2563eb] rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
-            Go to Calendar
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </Card>
+          )}
+        </div>
 
         {/* Recent Assignments Table */}
-        <Card className="shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-extrabold text-slate-900 dark:text-slate-100">Recent Assignments</h3>
-            <span className="text-[10px] text-[#2563eb] font-bold hover:underline cursor-pointer">View all</span>
+        <div className="card lg:col-span-2">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Recent Assignments</h2>
+            <Link to="#" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>View all</Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-xs font-semibold text-slate-650 dark:text-slate-350 text-left">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400">
-                  <th className="py-2 pr-2">Assignment</th>
-                  <th className="py-2 px-2 text-center">Submissions</th>
-                  <th className="py-2 pl-2 text-right">Due Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {[
-                  { name: 'Binary Trees Implementation', submitted: '12/120', date: 'May 30, 2025' },
-                  { name: 'Responsive Portfolio Website', submitted: '45/98', date: 'Jun 02, 2025' },
-                  { name: 'SQL Query Practice', submitted: '28/85', date: 'Jun 01, 2025' }
-                ].map((a, i) => (
-                  <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
-                    <td className="py-2.5 pr-2 font-bold text-slate-800 dark:text-slate-200">{a.name}</td>
-                    <td className="py-2.5 px-2 text-center text-[#2563eb] font-extrabold">{a.submitted}</td>
-                    <td className="py-2.5 pl-2 text-right text-slate-400">{a.date}</td>
+          {assignments.length === 0 ? (
+            <div className="text-center py-10">
+              <ClipboardList size={28} className="mx-auto mb-2 opacity-30" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>No assignments yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-5">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-[11px] uppercase tracking-wider" style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                    <th className="pb-3 px-5 font-semibold">Assignment</th>
+                    <th className="pb-3 px-5 font-semibold hidden sm:table-cell">Course</th>
+                    <th className="pb-3 px-5 font-semibold text-right">Submitted</th>
+                    <th className="pb-3 px-5 font-semibold text-right">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* Students Progress Overview Pie chart */}
-        <Card className="flex flex-col shadow-sm text-left">
-          <div className="mb-4">
-            <h3 className="font-extrabold text-slate-900 dark:text-slate-100">Students Progress Overview</h3>
-          </div>
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="h-36 w-full relative flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={studentProgressData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={45}
-                    outerRadius={58}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {studentProgressData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute text-center">
-                <p className="text-xl font-black text-slate-900 dark:text-slate-100">256</p>
-                <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-none mt-1">Total Students</p>
-              </div>
+                </thead>
+                <tbody>
+                  {assignments.map(a => {
+                    const pct = a.total > 0 ? Math.round((a.submitted / a.total) * 100) : 0;
+                    const due = new Date(a.dueDate);
+                    const isOverdue = due < new Date();
+                    return (
+                      <tr key={a.id} className="group border-b" style={{ borderColor: 'var(--border)' }}>
+                        <td className="py-3.5 px-5">
+                          <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{a.title}</p>
+                          <p className="text-[11px] mt-0.5 font-medium" style={{ color: isOverdue ? '#ef4444' : 'var(--text-muted)' }}>
+                            {isOverdue ? 'Overdue' : `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                          </p>
+                        </td>
+                        <td className="py-3.5 px-5 hidden sm:table-cell">
+                          <span className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>{a.courseTitle}</span>
+                        </td>
+                        <td className="py-3.5 px-5 text-right">
+                          <span className="text-[13px] font-black" style={{ color: 'var(--text-primary)' }}>{a.submitted}</span>
+                          <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>/{a.total}</span>
+                          <div className="w-16 h-1 rounded-full ml-auto mt-1" style={{ background: 'var(--border)' }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#4361f0' }} />
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-5 text-right">
+                          <button className="text-[12px] font-bold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--brand-500)' }}>
+                            Grade →
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-            
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-[10px] font-bold text-slate-650 dark:text-slate-350">
-              {studentProgressData.map((role, idx) => (
-                <div key={idx} className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[idx] }} />
-                  <span className="truncate max-w-[100px]">{role.name.split(' ')[0]}</span>
-                  <span className="text-slate-400">({role.value})</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Card>
-      </motion.div>
-
-      {/* Activity Feed */}
-      <motion.div 
-        variants={itemVariants}
-        className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl overflow-hidden shadow-sm transition-colors"
-      >
-        <div className="p-5 border-b border-slate-200/60 dark:border-slate-800/60 bg-slate-50/50 dark:bg-[#0f172a]/50 flex items-center justify-between">
-          <h3 className="font-extrabold text-slate-900 dark:text-slate-100">Recent Class Activities</h3>
-          <Badge variant="neutral">Live Logs</Badge>
+          )}
         </div>
-        <div className="p-6">
-          <div className="space-y-4 text-xs font-semibold">
-            {[
-              { txt: 'New assignment created in Data Structures', time: '2 hours ago', color: 'border-l-blue-500' },
-              { txt: 'Live class conducted: Web Development', time: '4 hours ago', color: 'border-l-emerald-500' },
-              { txt: 'Quiz "Python Basics" published', time: '1 day ago', color: 'border-l-purple-500' },
-              { txt: 'Grades updated in DBMS', time: '1 day ago', color: 'border-l-amber-500' },
-              { txt: 'New resource uploaded in Data Structures', time: '2 days ago', color: 'border-l-slate-400' }
-            ].map((a, i) => (
-              <div key={i} className={`pl-2.5 border-l-2 ${a.color} flex flex-col gap-0.5`}>
-                <p className="text-slate-800 dark:text-slate-200 font-bold leading-tight">{a.txt}</p>
-                <span className="text-[10px] text-slate-450 font-semibold">{a.time}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 
