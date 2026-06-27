@@ -122,16 +122,16 @@ const ForgotPassword: React.FC = () => {
   const stepIndex = steps.findIndex(s => s.key === step);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-10">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 py-12 px-4">
+      <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-10">
 
         {step === 'success' ? (
           <div className="text-center">
-            <div className="mx-auto h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="h-10 w-10 text-green-600" />
+            <div className="mx-auto h-20 w-20 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Password Reset!</h2>
-            <p className="text-slate-500 mb-6">Your password has been reset successfully.</p>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Password Reset!</h2>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">Your password has been reset successfully.</p>
             <button
               onClick={() => navigate('/login')}
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all duration-150 active:scale-95"
@@ -143,11 +143,11 @@ const ForgotPassword: React.FC = () => {
           <>
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="mx-auto h-14 w-14 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-                <KeyRound className="h-7 w-7 text-indigo-600" />
+              <div className="mx-auto h-14 w-14 bg-indigo-100 dark:bg-indigo-900/40 rounded-full flex items-center justify-center mb-4">
+                <KeyRound className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900">Forgot Password</h2>
-              <p className="text-slate-500 text-sm mt-1">We'll help you get back in</p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Forgot Password</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">We'll help you get back in</p>
             </div>
 
             {/* Step Indicators */}
@@ -160,18 +160,18 @@ const ForgotPassword: React.FC = () => {
                   <React.Fragment key={s.key}>
                     <div className="flex flex-col items-center gap-1">
                       <div className={`h-9 w-9 rounded-full flex items-center justify-center transition-all duration-300
-                        ${isDone ? 'bg-green-500' : isActive ? 'bg-indigo-600' : 'bg-slate-100'}`}>
+                        ${isDone ? 'bg-green-500' : isActive ? 'bg-indigo-600' : 'bg-slate-100 dark:bg-slate-700'}`}>
                         {isDone
                           ? <CheckCircle className="h-4 w-4 text-white" />
-                          : <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                          : <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
                         }
                       </div>
-                      <span className={`text-xs font-medium ${isActive ? 'text-indigo-600' : isDone ? 'text-green-600' : 'text-slate-400'}`}>
+                      <span className={`text-xs font-medium ${isActive ? 'text-indigo-600' : isDone ? 'text-green-600' : 'text-slate-400 dark:text-slate-500'}`}>
                         {s.label}
                       </span>
                     </div>
                     {i < steps.length - 1 && (
-                      <div className={`h-0.5 w-8 mb-4 rounded transition-all duration-300 ${i < stepIndex ? 'bg-green-400' : 'bg-slate-200'}`} />
+                      <div className={`h-0.5 w-8 mb-4 rounded transition-all duration-300 ${i < stepIndex ? 'bg-green-400' : 'bg-slate-200 dark:bg-slate-700'}`} />
                     )}
                   </React.Fragment>
                 );
@@ -179,7 +179,7 @@ const ForgotPassword: React.FC = () => {
             </div>
 
             {error && (
-              <div className="mb-4 text-red-600 text-sm text-center bg-red-50 border border-red-200 rounded-lg py-2 px-4">
+              <div className="mb-4 text-red-600 dark:text-red-400 text-sm text-center bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg py-2 px-4">
                 {error}
               </div>
             )}
@@ -188,14 +188,14 @@ const ForgotPassword: React.FC = () => {
             {step === 'email' && (
               <form onSubmit={handleEmailSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Email address</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email address</label>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={e => { setEmail(e.target.value); setError(''); }}
                     placeholder="you@example.com"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
                   />
                 </div>
                 <button
@@ -205,7 +205,7 @@ const ForgotPassword: React.FC = () => {
                 >
                   {loading ? <span className="flex items-center justify-center gap-2"><RefreshCw className="h-4 w-4 animate-spin" /> Sending...</span> : 'Send Reset Code'}
                 </button>
-                <div className="text-center text-sm text-slate-500">
+                <div className="text-center text-sm text-slate-500 dark:text-slate-400">
                   Remember your password?{' '}
                   <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-700">Sign in</Link>
                 </div>
@@ -215,8 +215,8 @@ const ForgotPassword: React.FC = () => {
             {/* Step 2: OTP */}
             {step === 'otp' && (
               <form onSubmit={handleOtpSubmit} className="space-y-6">
-                <p className="text-sm text-slate-500 text-center">
-                  Enter the 6-digit code sent to <span className="font-semibold text-slate-700">{email}</span>
+                <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
+                  Enter the 6-digit code sent to <span className="font-semibold text-slate-700 dark:text-slate-200">{email}</span>
                 </p>
                 <div className="flex gap-3 justify-center" onPaste={handleOtpPaste}>
                   {otp.map((digit, i) => (
@@ -229,8 +229,8 @@ const ForgotPassword: React.FC = () => {
                       value={digit}
                       onChange={e => handleOtpChange(i, e.target.value)}
                       onKeyDown={e => handleOtpKeyDown(i, e)}
-                      className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 outline-none transition-all
-                        ${digit ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200'}
+                      className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 outline-none transition-all bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white
+                        ${digit ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-700'}
                         focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200`}
                     />
                   ))}
@@ -242,10 +242,10 @@ const ForgotPassword: React.FC = () => {
                 >
                   {loading ? <span className="flex items-center justify-center gap-2"><RefreshCw className="h-4 w-4 animate-spin" /> Verifying...</span> : 'Verify Code'}
                 </button>
-                <div className="text-center text-sm text-slate-500">
+                <div className="text-center text-sm text-slate-500 dark:text-slate-400">
                   {canResend
                     ? <button type="button" onClick={handleResend} disabled={loading} className="font-semibold text-indigo-600 hover:text-indigo-700">Resend Code</button>
-                    : <span>Resend in <span className="font-semibold text-slate-700">{countdown}s</span></span>
+                    : <span>Resend in <span className="font-semibold text-slate-700 dark:text-slate-300">{countdown}s</span></span>
                   }
                 </div>
               </form>
@@ -255,7 +255,7 @@ const ForgotPassword: React.FC = () => {
             {step === 'password' && (
               <form onSubmit={handlePasswordSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">New Password</label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
@@ -263,24 +263,24 @@ const ForgotPassword: React.FC = () => {
                       value={newPassword}
                       onChange={e => { setNewPassword(e.target.value); setError(''); }}
                       placeholder="Min. 6 characters"
-                      className="w-full px-4 py-3 pr-11 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
+                      className="w-full px-4 py-3 pr-11 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
                     />
                     <button type="button" onClick={() => setShowPassword(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Confirm New Password</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Confirm New Password</label>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={confirmPassword}
                     onChange={e => { setConfirmPassword(e.target.value); setError(''); }}
                     placeholder="Repeat your new password"
-                    className={`w-full px-4 py-3 border rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all
-                      ${confirmPassword && confirmPassword !== newPassword ? 'border-red-400 focus:border-red-400' : 'border-slate-200 focus:border-indigo-500'}`}
+                    className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all
+                      ${confirmPassword && confirmPassword !== newPassword ? 'border-red-400 focus:border-red-400' : 'border-slate-200 dark:border-slate-700 focus:border-indigo-500'}`}
                   />
                   {confirmPassword && confirmPassword !== newPassword && (
                     <p className="text-red-500 text-xs mt-1">Passwords do not match</p>

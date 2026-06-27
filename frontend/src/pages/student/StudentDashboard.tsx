@@ -4,9 +4,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import {
-  BookOpen, TrendingUp, Star, Award, Clock,
+  BookOpen, TrendingUp, Star, Award,
   CheckCircle2, PlayCircle, FileText, ChevronRight,
-  Megaphone, Calendar, ListTodo
+  Megaphone, ListTodo
 } from 'lucide-react';
 import { StatCard, ErrorState, CourseCard } from '../../components';
 import { StatCardSkeleton, CourseCardSkeleton } from '../../components/Skeleton';
@@ -340,7 +340,7 @@ const StudentDashboard: React.FC = () => {
                   const due = formatDue(task.dueDate);
                   const prio = PRIORITY_CONFIG[task.priority];
                   return (
-                    <div key={task.id} className="flex items-start gap-3 p-2.5 rounded-xl border hover:bg-gray-50 dark:hover:bg-white/3 transition-colors"
+                    <div key={task.id} className="flex items-start gap-3 p-2.5 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                       style={{ borderColor: 'var(--border)' }}>
                       <div className="w-4 h-4 rounded border-2 mt-0.5 flex-shrink-0 cursor-pointer"
                         style={{ borderColor: task.completed ? '#10b981' : 'var(--border)', background: task.completed ? '#10b981' : 'transparent' }} />

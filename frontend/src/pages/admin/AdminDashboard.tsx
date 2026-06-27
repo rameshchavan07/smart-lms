@@ -24,7 +24,7 @@ interface AdminMetrics {
 }
 
 interface EnrollmentPoint { name: string; enrollments: number }
-interface TopCourse { id: string; name: string; enrollments: number; completionRate: number }
+
 interface SystemService { name: string; status: 'operational' | 'degraded' | 'down'; icon: React.ElementType }
 interface RecentActivity { id: string; text: string; time: string; color: string }
 

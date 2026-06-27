@@ -28,12 +28,14 @@ const EnrollmentManagement = React.lazy(() => import('./pages/admin/EnrollmentMa
 
 const TeacherDashboard   = React.lazy(() => import('./pages/teacher/TeacherDashboard'));
 const TeacherCourses     = React.lazy(() => import('./pages/teacher/TeacherCourses'));
+const QuizBuilder        = React.lazy(() => import('./pages/teacher/QuizBuilder'));
 
 const StudentDashboard   = React.lazy(() => import('./pages/student/StudentDashboard'));
 const StudentCourses     = React.lazy(() => import('./pages/student/StudentCourses'));
 
 const CourseDetails      = React.lazy(() => import('./pages/shared/CourseDetails'));
 const LiveClassRoom      = React.lazy(() => import('./pages/shared/LiveClassRoom'));
+const QuizView           = React.lazy(() => import('./pages/shared/QuizView'));
 
 // ─── Loading fallback ─────────────────────────────────────────────────────
 const PageLoader: React.FC = () => (
@@ -117,6 +119,8 @@ function App() {
                 <Route index element={<Suspense fallback={<PageLoader />}><TeacherDashboard /></Suspense>} />
                 <Route path="courses" element={<Suspense fallback={<PageLoader />}><TeacherCourses /></Suspense>} />
                 <Route path="courses/:id" element={<Suspense fallback={<PageLoader />}><CourseDetails /></Suspense>} />
+                <Route path="courses/:id/quizzes/new" element={<Suspense fallback={<PageLoader />}><QuizBuilder /></Suspense>} />
+                <Route path="courses/:id/quizzes/:quizId" element={<Suspense fallback={<PageLoader />}><QuizView /></Suspense>} />
                 <Route path="students" element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
               </Route>
 
@@ -131,6 +135,7 @@ function App() {
                 <Route index element={<Suspense fallback={<PageLoader />}><StudentDashboard /></Suspense>} />
                 <Route path="courses" element={<Suspense fallback={<PageLoader />}><StudentCourses /></Suspense>} />
                 <Route path="courses/:id" element={<Suspense fallback={<PageLoader />}><CourseDetails /></Suspense>} />
+                <Route path="courses/:id/quizzes/:quizId" element={<Suspense fallback={<PageLoader />}><QuizView /></Suspense>} />
               </Route>
 
               {/* ── Catch-all ── */}

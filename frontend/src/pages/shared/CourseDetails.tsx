@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,8 +17,21 @@ import {
   UploadCloud, 
   Loader2,
   Users,
-  UserMinus
+  UserMinus,
+  CheckSquare
 } from 'lucide-react';
+
+interface QuizData {
+  id: string;
+  title: string;
+  description: string | null;
+  durationMins: number | null;
+  totalMarks: number;
+  _count: {
+    questions: number;
+    submissions: number;
+  };
+}
 
 interface LectureData {
   id: string;
@@ -67,7 +80,7 @@ const CourseDetails: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
   
-  const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students'>('lectures');
+  const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students' | 'quizzes'>('lectures');
   
   // Lectures state
   const [lectures, setLectures] = useState<LectureData[]>([]);
@@ -96,7 +109,11 @@ const CourseDetails: React.FC = () => {
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
 
-  const fetchLectures = async () => {
+  // Quizzes state
+  const [quizzes, setQuizzes] = useState<QuizData[]>([]);
+  const [quizzesLoading, setQuizzesLoading] = useState(true);
+
+  const fetchLectures = useCallback(async () => {
     try {
       const { data } = await api.get(`/lectures/course/${id}`);
       setLectures(data.lectures);
@@ -105,7 +122,7 @@ const CourseDetails: React.FC = () => {
     } finally {
       setLecturesLoading(false);
     }
-  };
+  }, [id]);
 
   const handleLectureThumbnailUpload = async (lectureId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -131,7 +148,7 @@ const CourseDetails: React.FC = () => {
     }
   };
 
-  const fetchMaterials = async () => {
+  const fetchMaterials = useCallback(async () => {
     try {
       const { data } = await api.get(`/study-materials/course/${id}`);
       setMaterials(data.materials);
@@ -140,9 +157,9 @@ const CourseDetails: React.FC = () => {
     } finally {
       setMaterialsLoading(false);
     }
-  };
+  }, [id]);
 
-  const fetchEnrolledStudents = async () => {
+  const fetchEnrolledStudents = useCallback(async () => {
     try {
       const { data } = await api.get(`/enrollments/course/${id}/students`);
       setEnrolledStudents(data.enrollments);
@@ -151,17 +168,31 @@ const CourseDetails: React.FC = () => {
     } finally {
       setStudentsLoading(false);
     }
-  };
+  }, [id]);
+
+  const fetchQuizzes = useCallback(async () => {
+    try {
+      const { data } = await api.get(`/quizzes/course/${id}`);
+      setQuizzes(data.quizzes);
+    } catch (error) {
+      console.error('Failed to fetch quizzes', error);
+    } finally {
+      setQuizzesLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    if (id) {
-      fetchLectures();
-      fetchMaterials();
-      if (user?.role === 'TEACHER' || user?.role === 'ADMIN') {
-        fetchEnrolledStudents();
-      }
-    }
-  }, [id, user]);
+    if (!id) return;
+    const init = async () => {
+      await Promise.all([
+        fetchLectures(),
+        fetchMaterials(),
+        fetchQuizzes(),
+        (user?.role === 'TEACHER' || user?.role === 'ADMIN') ? fetchEnrolledStudents() : Promise.resolve()
+      ]);
+    };
+    init();
+  }, [id, user?.role, fetchLectures, fetchMaterials, fetchQuizzes, fetchEnrolledStudents]);
 
   const handleCreateLecture = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -200,9 +231,10 @@ const CourseDetails: React.FC = () => {
       setMaterialDescription('');
       setSelectedFile(null);
       fetchMaterials();
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }, message?: string };
       const msg = error?.response?.data?.message || error?.message || 'Upload failed. Please try again.';
-      console.error('Failed to upload study material:', error);
+      console.error('Failed to upload study material:', err);
       setUploadError(msg);
     } finally {
       setUploading(false);
@@ -252,7 +284,7 @@ const CourseDetails: React.FC = () => {
       <div className="flex items-center gap-4">
         <button 
           onClick={() => navigate(-1)} 
-          className="p-2 bg-white rounded-full border border-slate-200 hover:bg-slate-50 transition shadow-sm"
+          className="p-2 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-900/50 transition shadow-sm"
         >
           <ArrowLeft className="w-5 h-5 text-slate-600" />
         </button>
@@ -263,13 +295,13 @@ const CourseDetails: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200">
+      <div className="flex border-b border-slate-200 dark:border-slate-700">
         <button
           onClick={() => setActiveTab('lectures')}
           className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'lectures'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
           }`}
         >
           <Video className="w-4 h-4" />
@@ -280,11 +312,22 @@ const CourseDetails: React.FC = () => {
           className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'materials'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
           }`}
         >
           <FileText className="w-4 h-4" />
           Study Materials
+        </button>
+        <button
+          onClick={() => setActiveTab('quizzes')}
+          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'quizzes'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+          }`}
+        >
+          <CheckSquare className="w-4 h-4" />
+          Assessments
         </button>
         {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
           <button
@@ -292,7 +335,7 @@ const CourseDetails: React.FC = () => {
             className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
               activeTab === 'students'
                 ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -303,7 +346,7 @@ const CourseDetails: React.FC = () => {
 
       {/* Content Area */}
       {activeTab === 'lectures' ? (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-900">Scheduled Classes</h3>
             {user?.role === 'TEACHER' && (
@@ -318,46 +361,46 @@ const CourseDetails: React.FC = () => {
           </div>
 
           {showCreateLecture && user?.role === 'TEACHER' && (
-            <form onSubmit={handleCreateLecture} className="mb-8 p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4 shadow-sm">
+            <form onSubmit={handleCreateLecture} className="mb-8 p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg space-y-4 shadow-sm">
               <h4 className="font-semibold text-slate-900 text-sm">Schedule a Live Class</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Title</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Title</label>
                   <input 
                     type="text" 
                     required 
                     value={lectureForm.title} 
                     onChange={(e) => setLectureForm({...lectureForm, title: e.target.value})} 
-                    className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Description</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
                   <input 
                     type="text" 
                     value={lectureForm.description} 
                     onChange={(e) => setLectureForm({...lectureForm, description: e.target.value})} 
-                    className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Start Time</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Start Time</label>
                   <input 
                     type="datetime-local" 
                     required 
                     value={lectureForm.startTime} 
                     onChange={(e) => setLectureForm({...lectureForm, startTime: e.target.value})} 
-                    className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">End Time</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">End Time</label>
                   <input 
                     type="datetime-local" 
                     required 
                     value={lectureForm.endTime} 
                     onChange={(e) => setLectureForm({...lectureForm, endTime: e.target.value})} 
-                    className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
               </div>
@@ -365,7 +408,7 @@ const CourseDetails: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={() => setShowCreateLecture(false)} 
-                  className="px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 text-sm hover:bg-slate-50 transition"
+                  className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md text-slate-700 dark:text-slate-300 text-sm hover:bg-slate-50 dark:bg-slate-900/50 transition"
                 >
                   Cancel
                 </button>
@@ -385,14 +428,14 @@ const CourseDetails: React.FC = () => {
               <span className="text-xs mt-2 block">Loading lectures...</span>
             </div>
           ) : lectures.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+            <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/50/50">
               <Video className="mx-auto h-12 w-12 text-slate-300 mb-3" />
               <p className="text-slate-500 text-sm">No lectures scheduled yet.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {lectures.map((lecture) => (
-                <div key={lecture.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-slate-200 rounded-xl hover:border-blue-200 hover:bg-slate-50/50 transition">
+                <div key={lecture.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-200 hover:bg-slate-50 dark:bg-slate-900/50/50 transition">
                   <div className="flex items-start gap-4 mb-4 md:mb-0">
                     <div className="relative group h-12 w-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 overflow-hidden">
                       {lecture.thumbnailUrl ? (
@@ -439,7 +482,7 @@ const CourseDetails: React.FC = () => {
           )}
         </div>
       ) : activeTab === 'materials' ? (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-900">Study Materials</h3>
             {user?.role === 'TEACHER' && (
@@ -466,33 +509,33 @@ const CourseDetails: React.FC = () => {
           )}
 
           {showUploadMaterial && user?.role === 'TEACHER' && (
-            <form onSubmit={handleUploadMaterial} className="mb-8 p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4 shadow-sm">
+            <form onSubmit={handleUploadMaterial} className="mb-8 p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg space-y-4 shadow-sm">
               <h4 className="font-semibold text-slate-900 text-sm">Upload Study Material</h4>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Material Title</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Material Title</label>
                   <input 
                     type="text" 
                     placeholder="Enter document title (optional)" 
                     value={materialTitle} 
                     onChange={(e) => setMaterialTitle(e.target.value)} 
-                    className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Description (optional)</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Description (optional)</label>
                   <textarea 
                     placeholder="Enter document description (optional)" 
                     value={materialDescription} 
                     onChange={(e) => setMaterialDescription(e.target.value)} 
                     rows={2}
-                    className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Select File</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Select File</label>
                   <div className="flex items-center justify-center w-full">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer bg-white hover:bg-slate-50 transition">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer bg-white dark:bg-slate-800 hover:bg-slate-50 dark:bg-slate-900/50 transition">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <UploadCloud className="w-8 h-8 text-slate-400 mb-2" />
                         <p className="text-sm text-slate-500">
@@ -520,7 +563,7 @@ const CourseDetails: React.FC = () => {
                   type="button" 
                   onClick={() => setShowUploadMaterial(false)} 
                   disabled={uploading}
-                  className="px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 text-sm hover:bg-slate-50 transition disabled:opacity-50"
+                  className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md text-slate-700 dark:text-slate-300 text-sm hover:bg-slate-50 dark:bg-slate-900/50 transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -542,20 +585,20 @@ const CourseDetails: React.FC = () => {
               <span className="text-xs mt-2 block">Loading materials...</span>
             </div>
           ) : materials.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+            <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/50/50">
               <FileText className="mx-auto h-12 w-12 text-slate-300 mb-3" />
               <p className="text-slate-500 text-sm">No study materials uploaded yet.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {materials.map((material) => (
-                <div key={material.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-blue-200 hover:bg-slate-50/50 transition">
+                <div key={material.id} className="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-200 hover:bg-slate-50 dark:bg-slate-900/50/50 transition">
                   <div className="flex items-center gap-4 min-w-0">
                     {getFileIcon(material.fileType)}
                     <div className="min-w-0">
                       <h4 className="font-bold text-slate-900 text-sm truncate">{material.title}</h4>
                       {material.description && (
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed bg-slate-100/50 p-1.5 rounded border border-slate-100 max-w-md">
+                        <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed bg-slate-100 dark:bg-slate-700/50 p-1.5 rounded border border-slate-100 max-w-md">
                           {material.description}
                         </p>
                       )}
@@ -590,8 +633,8 @@ const CourseDetails: React.FC = () => {
             </div>
           )}
         </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      ) : activeTab === 'students' ? (
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-900">Enrolled Students</h3>
             <button 
@@ -609,14 +652,14 @@ const CourseDetails: React.FC = () => {
               <span className="text-xs mt-2 block">Loading enrolled students...</span>
             </div>
           ) : enrolledStudents.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+            <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/50/50">
               <Users className="mx-auto h-12 w-12 text-slate-300 mb-3" />
               <p className="text-slate-500 text-sm">No students enrolled in this course yet.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-4 text-left">Student Name</th>
                     <th className="px-6 py-4 text-left">Email Address</th>
@@ -624,9 +667,9 @@ const CourseDetails: React.FC = () => {
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
+                <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200">
                   {enrolledStudents.map((record) => (
-                    <tr key={record.student.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={record.student.id} className="hover:bg-slate-50 dark:bg-slate-900/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 flex-shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
@@ -661,22 +704,89 @@ const CourseDetails: React.FC = () => {
               </table>
             </div>
           )}
-
-          <EnrollStudentModal 
-            isOpen={showEnrollModal} 
-            onClose={() => setShowEnrollModal(false)} 
-            courseId={id || ''}
-            onSuccess={() => {
-              setShowEnrollModal(false);
-              fetchEnrolledStudents();
-            }}
-          />
         </div>
-      )}
+      ) : activeTab === 'quizzes' ? (
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-slate-900">Assessments</h3>
+            {user?.role === 'TEACHER' && (
+              <button 
+                onClick={() => navigate(`/teacher/courses/${id}/quizzes/new`)}
+                className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-100 transition font-medium text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Create Quiz
+              </button>
+            )}
+          </div>
+
+          {quizzesLoading ? (
+            <div className="text-center py-8 text-slate-500">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
+              <span className="text-xs mt-2 block">Loading assessments...</span>
+            </div>
+          ) : quizzes.length === 0 ? (
+            <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/50/50">
+              <CheckSquare className="mx-auto h-12 w-12 text-slate-300 mb-3" />
+              <p className="text-slate-500 text-sm">No assessments created yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {quizzes.map((quiz) => (
+                <div key={quiz.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-200 hover:bg-slate-50 dark:bg-slate-900/50/50 transition">
+                  <div className="flex items-start gap-4 mb-4 md:mb-0">
+                    <div className="relative group h-12 w-12 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 overflow-hidden">
+                      <CheckSquare className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-base">{quiz.title}</h4>
+                      <p className="text-sm text-slate-500 mt-1 line-clamp-1">{quiz.description}</p>
+                      <div className="flex items-center gap-3 mt-2 text-xs font-semibold text-slate-500">
+                        <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                          {quiz._count.questions} Questions
+                        </span>
+                        <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                          {quiz.totalMarks} Marks
+                        </span>
+                        {quiz.durationMins && (
+                          <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                            {quiz.durationMins} Mins
+                          </span>
+                        )}
+                        {user?.role === 'TEACHER' && (
+                          <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                            {quiz._count.submissions} Submissions
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => navigate(user?.role === 'TEACHER' ? `/teacher/courses/${id}/quizzes/${quiz.id}` : `/student/courses/${id}/quizzes/${quiz.id}`)}
+                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-700 transition font-semibold text-sm shadow-sm shrink-0"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    {user?.role === 'TEACHER' ? 'View Details' : 'Take Quiz'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      <EnrollStudentModal 
+        isOpen={showEnrollModal} 
+        onClose={() => setShowEnrollModal(false)} 
+        onSuccess={() => {
+          fetchEnrolledStudents();
+          setShowEnrollModal(false);
+        }}
+        courseId={id || ''}
+      />
     </div>
   );
 };
 
 export default CourseDetails;
-
-

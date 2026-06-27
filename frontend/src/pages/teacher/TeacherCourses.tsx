@@ -201,7 +201,7 @@ const TeacherCourses: React.FC = () => {
             {filtered.map((course, idx) => {
               const color = COURSE_COLORS[idx % COURSE_COLORS.length];
               return (
-                <div key={course.id} className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-white/2 transition-colors">
+                <div key={course.id} className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color.bg} flex items-center justify-center flex-shrink-0`}>
                     <BookOpen className="w-5 h-5 text-white" />
                   </div>

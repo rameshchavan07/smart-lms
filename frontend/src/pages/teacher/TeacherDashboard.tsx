@@ -6,7 +6,7 @@ import api from '../../services/api';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import {
   BookOpen, Users, ClipboardList, TrendingUp,
-  Video, ChevronRight, Calendar, GraduationCap
+  Video, Calendar, GraduationCap
 } from 'lucide-react';
 import { StatCard, ErrorState } from '../../components';
 import { StatCardSkeleton } from '../../components/Skeleton';
@@ -232,13 +232,13 @@ const TeacherDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {classes.map((cls, i) => {
+              {classes.map((cls) => {
                 const start = new Date(cls.startTime);
                 const isToday = start.toDateString() === new Date().toDateString();
                 const timeLabel = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
                 const dayLabel = isToday ? 'Today' : start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                 return (
-                  <div key={cls.id} className="flex items-start gap-3 p-3 rounded-xl border transition-colors hover:bg-gray-50 dark:hover:bg-white/3"
+                  <div key={cls.id} className="flex items-start gap-3 p-3 rounded-xl border transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50"
                     style={{ borderColor: isToday ? '#4361f030' : 'var(--border)', background: isToday ? 'rgba(67,97,240,0.04)' : 'transparent' }}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                       style={{ background: isToday ? 'rgba(67,97,240,0.1)' : 'var(--bg-subtle)' }}>

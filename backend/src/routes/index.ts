@@ -7,6 +7,7 @@ import analyticsRoutes from './analyticsRoutes';
 import lectureRoutes from './lectureRoutes';
 import studyMaterialRoutes from './studyMaterialRoutes';
 import mediaRoutes from './mediaRoutes';
+import quizRoutes from './quizRoutes';
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.use('/analytics', analyticsRoutes);
 router.use('/lectures', lectureRoutes);
 router.use('/study-materials', studyMaterialRoutes);
 router.use('/media', mediaRoutes);
+router.use('/quizzes', quizRoutes);
 
 export default router;
 

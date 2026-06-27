@@ -47,7 +47,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--bg)', color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
+    <div className="min-h-screen flex bg-slate-50 dark:bg-[#080d18] text-slate-900 dark:text-slate-100 font-sans">
       {/* ── Left Panel: Branding ── */}
       <div className="hidden lg:flex flex-col w-[52%] bg-gradient-to-br from-[#0f1729] via-[#162040] to-[#0a0f1e] relative overflow-hidden p-12">
         {/* Decorative blobs */}
@@ -128,11 +128,11 @@ const Login: React.FC = () => {
             <div className="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center">
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>OpenLearnX</span>
+            <span className="font-bold text-lg text-slate-900 dark:text-white">OpenLearnX</span>
           </div>
 
-          <h2 className="text-3xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Welcome back</h2>
-          <p className="mb-8 text-[15px]" style={{ color: 'var(--text-secondary)' }}>Sign in to your account to continue</p>
+          <h2 className="text-3xl font-bold mb-1 text-slate-900 dark:text-white">Welcome back</h2>
+          <p className="mb-8 text-[15px] text-slate-500 dark:text-slate-400">Sign in to your account to continue</p>
 
           {/* Error Messages */}
           {(oauthError || error) && (
@@ -145,11 +145,11 @@ const Login: React.FC = () => {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+              <label className="block text-[13px] font-semibold mb-1.5 text-slate-500 dark:text-slate-400">
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <input
                   type="email"
                   value={email}
@@ -163,7 +163,7 @@ const Login: React.FC = () => {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-[13px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                <label className="block text-[13px] font-semibold text-slate-500 dark:text-slate-400">
                   Password
                 </label>
                 <Link to="/forgot-password" className="text-[12px] font-medium text-brand-500 hover:text-brand-600 transition-colors">
@@ -171,7 +171,7 @@ const Login: React.FC = () => {
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -183,8 +183,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors"
-                  style={{ color: 'var(--text-muted)' }}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -197,7 +196,7 @@ const Login: React.FC = () => {
                 type="checkbox"
                 className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30 cursor-pointer"
               />
-              <label htmlFor="remember" className="text-[13px] cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
+              <label htmlFor="remember" className="text-[13px] cursor-pointer text-slate-500 dark:text-slate-400">
                 Keep me signed in
               </label>
             </div>
@@ -221,9 +220,9 @@ const Login: React.FC = () => {
 
           {/* Divider */}
           <div className="relative flex items-center gap-3 my-5">
-            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-            <span className="text-[12px] font-medium px-1" style={{ color: 'var(--text-muted)' }}>or continue with</span>
-            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+            <span className="text-[12px] font-medium px-1 text-slate-400 dark:text-slate-500">or continue with</span>
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
           </div>
 
           {/* Google */}
@@ -240,13 +239,13 @@ const Login: React.FC = () => {
 
 
           {/* Footer */}
-          <p className="text-center text-[13px] mt-6" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-center text-[13px] mt-6 text-slate-400 dark:text-slate-500">
             Don't have an account?{' '}
             <Link to="/register" className="font-semibold text-brand-500 hover:text-brand-600 transition-colors">
               Create one free
             </Link>
           </p>
-          <p className="text-center text-[11px] mt-4" style={{ color: 'var(--text-disabled)' }}>
+          <p className="text-center text-[11px] mt-4 text-slate-300 dark:text-slate-600">
             © 2026 OpenLearnX. All rights reserved.
           </p>
         </div>

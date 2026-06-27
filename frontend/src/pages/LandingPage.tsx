@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   GraduationCap, BookOpen, Users, BarChart3, ShieldCheck, Zap,
-  Star, ChevronRight, Play, ArrowRight, CheckCircle2, Globe,
+  Star, Play, ArrowRight, CheckCircle2, Globe,
   Award, Clock, TrendingUp, MessageSquare, Layers, Sparkles,
-  Code2, Heart, Rocket
+  Heart, Rocket
 } from 'lucide-react';
 
 /* ───────────────────────────────────────────
@@ -65,11 +65,7 @@ const STATS = [
   { value: 200,   suffix: '+',  label: 'Institutions',       icon: Award,    color: '#f59e0b' },
 ];
 
-const PLANS = [
-  { name: 'Free',       price: '0',  period: 'forever', color: '#94a3b8', features: ['Up to 50 students', '5 courses', 'Basic analytics', 'Community support'], cta: 'Get Started', popular: false },
-  { name: 'Pro',        price: '29', period: '/month',  color: '#4361f0', features: ['Unlimited students', 'Unlimited courses', 'Advanced analytics', 'Live classes', 'Priority support', 'Custom domain'], cta: 'Start Free Trial', popular: true },
-  { name: 'Enterprise', price: '99', period: '/month',  color: '#8b5cf6', features: ['Everything in Pro', 'White-label', 'SSO / SAML', 'Dedicated support', 'SLA guarantee', 'Custom integrations'], cta: 'Contact Sales', popular: false },
-];
+
 
 /* ───────────────────────────────────────────
    Component

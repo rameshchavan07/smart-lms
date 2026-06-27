@@ -66,6 +66,7 @@ const EnrollmentManagement: React.FC = () => {
 
   useEffect(() => {
     if (selectedCourseId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchEnrollments(selectedCourseId);
     }
   }, [selectedCourseId]);
