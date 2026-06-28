@@ -1,8 +1,7 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 // Admin Dashboard Analytics
 export const getAdminStats = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -113,14 +112,61 @@ export const getStudentStats = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
-    const totalEnrollments = await prisma.enrollment.count({
-      where: { studentId: student.id }
+    const enrollments = await prisma.enrollment.findMany({
+      where: { studentId: student.id },
+      include: {
+        course: {
+          include: {
+            quizzes: true,
+            assignments: true
+          }
+        }
+      }
     });
 
-    // In the future: active assignments, upcoming lectures
+    const totalEnrollments = enrollments.length;
+
+    const quizSubmissions = await prisma.quizSubmission.findMany({
+      where: { studentId: student.id },
+      include: { quiz: true }
+    });
+
+    const assignmentSubmissions = await prisma.assignmentSubmission.findMany({
+      where: { studentId: student.id },
+      include: { assignment: true }
+    });
+
+    // Calculate Quiz Average
+    let totalQuizScore = 0;
+    let totalQuizMarks = 0;
+    quizSubmissions.forEach(sub => {
+      totalQuizScore += sub.totalScore || 0;
+      totalQuizMarks += sub.quiz.totalMarks;
+    });
+    const quizAverage = totalQuizMarks > 0 ? Math.round((totalQuizScore / totalQuizMarks) * 100) : 0;
+
+    // Calculate Overall Progress (simplified logic: ratio of completed assessments vs total)
+    let totalRequired = 0;
+    let totalCompleted = 0;
+
+    enrollments.forEach(enroll => {
+      totalRequired += enroll.course.quizzes.length;
+      totalRequired += enroll.course.assignments.length;
+    });
+
+    totalCompleted += quizSubmissions.length;
+    totalCompleted += assignmentSubmissions.length;
+
+    const overallProgress = totalRequired > 0 ? Math.round((totalCompleted / totalRequired) * 100) : 0;
+
     res.json({
       metrics: {
-        totalEnrollments
+        totalEnrollments,
+        totalCompleted: totalCompleted > 0 ? 1 : 0, // Mock completed courses based on progress
+        quizAverage,
+        badgesEarned: Math.floor(totalCompleted / 5), // Mock badges
+        overallProgress,
+        progressBreakdown: { excellent: 2, good: 1, average: 0 }
       }
     });
   } catch (error: any) {

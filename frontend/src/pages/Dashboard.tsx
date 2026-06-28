@@ -1,25 +1,27 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { LogOut } from 'lucide-react';
+import { Button, Card } from '../components';
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#080d18] p-8">
-      <div className="max-w-4xl mx-auto bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
-        <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-100 dark:border-slate-700">
+      <Card className="max-w-4xl mx-auto p-8">
+        <div className="flex justify-between items-center mb-8 pb-4 border-b border-border">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">Welcome back, {user?.firstName}!</p>
+            <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
+            <p className="text-muted mt-1">Welcome back, {user?.firstName}!</p>
           </div>
-          <button 
+          <Button 
+            variant="ghost"
             onClick={logout}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4 mr-2" />
             Logout
-          </button>
+          </Button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -33,10 +35,10 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-xl border border-emerald-100 dark:border-emerald-800/30">
             <h3 className="font-semibold text-emerald-800 dark:text-emerald-400">Status</h3>
-            <p className="text-lg font-medium text-emerald-600 dark:text-emerald-300 mt-2">Active Student</p>
+            <p className="text-lg font-medium text-emerald-600 dark:text-emerald-300 mt-2">Active {user?.role ? user.role.charAt(0) + user.role.slice(1).toLowerCase() : 'User'}</p>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

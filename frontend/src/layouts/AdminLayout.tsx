@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { 
+import { BottomNav } from '../components/BottomNav';
+import { motion, AnimatePresence } from 'framer-motion';
+import { NotificationBell } from '../components/NotificationBell';import { 
   LayoutDashboard, BookOpen, Users, ClipboardList, 
   BarChart3, MessageSquare, Settings, HelpCircle, 
   LogOut, Menu, X, Search, Bell, Moon, Sun, Mail,
@@ -136,7 +138,7 @@ const AdminLayout: React.FC = () => {
         <header className="glass sticky top-0 z-30 flex items-center gap-4 px-4 md:px-6 h-16 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
           <button
             onClick={() => setIsMobileOpen(true)}
-            className="lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            className="hidden sm:block lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />
@@ -166,10 +168,7 @@ const AdminLayout: React.FC = () => {
             <button onClick={toggleDark} className="btn btn-ghost p-2 rounded-xl" aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"} title="Toggle theme">
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <button className="btn btn-ghost p-2 rounded-xl relative" aria-label="Notifications">
-              <Bell className="w-5 h-5" />
-              <span className="notif-dot" />
-            </button>
+            <NotificationBell />
             <button className="btn btn-ghost p-2 rounded-xl hidden sm:flex" aria-label="Messages">
               <Mail className="w-5 h-5" />
             </button>
@@ -187,10 +186,24 @@ const AdminLayout: React.FC = () => {
         </header>
 
         {/* Content */}
-        <main id="main-content" className="flex-1 overflow-y-auto p-4 md:p-6">
-          <Outlet />
+        <main id="main-content" className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 sm:pb-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="h-full"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNav items={navItems.slice(0, 4)} />
     </div>
   );
 };

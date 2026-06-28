@@ -110,30 +110,30 @@ const QuizBuilder: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20">
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 hover:bg-bg-subtle rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5 text-slate-500" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Create New Quiz</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Build a multiple-choice assessment for your students.</p>
+          <h1 className="text-2xl font-bold text-primary">Create New Quiz</h1>
+          <p className="text-sm text-muted">Build a multiple-choice assessment for your students.</p>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+      <div className="bg-surface rounded-xl shadow-sm border border-border p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Quiz Title</label>
+          <label className="block text-sm font-medium text-secondary mb-1">Quiz Title</label>
           <input 
             type="text" 
-            className="w-full border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="e.g., Midterm Exam"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description (Optional)</label>
+          <label className="block text-sm font-medium text-secondary mb-1">Description (Optional)</label>
           <textarea 
-            className="w-full border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500"
             rows={2}
             placeholder="Instructions or topics covered..."
             value={description}
@@ -141,11 +141,11 @@ const QuizBuilder: React.FC = () => {
           />
         </div>
         <div className="w-1/3">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Duration (Minutes)</label>
+          <label className="block text-sm font-medium text-secondary mb-1">Duration (Minutes)</label>
           <input 
             type="number" 
             min="1"
-            className="w-full border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Leave empty for no limit"
             value={durationMins}
             onChange={(e) => setDurationMins(e.target.value === '' ? '' : Number(e.target.value))}
@@ -155,7 +155,7 @@ const QuizBuilder: React.FC = () => {
 
       <div className="space-y-6">
         {questions.map((q, qIndex) => (
-          <div key={qIndex} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 relative">
+          <div key={qIndex} className="bg-surface rounded-xl shadow-sm border border-border p-6 relative">
             {questions.length > 1 && (
               <button 
                 onClick={() => handleRemoveQuestion(qIndex)}
@@ -168,28 +168,28 @@ const QuizBuilder: React.FC = () => {
             
             <div className="flex gap-4 mb-4 pr-8">
               <div className="flex-1">
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Question {qIndex + 1}</label>
+                <label className="block text-sm font-semibold text-secondary mb-1">Question {qIndex + 1}</label>
                 <input 
                   type="text" 
-                  className="w-full border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="What is the capital of France?"
                   value={q.text}
                   onChange={(e) => handleQuestionChange(qIndex, 'text', e.target.value)}
                 />
               </div>
               <div className="w-24">
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Marks</label>
+                <label className="block text-sm font-semibold text-secondary mb-1">Marks</label>
                 <input 
                   type="number" 
                   min="1"
-                  className="w-full border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500"
                   value={q.marks}
                   onChange={(e) => handleQuestionChange(qIndex, 'marks', Number(e.target.value))}
                 />
               </div>
             </div>
 
-            <div className="space-y-3 pl-4 border-l-2 border-slate-100 dark:border-slate-700 ml-2">
+            <div className="space-y-3 pl-4 border-l-2 border-border ml-2">
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Options</label>
               {q.options.map((opt, oIndex) => (
                 <div key={oIndex} className="flex items-center gap-3">
@@ -198,7 +198,7 @@ const QuizBuilder: React.FC = () => {
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                       opt.isCorrect 
                         ? 'border-emerald-500 bg-emerald-500' 
-                        : 'border-slate-300 dark:border-slate-600 hover:border-emerald-400'
+                        : 'border-border-strong hover:border-emerald-400'
                     }`}
                     title="Mark as correct answer"
                   >
@@ -206,7 +206,7 @@ const QuizBuilder: React.FC = () => {
                   </button>
                   <input 
                     type="text" 
-                    className={`flex-1 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900/50 text-slate-900 dark:text-white rounded-md border p-1.5 focus:ring-blue-500 focus:border-blue-500 text-sm ${
+                    className={`flex-1 border-border-strong bg-surface text-primary rounded-md border p-1.5 focus:ring-blue-500 focus:border-blue-500 text-sm ${
                       opt.isCorrect ? 'ring-1 ring-emerald-500/50 border-emerald-500/50' : ''
                     }`}
                     placeholder={`Option ${oIndex + 1}`}
@@ -243,7 +243,7 @@ const QuizBuilder: React.FC = () => {
         </Button>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 shadow-lg flex justify-end gap-4 z-10 lg:pl-64">
+      <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border p-4 shadow-lg flex justify-end gap-4 z-10 lg:pl-64">
         <Button variant="secondary" onClick={() => navigate(-1)}>Cancel</Button>
         <Button onClick={handleSaveQuiz} disabled={saving} className="min-w-[150px]">
           {saving ? 'Saving...' : (

@@ -91,7 +91,7 @@ export const Logo: React.FC<LogoProps> = ({
       {!iconOnly && (
         <div className="flex flex-col items-center mt-2">
           <div className={`${textSizes[size]} font-black tracking-tight leading-none flex items-center`}>
-            <span className={lightText ? 'text-white' : 'text-slate-900 dark:text-white'}>
+            <span className={lightText ? 'text-white' : 'text-primary'}>
               OpenLearn
             </span>
             <span className="text-[#2563eb]">
@@ -99,7 +99,7 @@ export const Logo: React.FC<LogoProps> = ({
             </span>
           </div>
           {subtext && (
-            <span className="text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase mt-1.5 leading-none">
+            <span className="text-[10px] font-bold tracking-wider text-muted uppercase mt-1.5 leading-none">
               {subtext}
             </span>
           )}

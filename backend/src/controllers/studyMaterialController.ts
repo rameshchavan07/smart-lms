@@ -1,11 +1,10 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import { uploadFileToDrive, deleteFileFromDrive, getOrCreateFolderId } from '../services/googleDriveService';
 import fs from 'fs';
 import { logActivity } from '../utils/auditLogger';
 
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 // Upload study material (Teacher only)
 export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<void> => {

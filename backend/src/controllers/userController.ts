@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { AuthRequest } from '../middleware/auth';
 import { logActivity } from '../utils/auditLogger';
 
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 // Get all users with pagination and filtering
 export const getUsers = async (req: AuthRequest, res: Response): Promise<void> => {

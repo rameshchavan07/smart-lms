@@ -57,10 +57,10 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', duration: 0.3 }}
-            className={`relative w-full ${sizes[size]} bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-10`}
+            className={`relative w-full ${sizes[size]} bg-surface rounded-2xl shadow-xl border border-border overflow-hidden z-10`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {title}
               </h3>

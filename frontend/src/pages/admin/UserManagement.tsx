@@ -102,13 +102,13 @@ const UserManagement: React.FC = () => {
         </Button>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
+      <div className="bg-surface rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
         {currentUser?.role === 'ADMIN' && (
-          <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 flex gap-4">
+          <div className="p-4 border-b border-border bg-slate-50/50 dark:bg-slate-800/40 flex gap-4">
             <select 
               value={filterRole} 
               onChange={(e) => setFilterRole(e.target.value)}
-              className="border-slate-300 dark:border-slate-705 rounded-xl text-sm focus:ring-primary-500/20 focus:border-primary-500 bg-white dark:bg-slate-800 shadow-sm px-3 py-2 border transition-all text-slate-750 dark:text-slate-200"
+              className="border-slate-300 dark:border-slate-705 rounded-xl text-sm focus:ring-primary-500/20 focus:border-primary-500 bg-surface shadow-sm px-3 py-2 border transition-all text-slate-750 dark:text-slate-200"
             >
               <option value="">All Roles</option>
               <option value="TEACHER">Teachers</option>
@@ -138,7 +138,7 @@ const UserManagement: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-              <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+              <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 text-left">User</th>
                   <th className="px-6 py-4 text-left">Role</th>
@@ -147,7 +147,7 @@ const UserManagement: React.FC = () => {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="bg-surface divide-y divide-slate-200 dark:divide-slate-700">
                 {users.map((user) => (
                   <tr key={user.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -157,7 +157,7 @@ const UserManagement: React.FC = () => {
                         </div>
                         <div className="ml-4 text-left">
                           <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{user.firstName} {user.lastName}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">{user.email}</div>
+                          <div className="text-xs text-muted">{user.email}</div>
                         </div>
                       </div>
                     </td>
@@ -166,7 +166,7 @@ const UserManagement: React.FC = () => {
                         {user.role}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

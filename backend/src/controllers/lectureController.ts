@@ -1,5 +1,4 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { generateJitsiToken } from '../services/jitsi.service';
@@ -8,7 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import { getOrCreateFolderId, uploadFileToDrive, deleteFileFromDrive } from '../services/googleDriveService';
 
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 // Create a new lecture (Teacher only)
 export const createLecture = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -194,5 +193,71 @@ export const uploadLectureThumbnail = async (req: AuthRequest, res: Response): P
       fs.unlinkSync(req.file.path);
     }
     res.status(500).json({ message: 'Failed to upload lecture thumbnail: ' + error.message });
+  }
+};
+
+export const uploadLectureRecording = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      res.status(400).json({ message: 'No video file provided' });
+      return;
+    }
+
+    const lecture = await prisma.lecture.findUnique({
+      where: { id: id as string }
+    });
+
+    if (!lecture) {
+      res.status(404).json({ message: 'Lecture not found' });
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return;
+    }
+
+    // Resolve or create Google Drive folder structure: courses/lectures/recordings
+    const folderId = await getOrCreateFolderId([
+      { path: 'courses', name: 'Courses' },
+      { path: 'courses/lectures', name: 'Lectures' },
+      { path: 'courses/lectures/recordings', name: 'Lecture Recordings' }
+    ]);
+
+    // Upload recording file to Drive
+    const uploadResult = await uploadFileToDrive(
+      req.file.path,
+      `recording-lecture-${lecture.id}-${Date.now()}${path.extname(req.file.originalname)}`,
+      req.file.mimetype,
+      folderId
+    );
+
+    // If there is an existing recording, delete it from Drive
+    if (lecture.recordingUrl) {
+      const oldFileId = extractFileIdFromUrl(lecture.recordingUrl);
+      if (oldFileId) {
+        await deleteFileFromDrive(oldFileId);
+      }
+    }
+
+    // Update database with the webViewLink (Google Drive player link)
+    const updatedLecture = await prisma.lecture.update({
+      where: { id: id as string },
+      data: { recordingUrl: uploadResult.webViewLink }
+    });
+
+    await logActivity(req.user!.id, `Uploaded recording for lecture: ${lecture.title}`, 'Lecture', lecture.id);
+
+    // Remove local temp file
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    res.json({ message: 'Lecture recording uploaded successfully', lecture: updatedLecture });
+  } catch (error: any) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ message: 'Failed to upload lecture recording: ' + error.message });
   }
 };

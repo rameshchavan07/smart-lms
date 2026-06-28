@@ -107,30 +107,30 @@ const VerifyOtp: React.FC = () => {
 
   if (verified) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-bg">
         <div className="text-center">
           <div className="mx-auto h-20 w-20 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mb-4 animate-bounce">
             <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Email Verified!</h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">Redirecting to your dashboard...</p>
+          <h2 className="text-2xl font-bold text-primary">Email Verified!</h2>
+          <p className="text-muted mt-2">Redirecting to your dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 py-12 px-4">
-      <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-10">
+    <div className="min-h-screen flex items-center justify-center bg-bg py-12 px-4">
+      <div className="max-w-md w-full bg-surface rounded-2xl shadow-lg p-10">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="mx-auto h-14 w-14 bg-indigo-100 dark:bg-indigo-900/40 rounded-full flex items-center justify-center mb-4">
             <Mail className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Verify your email</h2>
-          <p className="mt-2 text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+          <h2 className="text-2xl font-bold text-primary">Verify your email</h2>
+          <p className="mt-2 text-muted text-sm leading-relaxed">
             We sent a 6-digit code to<br />
-            <span className="font-semibold text-slate-700 dark:text-slate-200">{email}</span>
+            <span className="font-semibold text-secondary">{email}</span>
           </p>
         </div>
 
@@ -148,7 +148,7 @@ const VerifyOtp: React.FC = () => {
                 onChange={e => handleChange(i, e.target.value)}
                 onKeyDown={e => handleKeyDown(i, e)}
                 className={`w-12 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all duration-150 outline-none
-                  ${digit ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white'}
+                  ${digit ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'border-border bg-surface text-primary'}
                   ${error ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : ''}
                   focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200`}
               />
@@ -176,7 +176,7 @@ const VerifyOtp: React.FC = () => {
           </button>
 
           {/* Resend */}
-          <div className="text-center text-sm text-slate-500 dark:text-slate-400">
+          <div className="text-center text-sm text-muted">
             Didn't receive the code?{' '}
             {canResend ? (
               <button
@@ -188,8 +188,8 @@ const VerifyOtp: React.FC = () => {
                 {resendLoading ? 'Sending...' : 'Resend OTP'}
               </button>
             ) : (
-              <span className="text-slate-400 dark:text-slate-500">
-                Resend in <span className="font-semibold text-slate-600 dark:text-slate-300">{countdown}s</span>
+              <span className="text-muted">
+                Resend in <span className="font-semibold text-secondary">{countdown}s</span>
               </span>
             )}
           </div>
@@ -198,7 +198,7 @@ const VerifyOtp: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/register')}
-              className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              className="text-xs text-muted hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
             >
               ← Use a different email
             </button>

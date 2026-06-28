@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { Mail, Lock, User } from 'lucide-react';
 import { Logo } from '../components';
 
@@ -43,11 +44,14 @@ const Register: React.FC = () => {
       };
       const { data } = await api.post('/auth/register', dataToSend);
 
+      toast.success('Registration successful!');
       // Navigate to OTP verification with email in state
       navigate('/verify-email', { state: { email: data.email } });
     } catch (err) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Registration failed. Please try again.');
+      const errorObj = err as { response?: { data?: { message?: string } } };
+      const msg = errorObj.response?.data?.message || 'Registration failed. Please try again.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -76,11 +80,11 @@ const Register: React.FC = () => {
           transition={{ duration: 0.6 }}
           className="space-y-6 max-w-xl relative z-10 text-left"
         >
-          <h1 className="text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+          <h1 className="text-5xl font-black tracking-tight text-primary leading-tight">
             Start Your<br />
             Learning <span className="bg-gradient-to-r from-primary-500 to-indigo-650 bg-clip-text text-transparent">Adventure.</span>
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed font-medium">
+          <p className="text-muted text-lg leading-relaxed font-medium">
             Create an account on OpenLearnX to join live classes, access study material repositories, and follow syllabus roadmaps.
           </p>
 
@@ -115,10 +119,10 @@ const Register: React.FC = () => {
           </div>
 
           <div className="text-center md:text-left space-y-1.5">
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+            <h2 className="text-2xl font-black text-primary">
               Create an Account
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+            <p className="text-sm text-muted font-medium">
               Join OpenLearnX and start learning
             </p>
           </div>
@@ -127,7 +131,7 @@ const Register: React.FC = () => {
           <button
             type="button"
             onClick={handleGoogleSignup}
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-250 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-250 font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-sm hover:shadow active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-250 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-250 font-bold rounded-xl hover:bg-bg-subtle transition-colors cursor-pointer shadow-sm hover:shadow active:scale-[0.98]"
           >
             <svg className="h-4.5 w-4.5" viewBox="0 0 24 24">
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
@@ -152,15 +156,9 @@ const Register: React.FC = () => {
 
           {/* Email Registration Form */}
           <form className="space-y-4" onSubmit={handleSubmit}>
-            {error && (
-              <div className="text-red-655 text-xs bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl text-center font-medium">
-                {error}
-              </div>
-            )}
-
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">First Name</label>
+                <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">First Name</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <User className="w-4 h-4" />
@@ -177,7 +175,7 @@ const Register: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">Last Name</label>
+                <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">Last Name</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <User className="w-4 h-4" />
@@ -196,7 +194,7 @@ const Register: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">Email address</label>
+              <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">Email address</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Mail className="w-4 h-4" />
@@ -214,7 +212,7 @@ const Register: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">Password</label>
+              <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">Password</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Lock className="w-4 h-4" />
@@ -232,7 +230,7 @@ const Register: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">Confirm Password</label>
+              <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">Confirm Password</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Lock className="w-4 h-4" />

@@ -35,3 +35,41 @@ export const resetPasswordSchema = z.object({
   resetToken: z.string().min(1, 'Reset token is required'),
   newPassword: z.string().min(6, 'Password must be at least 6 characters long'),
 });
+
+// ─── Course Schemas ───────────────────────────────────────────────────────────
+export const createCourseSchema = z.object({
+  title: z.string().min(3, 'Title must be at least 3 characters').max(255),
+  description: z.string().optional(),
+  teacherId: z.string().uuid().optional(),
+  maxStudents: z.number().int().positive().optional(),
+});
+
+export const updateCourseSchema = createCourseSchema.partial();
+
+// ─── Lecture Schemas ──────────────────────────────────────────────────────────
+export const createLectureSchema = z.object({
+  title: z.string().min(3, 'Title must be at least 3 characters').max(255),
+  description: z.string().optional(),
+  startTime: z.string().datetime(),
+  endTime: z.string().datetime(),
+});
+
+// ─── Quiz Schemas ─────────────────────────────────────────────────────────────
+export const createQuizSchema = z.object({
+  title: z.string().min(3).max(255),
+  description: z.string().optional(),
+  durationMins: z.number().int().positive().optional(),
+  totalMarks: z.number().int().positive(),
+  questions: z.array(
+    z.object({
+      text: z.string().min(1),
+      marks: z.number().int().positive(),
+      options: z.array(
+        z.object({
+          text: z.string().min(1),
+          isCorrect: z.boolean(),
+        })
+      ).min(2, 'At least two options are required'),
+    })
+  ).min(1, 'At least one question is required'),
+});

@@ -31,10 +31,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </div>
         <div>
           <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100">{title}</h4>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{message}</p>
+          <p className="text-sm text-muted mt-1 leading-relaxed">{message}</p>
         </div>
       </div>
-      <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+      <div className="flex justify-end gap-3 pt-4 border-t border-border">
         <Button variant="secondary" onClick={onCancel} disabled={loading}>
           {cancelLabel}
         </Button>

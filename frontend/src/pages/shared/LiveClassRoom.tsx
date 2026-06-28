@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { JitsiMeeting } from '@jitsi/react-sdk';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, PlayCircle } from 'lucide-react';
+import { LectureRecordingPlayer } from '../../components';
 
 const LiveClassRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,8 @@ const LiveClassRoom: React.FC = () => {
   const [jwtToken, setJwtToken] = useState<string | null>(null);
   const [courseName, setCourseName] = useState('');
   const [lectureTitle, setLectureTitle] = useState('');
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
+  const [isEnded, setIsEnded] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +26,8 @@ const LiveClassRoom: React.FC = () => {
         setJwtToken(data.jitsiToken || null);
         setCourseName(data.lecture.course.title);
         setLectureTitle(data.lecture.title);
+        setRecordingUrl(data.lecture.recordingUrl || null);
+        setIsEnded(new Date(data.lecture.endTime) < new Date());
       } catch (error) {
         console.error('Failed to fetch lecture', error);
       } finally {
@@ -67,44 +72,66 @@ const LiveClassRoom: React.FC = () => {
             <p className="text-xs text-slate-400">{courseName} • Powered by Jitsi Meet</p>
           </div>
         </div>
-        <div className="px-3 py-1 bg-green-500/20 text-green-400 text-sm font-medium rounded-full flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          Class is Live
-        </div>
+        {recordingUrl ? (
+          <div className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm font-medium rounded-full flex items-center gap-2">
+            <PlayCircle className="w-4 h-4" />
+            Watching Recording
+          </div>
+        ) : isEnded ? (
+          <div className="px-3 py-1 bg-red-500/20 text-red-400 text-sm font-medium rounded-full flex items-center gap-2">
+            Class Ended
+          </div>
+        ) : (
+          <div className="px-3 py-1 bg-green-500/20 text-green-400 text-sm font-medium rounded-full flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            Class is Live
+          </div>
+        )}
       </div>
 
-      {/* Jitsi Wrapper */}
-      <div className="flex-1 w-full bg-black relative">
-        <JitsiMeeting
-          domain={isJaaS ? "8x8.vc" : "meet.jit.si"}
-          roomName={isJaaS ? `${import.meta.env.VITE_JITSI_APP_ID}/${meetingUrl}` : meetingUrl}
-          jwt={isJaaS ? (jwtToken || undefined) : undefined}
-          configOverwrite={{
-            startWithAudioMuted: true,
-            disableModeratorIndicator: true,
-            startScreenSharing: true,
-            enableEmailInStats: false,
-          }}
-          interfaceConfigOverwrite={{
-            DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
-            SHOW_CHROME_EXTENSION_BANNER: false,
-          }}
-          userInfo={{
-            displayName: `${user?.firstName} ${user?.lastName} (${user?.role})`,
-            email: user?.email || 'guest@openlearnx.com'
-          }}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          onApiReady={(externalApi: any) => {
-            // Here you can attach listeners, e.g. when user leaves
-            externalApi.addListener('videoConferenceLeft', () => {
-              navigate(-1);
-            });
-          }}
-          getIFrameRef={(iframeRef) => {
-            iframeRef.style.height = '100%';
-            iframeRef.style.width = '100%';
-          }}
-        />
+      {/* Jitsi Wrapper or Recording Player */}
+      <div className="flex-1 w-full bg-black relative flex flex-col justify-center">
+        {recordingUrl ? (
+          <div className="w-full max-w-5xl mx-auto p-4">
+            <LectureRecordingPlayer url={recordingUrl} />
+          </div>
+        ) : isEnded ? (
+          <div className="text-center text-slate-400 p-8">
+            <p className="text-xl font-semibold mb-2">This live class has ended.</p>
+            <p className="text-sm">The recording will be available here soon.</p>
+          </div>
+        ) : (
+          <JitsiMeeting
+            domain={isJaaS ? "8x8.vc" : "meet.jit.si"}
+            roomName={isJaaS ? `${import.meta.env.VITE_JITSI_APP_ID}/${meetingUrl}` : meetingUrl}
+            jwt={jwtToken || undefined}
+            configOverwrite={{
+              startWithAudioMuted: true,
+              disableModeratorIndicator: true,
+              startScreenSharing: true,
+              enableEmailInStats: false,
+            }}
+            interfaceConfigOverwrite={{
+              DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+              SHOW_CHROME_EXTENSION_BANNER: false,
+            }}
+            userInfo={{
+              displayName: `${user?.firstName} ${user?.lastName} (${user?.role})`,
+              email: user?.email || 'guest@openlearnx.com'
+            }}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onApiReady={(externalApi: any) => {
+              // Here you can attach listeners, e.g. when user leaves
+              externalApi.addListener('videoConferenceLeft', () => {
+                navigate(-1);
+              });
+            }}
+            getIFrameRef={(iframeRef) => {
+              iframeRef.style.height = '100%';
+              iframeRef.style.width = '100%';
+            }}
+          />
+        )}
       </div>
     </div>
   );

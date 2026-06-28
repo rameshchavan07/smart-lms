@@ -7,6 +7,9 @@ import path from 'path';
 import passport from 'passport';
 import session from 'express-session';
 import { configurePassport } from './services/passportService';
+import rateLimit from 'express-rate-limit';
+
+const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:5173'];
 
 const app: Application = express();
 import routes from './routes';
@@ -17,8 +20,29 @@ configurePassport();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 app.use(morgan('dev'));
+
+// Rate Limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // Limit each IP to 200 requests per `window`
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api', apiLimiter);
+
+// Strict limiter for auth routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many login attempts from this IP, please try again after 15 minutes'
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // Session (required for Passport OAuth redirect flow)
 app.use(
@@ -105,6 +129,11 @@ app.use('/api', routes);
 // Health Check Route
 app.get('/api/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'success', message: 'OpenLearnX API is running' });
+});
+
+// 404 Handler for undefined API routes
+app.use('/api', (req: Request, res: Response) => {
+  res.status(404).json({ message: 'API route not found' });
 });
 
 // Global Error Handler

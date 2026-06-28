@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { StatCard, ErrorState, CourseCard } from '../../components';
 import { StatCardSkeleton, CourseCardSkeleton } from '../../components/Skeleton';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 /* ── API Types ─────────────────────────── */
 interface StudentMetrics {
@@ -100,6 +101,16 @@ const FALLBACK_ACTIVITY: ActivityItem[] = [
   { id: '1', type: 'quiz',       title: 'Completed Quiz',       courseTitle: 'Data Structures', timestamp: new Date(Date.now() - 7200000).toISOString() },
   { id: '2', type: 'assignment', title: 'Submitted Assignment',  courseTitle: 'Web Development', timestamp: new Date(Date.now() - 86400000).toISOString() },
   { id: '3', type: 'lecture',    title: 'Watched Lecture',       courseTitle: 'Python Programming', timestamp: new Date(Date.now() - 172800000).toISOString() },
+];
+
+const PERFORMANCE_DATA = [
+  { name: 'Mon', score: 65 },
+  { name: 'Tue', score: 70 },
+  { name: 'Wed', score: 85 },
+  { name: 'Thu', score: 80 },
+  { name: 'Fri', score: 95 },
+  { name: 'Sat', score: 90 },
+  { name: 'Sun', score: 100 },
 ];
 
 /* ── Component ──────────────────────────── */
@@ -282,6 +293,33 @@ const StudentDashboard: React.FC = () => {
               )}
             </div>
 
+            {/* Performance Chart */}
+            <div className="card md:col-span-2">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Performance Analytics</h2>
+              </div>
+              <div className="h-[250px] w-full mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={PERFORMANCE_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4361f0" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#4361f0" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)', borderRadius: '8px', color: 'var(--text-primary)' }}
+                      itemStyle={{ color: 'var(--brand-500)' }}
+                    />
+                    <Area type="monotone" dataKey="score" stroke="#4361f0" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
             {/* Recent Activity */}
             <div className="card">
               <div className="flex items-center justify-between mb-5">
@@ -340,7 +378,7 @@ const StudentDashboard: React.FC = () => {
                   const due = formatDue(task.dueDate);
                   const prio = PRIORITY_CONFIG[task.priority];
                   return (
-                    <div key={task.id} className="flex items-start gap-3 p-2.5 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    <div key={task.id} className="flex items-start gap-3 p-2.5 rounded-xl border hover:bg-bg-subtle transition-colors"
                       style={{ borderColor: 'var(--border)' }}>
                       <div className="w-4 h-4 rounded border-2 mt-0.5 flex-shrink-0 cursor-pointer"
                         style={{ borderColor: task.completed ? '#10b981' : 'var(--border)', background: task.completed ? '#10b981' : 'transparent' }} />

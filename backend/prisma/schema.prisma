@@ -8,24 +8,26 @@ datasource db {
 }
 
 model User {
-  id            String            @id @default(uuid())
-  firstName     String            @db.VarChar(100)
-  lastName      String            @db.VarChar(100)
-  email         String            @unique @db.VarChar(255)
-  passwordHash  String?
-  role          UserRole
-  profileImage  String?
-  googleId      String?           @db.VarChar(255)
-  isActive         Boolean           @default(true)
-  isEmailVerified  Boolean           @default(false)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  auditLogs     AuditLog[]
-  driveFiles    GoogleDriveFile[]
-  notifications Notification[]
-  refreshTokens RefreshToken[]
-  student       Student?
-  teacher       Teacher?
+  id                String            @id @default(uuid())
+  firstName         String            @db.VarChar(100)
+  lastName          String            @db.VarChar(100)
+  email             String            @unique @db.VarChar(255)
+  passwordHash      String?
+  role              UserRole
+  profileImage      String?
+  googleId          String?           @db.VarChar(255)
+  isActive          Boolean           @default(true)
+  isEmailVerified   Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  auditLogs         AuditLog[]
+  driveFiles        GoogleDriveFile[]
+  notifications     Notification[]
+  refreshTokens     RefreshToken[]
+  student           Student?
+  teacher           Teacher?
+  discussions       Discussion[]
+  discussionReplies DiscussionReply[]
 
   @@index([email])
 }
@@ -69,6 +71,7 @@ model Course {
   description    String?
   thumbnailUrl   String?
   teacherId      String?
+  maxStudents    Int?
   status         CourseStatus    @default(DRAFT)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -78,6 +81,7 @@ model Course {
   lectures       Lecture[]
   studyMaterials StudyMaterial[]
   quizzes        Quiz[]
+  discussions    Discussion[]
 
   @@index([teacherId])
 }
@@ -174,7 +178,7 @@ model Quiz {
   courseId     String
   title        String           @db.VarChar(255)
   description  String?
-  durationMins Int?            
+  durationMins Int?
   totalMarks   Int
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
@@ -186,38 +190,38 @@ model Quiz {
 }
 
 model QuizQuestion {
-  id          String           @id @default(uuid())
-  quizId      String
-  text        String           @db.Text
-  marks       Int
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  quiz        Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  options     QuizOption[]
-  answers     QuizAnswer[]
+  id        String       @id @default(uuid())
+  quizId    String
+  text      String       @db.Text
+  marks     Int
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  quiz      Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options   QuizOption[]
+  answers   QuizAnswer[]
 
   @@index([quizId])
 }
 
 model QuizOption {
-  id          String           @id @default(uuid())
-  questionId  String
-  text        String           @db.VarChar(500)
-  isCorrect   Boolean          @default(false)
-  question    QuizQuestion     @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  answers     QuizAnswer[]
+  id         String       @id @default(uuid())
+  questionId String
+  text       String       @db.VarChar(500)
+  isCorrect  Boolean      @default(false)
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers    QuizAnswer[]
 
   @@index([questionId])
 }
 
 model QuizSubmission {
-  id          String           @id @default(uuid())
+  id          String       @id @default(uuid())
   quizId      String
   studentId   String
   totalScore  Int?
-  submittedAt DateTime         @default(now())
-  quiz        Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  student     Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  submittedAt DateTime     @default(now())
+  quiz        Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
   answers     QuizAnswer[]
 
   @@unique([quizId, studentId])
@@ -228,7 +232,7 @@ model QuizAnswer {
   id               String         @id @default(uuid())
   submissionId     String
   questionId       String
-  selectedOptionId String?      
+  selectedOptionId String?
   submission       QuizSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   question         QuizQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
   selectedOption   QuizOption?    @relation(fields: [selectedOptionId], references: [id], onDelete: Cascade)
@@ -243,7 +247,6 @@ model GoogleDriveFolder {
   folderName    String
   createdAt     DateTime @default(now())
 }
-
 
 model Notification {
   id        String   @id @default(uuid())
@@ -322,4 +325,33 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
   LATE
+}
+
+model Discussion {
+  id        String            @id @default(uuid())
+  courseId  String
+  userId    String
+  title     String            @db.VarChar(255)
+  content   String            @db.Text
+  isPinned  Boolean           @default(false)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  course    Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id])
+  replies   DiscussionReply[]
+
+  @@index([courseId])
+}
+
+model DiscussionReply {
+  id           String     @id @default(uuid())
+  discussionId String
+  userId       String
+  content      String     @db.Text
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id])
+
+  @@index([discussionId])
 }

@@ -119,7 +119,7 @@ const StudentCourses: React.FC = () => {
               const teacherName = course.teacher
                 ? `${course.teacher.user.firstName} ${course.teacher.user.lastName}` : null;
               return (
-                <div key={course.id} className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                <div key={course.id} className="flex items-center gap-4 p-4 hover:bg-bg-subtle transition-colors">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${
                     ['from-blue-500 to-indigo-600','from-emerald-500 to-teal-600','from-violet-500 to-purple-600','from-orange-500 to-amber-600'][idx % 4]
                   }`}>

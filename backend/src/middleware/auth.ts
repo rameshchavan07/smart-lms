@@ -1,12 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 export interface AuthRequest extends Request {
   user?: any;
 }
+
+// Simple in-memory cache for user sessions to reduce DB hits
+// Key: userId, Value: { user, expiresAt }
+const userCache = new Map<string, { user: any; expiresAt: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   let token;
@@ -16,10 +20,20 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
       token = req.headers.authorization.split(' ')[1];
       const decoded: any = verifyToken(token);
 
-      req.user = await prisma.user.findUnique({
-        where: { id: decoded.id },
-        select: { id: true, email: true, role: true, firstName: true, lastName: true, isActive: true },
-      });
+      // Check cache first
+      const cached = userCache.get(decoded.id);
+      if (cached && cached.expiresAt > Date.now()) {
+        req.user = cached.user;
+      } else {
+        req.user = await prisma.user.findUnique({
+          where: { id: decoded.id },
+          select: { id: true, email: true, role: true, firstName: true, lastName: true, isActive: true },
+        });
+        
+        if (req.user) {
+          userCache.set(decoded.id, { user: req.user, expiresAt: Date.now() + CACHE_TTL });
+        }
+      }
 
       if (!req.user || !req.user.isActive) {
         res.status(401).json({ message: 'Not authorized, user disabled or not found' });

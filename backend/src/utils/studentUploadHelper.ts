@@ -1,7 +1,6 @@
 import { getOrCreateFolderId } from '../services/googleDriveService';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 interface PathComponent {
   path: string;

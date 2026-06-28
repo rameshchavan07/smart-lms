@@ -116,8 +116,8 @@ const CourseManagement: React.FC = () => {
         </Button>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-850/20 flex gap-4">
+      <div className="bg-surface rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
+        <div className="p-4 border-b border-border bg-slate-50/50 dark:bg-slate-850/20 flex gap-4">
           <div className="relative flex-1 max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-slate-400" />
@@ -127,7 +127,7 @@ const CourseManagement: React.FC = () => {
               placeholder="Search courses..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 block w-full border-slate-250 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 shadow-sm focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm px-3 py-2 border text-slate-900 dark:text-slate-100 transition-all"
+              className="pl-10 block w-full border-slate-250 dark:border-slate-700 rounded-xl bg-surface shadow-sm focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm px-3 py-2 border text-slate-900 dark:text-slate-100 transition-all"
             />
           </div>
         </div>
@@ -152,7 +152,7 @@ const CourseManagement: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-              <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+              <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 text-left">Course Name</th>
                   <th className="px-6 py-4 text-left">Teacher</th>
@@ -162,7 +162,7 @@ const CourseManagement: React.FC = () => {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="bg-surface divide-y divide-slate-200 dark:divide-slate-700">
                 {courses.map((course) => (
                   <tr key={course.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -171,7 +171,7 @@ const CourseManagement: React.FC = () => {
                           <img 
                             src={getDirectDriveUrl(course.thumbnailUrl)} 
                             alt={course.title} 
-                            className="h-10 w-10 object-cover rounded-xl flex-shrink-0 border border-slate-200 dark:border-slate-700"
+                            className="h-10 w-10 object-cover rounded-xl flex-shrink-0 border border-border"
                             loading="lazy"
                             decoding="async"
                             onError={(e) => {
@@ -203,7 +203,7 @@ const CourseManagement: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-600 dark:text-slate-350">
                       {course._count.lectures}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                       {new Date(course.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold space-x-2">

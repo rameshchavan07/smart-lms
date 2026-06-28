@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import EnrollStudentModal from '../../components/EnrollStudentModal';
+import { EmptyState, Button } from '../../components';
 import { getDirectDriveUrl } from '../../utils/drive';
+import { AssignmentsTab } from './AssignmentsTab';
+import { DiscussionsTab } from './DiscussionsTab';
 import { 
   Video, 
   Calendar, 
@@ -18,7 +21,9 @@ import {
   Loader2,
   Users,
   UserMinus,
-  CheckSquare
+  CheckSquare,
+  FileText as FileTextIcon,
+  MessageCircle
 } from 'lucide-react';
 
 interface QuizData {
@@ -80,7 +85,7 @@ const CourseDetails: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
   
-  const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students' | 'quizzes'>('lectures');
+  const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students' | 'quizzes' | 'assignments' | 'discussions'>('lectures');
   
   // Lectures state
   const [lectures, setLectures] = useState<LectureData[]>([]);
@@ -284,7 +289,7 @@ const CourseDetails: React.FC = () => {
       <div className="flex items-center gap-4">
         <button 
           onClick={() => navigate(-1)} 
-          className="p-2 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-900/50 transition shadow-sm"
+          className="p-2 bg-surface rounded-full border border-border hover:bg-bg-subtle transition shadow-sm"
         >
           <ArrowLeft className="w-5 h-5 text-slate-600" />
         </button>
@@ -295,13 +300,13 @@ const CourseDetails: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-700">
+      <div className="flex border-b border-border">
         <button
           onClick={() => setActiveTab('lectures')}
           className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'lectures'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+              : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
           }`}
         >
           <Video className="w-4 h-4" />
@@ -312,7 +317,7 @@ const CourseDetails: React.FC = () => {
           className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'materials'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+              : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -323,11 +328,33 @@ const CourseDetails: React.FC = () => {
           className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'quizzes'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+              : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
           }`}
         >
           <CheckSquare className="w-4 h-4" />
           Assessments
+        </button>
+        <button
+          onClick={() => setActiveTab('assignments')}
+          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'assignments'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+          }`}
+        >
+          <FileTextIcon className="w-4 h-4" />
+          Assignments
+        </button>
+        <button
+          onClick={() => setActiveTab('discussions')}
+          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'discussions'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+          }`}
+        >
+          <MessageCircle className="w-4 h-4" />
+          Discussions
         </button>
         {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
           <button
@@ -335,7 +362,7 @@ const CourseDetails: React.FC = () => {
             className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
               activeTab === 'students'
                 ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+                : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -346,78 +373,78 @@ const CourseDetails: React.FC = () => {
 
       {/* Content Area */}
       {activeTab === 'lectures' ? (
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-900">Scheduled Classes</h3>
             {user?.role === 'TEACHER' && (
-              <button 
+              <Button 
+                variant="primary"
                 onClick={() => setShowCreateLecture(!showCreateLecture)}
-                className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-100 transition font-medium text-sm"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 mr-2" />
                 Schedule New
-              </button>
+              </Button>
             )}
           </div>
 
           {showCreateLecture && user?.role === 'TEACHER' && (
-            <form onSubmit={handleCreateLecture} className="mb-8 p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg space-y-4 shadow-sm">
+            <form onSubmit={handleCreateLecture} className="mb-8 p-4 bg-bg-subtle border border-border rounded-lg space-y-4 shadow-sm">
               <h4 className="font-semibold text-slate-900 text-sm">Schedule a Live Class</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Title</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Title</label>
                   <input 
                     type="text" 
                     required 
                     value={lectureForm.title} 
                     onChange={(e) => setLectureForm({...lectureForm, title: e.target.value})} 
-                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-border-strong rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Description</label>
                   <input 
                     type="text" 
                     value={lectureForm.description} 
                     onChange={(e) => setLectureForm({...lectureForm, description: e.target.value})} 
-                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-border-strong rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Start Time</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Start Time</label>
                   <input 
                     type="datetime-local" 
                     required 
                     value={lectureForm.startTime} 
                     onChange={(e) => setLectureForm({...lectureForm, startTime: e.target.value})} 
-                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-border-strong rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">End Time</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">End Time</label>
                   <input 
                     type="datetime-local" 
                     required 
                     value={lectureForm.endTime} 
                     onChange={(e) => setLectureForm({...lectureForm, endTime: e.target.value})} 
-                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-border-strong rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <button 
+                <Button 
+                  variant="ghost"
                   type="button" 
                   onClick={() => setShowCreateLecture(false)} 
-                  className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md text-slate-700 dark:text-slate-300 text-sm hover:bg-slate-50 dark:bg-slate-900/50 transition"
                 >
                   Cancel
-                </button>
-                <button 
+                </Button>
+                <Button 
+                  variant="primary"
                   type="submit" 
-                  className="px-4 py-2 bg-blue-600 rounded-md text-white text-sm hover:bg-blue-700 transition font-medium"
                 >
                   Create
-                </button>
+                </Button>
               </div>
             </form>
           )}
@@ -428,14 +455,15 @@ const CourseDetails: React.FC = () => {
               <span className="text-xs mt-2 block">Loading lectures...</span>
             </div>
           ) : lectures.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/50/50">
-              <Video className="mx-auto h-12 w-12 text-slate-300 mb-3" />
-              <p className="text-slate-500 text-sm">No lectures scheduled yet.</p>
-            </div>
+            <EmptyState 
+              icon={<Video className="w-8 h-8" />} 
+              title="No live classes"
+              description="No lectures scheduled yet."
+            />
           ) : (
             <div className="space-y-4">
               {lectures.map((lecture) => (
-                <div key={lecture.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-200 hover:bg-slate-50 dark:bg-slate-900/50/50 transition">
+                <div key={lecture.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-border rounded-xl hover:border-blue-200 hover:bg-bg-subtle/50 transition">
                   <div className="flex items-start gap-4 mb-4 md:mb-0">
                     <div className="relative group h-12 w-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 overflow-hidden">
                       {lecture.thumbnailUrl ? (
@@ -482,17 +510,17 @@ const CourseDetails: React.FC = () => {
           )}
         </div>
       ) : activeTab === 'materials' ? (
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-900">Study Materials</h3>
             {user?.role === 'TEACHER' && (
-              <button 
+              <Button 
+                variant="primary"
                 onClick={() => { setShowUploadMaterial(!showUploadMaterial); setUploadError(null); setUploadSuccess(null); }}
-                className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-100 transition font-medium text-sm"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 mr-2" />
                 Upload File
-              </button>
+              </Button>
             )}
           </div>
 
@@ -509,33 +537,33 @@ const CourseDetails: React.FC = () => {
           )}
 
           {showUploadMaterial && user?.role === 'TEACHER' && (
-            <form onSubmit={handleUploadMaterial} className="mb-8 p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg space-y-4 shadow-sm">
+            <form onSubmit={handleUploadMaterial} className="mb-8 p-4 bg-bg-subtle border border-border rounded-lg space-y-4 shadow-sm">
               <h4 className="font-semibold text-slate-900 text-sm">Upload Study Material</h4>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Material Title</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Material Title</label>
                   <input 
                     type="text" 
                     placeholder="Enter document title (optional)" 
                     value={materialTitle} 
                     onChange={(e) => setMaterialTitle(e.target.value)} 
-                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-border-strong rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Description (optional)</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Description (optional)</label>
                   <textarea 
                     placeholder="Enter document description (optional)" 
                     value={materialDescription} 
                     onChange={(e) => setMaterialDescription(e.target.value)} 
                     rows={2}
-                    className="w-full border border-slate-300 dark:border-slate-600 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full border border-border-strong rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Select File</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Select File</label>
                   <div className="flex items-center justify-center w-full">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer bg-white dark:bg-slate-800 hover:bg-slate-50 dark:bg-slate-900/50 transition">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border-strong rounded-lg cursor-pointer bg-surface hover:bg-bg-subtle transition">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <UploadCloud className="w-8 h-8 text-slate-400 mb-2" />
                         <p className="text-sm text-slate-500">
@@ -559,22 +587,21 @@ const CourseDetails: React.FC = () => {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <button 
+                <Button 
+                  variant="ghost"
                   type="button" 
                   onClick={() => setShowUploadMaterial(false)} 
                   disabled={uploading}
-                  className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md text-slate-700 dark:text-slate-300 text-sm hover:bg-slate-50 dark:bg-slate-900/50 transition disabled:opacity-50"
                 >
                   Cancel
-                </button>
-                <button 
+                </Button>
+                <Button 
+                  variant="primary"
                   type="submit" 
-                  disabled={uploading}
-                  className="px-4 py-2 bg-blue-600 rounded-md text-white text-sm hover:bg-blue-700 transition font-medium flex items-center gap-2 disabled:opacity-50"
+                  loading={uploading}
                 >
-                  {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {uploading ? 'Uploading...' : 'Upload'}
-                </button>
+                  Upload
+                </Button>
               </div>
             </form>
           )}
@@ -585,14 +612,15 @@ const CourseDetails: React.FC = () => {
               <span className="text-xs mt-2 block">Loading materials...</span>
             </div>
           ) : materials.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/50/50">
-              <FileText className="mx-auto h-12 w-12 text-slate-300 mb-3" />
-              <p className="text-slate-500 text-sm">No study materials uploaded yet.</p>
-            </div>
+            <EmptyState 
+              icon={<FileText className="w-8 h-8" />}
+              title="No materials"
+              description="No study materials uploaded yet."
+            />
           ) : (
             <div className="space-y-4">
               {materials.map((material) => (
-                <div key={material.id} className="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-200 hover:bg-slate-50 dark:bg-slate-900/50/50 transition">
+                <div key={material.id} className="flex items-center justify-between p-4 border border-border rounded-xl hover:border-blue-200 hover:bg-bg-subtle/50 transition">
                   <div className="flex items-center gap-4 min-w-0">
                     {getFileIcon(material.fileType)}
                     <div className="min-w-0">
@@ -634,16 +662,16 @@ const CourseDetails: React.FC = () => {
           )}
         </div>
       ) : activeTab === 'students' ? (
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-900">Enrolled Students</h3>
-            <button 
+            <Button 
+              variant="primary"
               onClick={() => setShowEnrollModal(true)}
-              className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-100 transition font-medium text-sm"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 mr-2" />
               Enroll Student
-            </button>
+            </Button>
           </div>
 
           {studentsLoading ? (
@@ -652,14 +680,15 @@ const CourseDetails: React.FC = () => {
               <span className="text-xs mt-2 block">Loading enrolled students...</span>
             </div>
           ) : enrolledStudents.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/50/50">
-              <Users className="mx-auto h-12 w-12 text-slate-300 mb-3" />
-              <p className="text-slate-500 text-sm">No students enrolled in this course yet.</p>
-            </div>
+            <EmptyState 
+              icon={<Users className="w-8 h-8" />}
+              title="No students"
+              description="No students enrolled in this course yet."
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                <thead className="bg-bg-subtle text-slate-500 text-xs font-semibold uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-4 text-left">Student Name</th>
                     <th className="px-6 py-4 text-left">Email Address</th>
@@ -667,9 +696,9 @@ const CourseDetails: React.FC = () => {
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200">
+                <tbody className="bg-surface divide-y divide-slate-200">
                   {enrolledStudents.map((record) => (
-                    <tr key={record.student.id} className="hover:bg-slate-50 dark:bg-slate-900/50 transition-colors">
+                    <tr key={record.student.id} className="hover:bg-bg-subtle transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 flex-shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
@@ -706,17 +735,17 @@ const CourseDetails: React.FC = () => {
           )}
         </div>
       ) : activeTab === 'quizzes' ? (
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-900">Assessments</h3>
             {user?.role === 'TEACHER' && (
-              <button 
+              <Button 
+                variant="primary"
                 onClick={() => navigate(`/teacher/courses/${id}/quizzes/new`)}
-                className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-md hover:bg-blue-100 transition font-medium text-sm"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 mr-2" />
                 Create Quiz
-              </button>
+              </Button>
             )}
           </div>
 
@@ -726,14 +755,15 @@ const CourseDetails: React.FC = () => {
               <span className="text-xs mt-2 block">Loading assessments...</span>
             </div>
           ) : quizzes.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/50/50">
-              <CheckSquare className="mx-auto h-12 w-12 text-slate-300 mb-3" />
-              <p className="text-slate-500 text-sm">No assessments created yet.</p>
-            </div>
+            <EmptyState 
+              icon={<CheckSquare className="w-8 h-8" />}
+              title="No assessments"
+              description="No assessments created yet."
+            />
           ) : (
             <div className="space-y-4">
               {quizzes.map((quiz) => (
-                <div key={quiz.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-200 hover:bg-slate-50 dark:bg-slate-900/50/50 transition">
+                <div key={quiz.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-border rounded-xl hover:border-blue-200 hover:bg-bg-subtle/50 transition">
                   <div className="flex items-start gap-4 mb-4 md:mb-0">
                     <div className="relative group h-12 w-12 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 overflow-hidden">
                       <CheckSquare className="w-6 h-6" />
@@ -774,6 +804,14 @@ const CourseDetails: React.FC = () => {
             </div>
           )}
         </div>
+      ) : activeTab === 'assignments' && id ? (
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+          <AssignmentsTab courseId={id} />
+        </div>
+      ) : activeTab === 'discussions' && id ? (
+        <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+          <DiscussionsTab courseId={id} />
+        </div>
       ) : null}
 
       <EnrollStudentModal 
@@ -784,6 +822,7 @@ const CourseDetails: React.FC = () => {
           setShowEnrollModal(false);
         }}
         courseId={id || ''}
+        enrolledStudentIds={enrolledStudents.map((s: any) => s.studentId)}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import toast from 'react-hot-toast';
 import { 
   Mail, Lock, Eye, EyeOff, GraduationCap, 
   BookOpen, Users, ShieldCheck, BarChart3,
@@ -27,16 +28,25 @@ const Login: React.FC = () => {
   const [searchParams] = useSearchParams();
   const oauthError = searchParams.get('error');
 
+  React.useEffect(() => {
+    if (oauthError) {
+      toast.error('Google authentication failed. Please try again.');
+    }
+  }, [oauthError]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
       const { data } = await api.post('/auth/login', { email, password });
+      toast.success('Login successful!');
       login(data);
     } catch (err) {
       const e2 = err as { response?: { data?: { message?: string } } };
-      setError(e2.response?.data?.message || 'Login failed. Please try again.');
+      const msg = e2.response?.data?.message || 'Login failed. Please try again.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -128,28 +138,20 @@ const Login: React.FC = () => {
             <div className="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center">
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-lg text-slate-900 dark:text-white">OpenLearnX</span>
+            <span className="font-bold text-lg text-primary">OpenLearnX</span>
           </div>
 
-          <h2 className="text-3xl font-bold mb-1 text-slate-900 dark:text-white">Welcome back</h2>
-          <p className="mb-8 text-[15px] text-slate-500 dark:text-slate-400">Sign in to your account to continue</p>
-
-          {/* Error Messages */}
-          {(oauthError || error) && (
-            <div className="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800/30 text-red-600 dark:text-red-400 text-[13px] font-medium flex items-start gap-2">
-              <span className="flex-shrink-0 mt-0.5">⚠️</span>
-              {error || 'Google authentication failed. Please try again.'}
-            </div>
-          )}
+          <h2 className="text-3xl font-bold mb-1 text-primary">Welcome back</h2>
+          <p className="mb-8 text-[15px] text-muted">Sign in to your account to continue</p>
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[13px] font-semibold mb-1.5 text-slate-500 dark:text-slate-400">
+              <label className="block text-[13px] font-semibold mb-1.5 text-muted">
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="email"
                   value={email}
@@ -163,7 +165,7 @@ const Login: React.FC = () => {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-[13px] font-semibold text-slate-500 dark:text-slate-400">
+                <label className="block text-[13px] font-semibold text-muted">
                   Password
                 </label>
                 <Link to="/forgot-password" className="text-[12px] font-medium text-brand-500 hover:text-brand-600 transition-colors">
@@ -171,7 +173,7 @@ const Login: React.FC = () => {
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -183,7 +185,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors text-muted hover:text-slate-600 dark:hover:text-slate-300"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -196,7 +198,7 @@ const Login: React.FC = () => {
                 type="checkbox"
                 className="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/30 cursor-pointer"
               />
-              <label htmlFor="remember" className="text-[13px] cursor-pointer text-slate-500 dark:text-slate-400">
+              <label htmlFor="remember" className="text-[13px] cursor-pointer text-muted">
                 Keep me signed in
               </label>
             </div>
@@ -221,7 +223,7 @@ const Login: React.FC = () => {
           {/* Divider */}
           <div className="relative flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
-            <span className="text-[12px] font-medium px-1 text-slate-400 dark:text-slate-500">or continue with</span>
+            <span className="text-[12px] font-medium px-1 text-muted">or continue with</span>
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
           </div>
 
@@ -239,7 +241,7 @@ const Login: React.FC = () => {
 
 
           {/* Footer */}
-          <p className="text-center text-[13px] mt-6 text-slate-400 dark:text-slate-500">
+          <p className="text-center text-[13px] mt-6 text-muted">
             Don't have an account?{' '}
             <Link to="/register" className="font-semibold text-brand-500 hover:text-brand-600 transition-colors">
               Create one free

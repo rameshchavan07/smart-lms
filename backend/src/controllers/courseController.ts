@@ -1,12 +1,11 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import path from 'path';
 import fs from 'fs';
 import { getOrCreateFolderId, uploadFileToDrive, deleteFileFromDrive } from '../services/googleDriveService';
 import { logActivity } from '../utils/auditLogger';
 
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 // Get all courses with pagination and optional search
 export const getCourses = async (req: Request, res: Response): Promise<void> => {

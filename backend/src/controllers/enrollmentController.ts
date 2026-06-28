@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 import { logActivity } from '../utils/auditLogger';
 
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 // Enroll a student in a course (Admin / Teacher)
 export const enrollStudent = async (req: AuthRequest, res: Response): Promise<void> => {

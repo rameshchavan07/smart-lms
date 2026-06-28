@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 // Cache bust comment
 
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 // Create a new quiz for a course
 export const createQuiz = async (req: Request, res: Response) => {

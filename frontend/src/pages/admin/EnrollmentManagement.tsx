@@ -107,13 +107,13 @@ const EnrollmentManagement: React.FC = () => {
         </Button>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-850/20 flex gap-4 items-center">
+      <div className="bg-surface rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
+        <div className="p-4 border-b border-border bg-slate-50/50 dark:bg-slate-850/20 flex gap-4 items-center">
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-305">Select Course:</label>
           <select
             value={selectedCourseId}
             onChange={(e) => setSelectedCourseId(e.target.value)}
-            className="block w-64 pl-3 pr-10 py-2 text-base border-slate-350 dark:border-slate-700 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl border bg-white dark:bg-slate-800 text-slate-850 dark:text-slate-150 transition-all"
+            className="block w-64 pl-3 pr-10 py-2 text-base border-slate-350 dark:border-slate-700 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-xl border bg-surface text-slate-850 dark:text-slate-150 transition-all"
           >
             <option value="" disabled>-- Select a Course --</option>
             {courses.map(course => (
@@ -150,7 +150,7 @@ const EnrollmentManagement: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-              <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+              <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 text-left">Student Name</th>
                   <th className="px-6 py-4 text-left">Email Address</th>
@@ -158,7 +158,7 @@ const EnrollmentManagement: React.FC = () => {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="bg-surface divide-y divide-slate-200 dark:divide-slate-700">
                 {enrollments.map((record) => (
                   <tr key={record.student.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -176,7 +176,7 @@ const EnrollmentManagement: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-605 dark:text-slate-350">
                       {record.student.user.email}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                       {new Date(record.enrolledAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

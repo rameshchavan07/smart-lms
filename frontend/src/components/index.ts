@@ -17,3 +17,4 @@ export { default as PageHeader } from './PageHeader';
 export { default as CourseCard } from './CourseCard';
 export { default as ErrorState } from './ErrorState';
 export { Skeleton, StatCardSkeleton, CourseCardSkeleton, TableRowSkeleton } from './Skeleton';
+export { default as LectureRecordingPlayer } from './LectureRecordingPlayer';

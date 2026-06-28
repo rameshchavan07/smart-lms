@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+import prisma from '../config/db';
 
 export const logActivity = async (userId: string, action: string, entityType: string, entityId: string): Promise<void> => {
   try {
