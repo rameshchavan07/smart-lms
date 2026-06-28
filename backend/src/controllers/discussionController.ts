@@ -167,3 +167,47 @@ export const togglePinDiscussion = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Failed to update discussion pin status' });
   }
 };
+
+export const getMyDiscussions = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const student = await prisma.student.findUnique({ where: { userId } });
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+
+    const enrollments = await prisma.enrollment.findMany({ where: { studentId: student.id } });
+    const courseIds = enrollments.map(e => e.courseId);
+
+    const discussions = await prisma.discussion.findMany({
+      where: { courseId: { in: courseIds } },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, role: true } },
+        course: { select: { title: true } },
+        _count: { select: { replies: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json({ discussions });
+  } catch (error) {
+    console.error('Get my discussions error:', error);
+    res.status(500).json({ message: 'Failed to fetch discussions' });
+  }
+};
+
+export const getAllDiscussions = async (req: AuthRequest, res: Response) => {
+  try {
+    const discussions = await prisma.discussion.findMany({
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, role: true } },
+        course: { select: { title: true } },
+        _count: { select: { replies: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json({ discussions });
+  } catch (error) {
+    console.error('Get all discussions error:', error);
+    res.status(500).json({ message: 'Failed to fetch discussions' });
+  }
+};

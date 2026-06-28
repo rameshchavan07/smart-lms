@@ -19,14 +19,14 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard',   href: '/student',          icon: LayoutDashboard },
-  { label: 'My Courses',  href: '/student/courses',  icon: BookOpen },
-  { label: 'Assignments', href: '#',                 icon: ClipboardList },
-  { label: 'Grades',      href: '#',                 icon: Award },
-  { label: 'Community',   href: '#',                 icon: Users },
-  { label: 'Messages',    href: '#',                 icon: MessageSquare, badge: 2 },
-  { label: 'Reports',     href: '#',                 icon: BarChart3 },
-  { label: 'Settings',    href: '#',                 icon: Settings },
+  { label: 'Dashboard',   href: '/student',             icon: LayoutDashboard },
+  { label: 'My Courses',  href: '/student/courses',     icon: BookOpen },
+  { label: 'Assignments', href: '/student/assignments', icon: ClipboardList },
+  { label: 'Grades',      href: '/student/grades',      icon: Award },
+  { label: 'Community',   href: '/student/community',   icon: Users },
+  { label: 'Messages',    href: '/student/messages',    icon: MessageSquare, badge: 2 },
+  { label: 'Reports',     href: '/student/reports',     icon: BarChart3 },
+  { label: 'Settings',    href: '/student/settings',    icon: Settings },
 ];
 
 const StudentLayout: React.FC = () => {
@@ -136,8 +136,8 @@ const StudentLayout: React.FC = () => {
         {/* Header */}
         <header className="glass sticky top-0 z-30 flex items-center gap-4 px-4 md:px-6 h-16 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
           <button
-            onClick={() => setIsMobileOpen(true)}
-            className="hidden sm:block lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            onClick={() => setIsMobileOpen(prev => !prev)}
+            className="block lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />

@@ -19,14 +19,14 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard',     href: '/teacher',          icon: LayoutDashboard },
-  { label: 'Courses',       href: '/teacher/courses',  icon: BookOpen },
-  { label: 'Students',      href: '/teacher/students', icon: Users },
-  { label: 'Enrollments',   href: '#',                 icon: GraduationCap },
-  { label: 'Assessments',   href: '#',                 icon: ClipboardList },
-  { label: 'Reports',       href: '#',                 icon: BarChart3 },
-  { label: 'Communication', href: '#',                 icon: MessageSquare, badge: 3 },
-  { label: 'Settings',      href: '#',                 icon: Settings },
+  { label: 'Dashboard',     href: '/teacher',               icon: LayoutDashboard },
+  { label: 'Courses',       href: '/teacher/courses',       icon: BookOpen },
+  { label: 'Students',      href: '/teacher/students',      icon: Users },
+  { label: 'Enrollments',   href: '/teacher/enrollments',   icon: GraduationCap },
+  { label: 'Assessments',   href: '/teacher/assessments',   icon: ClipboardList },
+  { label: 'Reports',       href: '/teacher/reports',       icon: BarChart3 },
+  { label: 'Communication', href: '/teacher/communication', icon: MessageSquare, badge: 3 },
+  { label: 'Settings',      href: '/teacher/settings',      icon: Settings },
 ];
 
 const TeacherLayout: React.FC = () => {
@@ -136,8 +136,8 @@ const TeacherLayout: React.FC = () => {
         {/* Header */}
         <header className="glass sticky top-0 z-30 flex items-center gap-4 px-4 md:px-6 h-16 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
           <button
-            onClick={() => setIsMobileOpen(true)}
-            className="hidden sm:block lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            onClick={() => setIsMobileOpen(prev => !prev)}
+            className="block lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />

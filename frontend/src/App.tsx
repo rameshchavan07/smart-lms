@@ -22,17 +22,33 @@ const TeacherLayout    = React.lazy(() => import('./layouts/TeacherLayout'));
 const StudentLayout    = React.lazy(() => import('./layouts/StudentLayout'));
 
 // ─── Code-split pages ─────────────────────────────────────────────────────
-const AdminDashboard     = React.lazy(() => import('./pages/admin/AdminDashboard'));
-const UserManagement     = React.lazy(() => import('./pages/admin/UserManagement'));
-const CourseManagement   = React.lazy(() => import('./pages/admin/CourseManagement'));
+const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
+const UserManagement = React.lazy(() => import('./pages/admin/UserManagement'));
+const CourseManagement = React.lazy(() => import('./pages/admin/CourseManagement'));
 const EnrollmentManagement = React.lazy(() => import('./pages/admin/EnrollmentManagement'));
+const AdminAssessments = React.lazy(() => import('./pages/admin/AdminAssessments'));
+const AdminReports = React.lazy(() => import('./pages/admin/AdminReports'));
+const AdminCommunication = React.lazy(() => import('./pages/admin/AdminCommunication'));
+const AdminIntegrations = React.lazy(() => import('./pages/admin/AdminIntegrations'));
+const AdminSettings = React.lazy(() => import('./pages/admin/AdminSettings'));
 
 const TeacherDashboard   = React.lazy(() => import('./pages/teacher/TeacherDashboard'));
 const TeacherCourses     = React.lazy(() => import('./pages/teacher/TeacherCourses'));
 const QuizBuilder        = React.lazy(() => import('./pages/teacher/QuizBuilder'));
+const TeacherEnrollments = React.lazy(() => import('./pages/teacher/TeacherEnrollments'));
+const TeacherAssessments = React.lazy(() => import('./pages/teacher/TeacherAssessments'));
+const TeacherReports     = React.lazy(() => import('./pages/teacher/TeacherReports'));
+const TeacherCommunication = React.lazy(() => import('./pages/teacher/TeacherCommunication'));
+const TeacherSettings    = React.lazy(() => import('./pages/teacher/TeacherSettings'));
 
-const StudentDashboard   = React.lazy(() => import('./pages/student/StudentDashboard'));
-const StudentCourses     = React.lazy(() => import('./pages/student/StudentCourses'));
+const StudentDashboard = React.lazy(() => import('./pages/student/StudentDashboard'));
+const StudentCourses = React.lazy(() => import('./pages/student/StudentCourses'));
+const StudentAssignments = React.lazy(() => import('./pages/student/StudentAssignments'));
+const StudentGrades = React.lazy(() => import('./pages/student/StudentGrades'));
+const StudentCommunity = React.lazy(() => import('./pages/student/StudentCommunity'));
+const StudentMessages = React.lazy(() => import('./pages/student/StudentMessages'));
+const StudentReports = React.lazy(() => import('./pages/student/StudentReports'));
+const StudentSettings = React.lazy(() => import('./pages/student/StudentSettings'));
 
 const CourseDetails      = React.lazy(() => import('./pages/shared/CourseDetails'));
 const LiveClassRoom      = React.lazy(() => import('./pages/shared/LiveClassRoom'));
@@ -109,6 +125,11 @@ function App() {
                 <Route path="users"       element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
                 <Route path="courses"     element={<Suspense fallback={<PageLoader />}><CourseManagement /></Suspense>} />
                 <Route path="enrollments" element={<Suspense fallback={<PageLoader />}><EnrollmentManagement /></Suspense>} />
+                <Route path="assessments" element={<Suspense fallback={<PageLoader />}><AdminAssessments /></Suspense>} />
+                <Route path="reports" element={<Suspense fallback={<PageLoader />}><AdminReports /></Suspense>} />
+                <Route path="communication" element={<Suspense fallback={<PageLoader />}><AdminCommunication /></Suspense>} />
+                <Route path="integrations" element={<Suspense fallback={<PageLoader />}><AdminIntegrations /></Suspense>} />
+                <Route path="settings"    element={<Suspense fallback={<PageLoader />}><AdminSettings /></Suspense>} />
               </Route>
 
               {/* ── Teacher Portal ── */}
@@ -125,6 +146,11 @@ function App() {
                 <Route path="courses/:id/quizzes/new" element={<Suspense fallback={<PageLoader />}><QuizBuilder /></Suspense>} />
                 <Route path="courses/:id/quizzes/:quizId" element={<Suspense fallback={<PageLoader />}><QuizView /></Suspense>} />
                 <Route path="students" element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
+                <Route path="enrollments" element={<Suspense fallback={<PageLoader />}><TeacherEnrollments /></Suspense>} />
+                <Route path="assessments" element={<Suspense fallback={<PageLoader />}><TeacherAssessments /></Suspense>} />
+                <Route path="reports" element={<Suspense fallback={<PageLoader />}><TeacherReports /></Suspense>} />
+                <Route path="communication" element={<Suspense fallback={<PageLoader />}><TeacherCommunication /></Suspense>} />
+                <Route path="settings" element={<Suspense fallback={<PageLoader />}><TeacherSettings /></Suspense>} />
               </Route>
 
               {/* ── Student Portal ── */}
@@ -139,6 +165,12 @@ function App() {
                 <Route path="courses" element={<Suspense fallback={<PageLoader />}><StudentCourses /></Suspense>} />
                 <Route path="courses/:id" element={<Suspense fallback={<PageLoader />}><CourseDetails /></Suspense>} />
                 <Route path="courses/:id/quizzes/:quizId" element={<Suspense fallback={<PageLoader />}><QuizView /></Suspense>} />
+                <Route path="assignments" element={<Suspense fallback={<PageLoader />}><StudentAssignments /></Suspense>} />
+                <Route path="grades" element={<Suspense fallback={<PageLoader />}><StudentGrades /></Suspense>} />
+                <Route path="community" element={<Suspense fallback={<PageLoader />}><StudentCommunity /></Suspense>} />
+                <Route path="messages" element={<Suspense fallback={<PageLoader />}><StudentMessages /></Suspense>} />
+                <Route path="reports" element={<Suspense fallback={<PageLoader />}><StudentReports /></Suspense>} />
+                <Route path="settings" element={<Suspense fallback={<PageLoader />}><StudentSettings /></Suspense>} />
               </Route>
 
               {/* ── Catch-all ── */}

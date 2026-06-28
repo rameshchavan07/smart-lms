@@ -13,16 +13,22 @@ export const generateJitsiToken = (user: { id: string, firstName: string, lastNa
   // Ensure newlines in the private key are real newline characters
   privateKey = privateKey.replace(/\\n/g, '\n');
 
+  const now = Math.floor(Date.now() / 1000);
   const payload = {
     aud: 'jitsi',
     iss: 'chat',
     sub: appId,
-    room: roomName,
+    room: '*', // Wildcard room prevents auth mismatch issues on JaaS
+    nbf: now - 300, // 5 minutes ago to prevent clock drift issues
+    iat: now,
+    exp: now + 7200, // 2 hours
     context: {
       user: {
         id: user.id,
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
+        avatar: "",
+        affiliate: user.role === 'TEACHER' ? 'owner' : 'member',
         moderator: user.role === 'TEACHER', // Grant moderator rights to teachers
       },
       features: {
@@ -35,8 +41,7 @@ export const generateJitsiToken = (user: { id: string, firstName: string, lastNa
 
   const options: jwt.SignOptions = {
     algorithm: 'RS256',
-    keyid: kid,
-    expiresIn: '2h'
+    keyid: kid
   };
 
   try {

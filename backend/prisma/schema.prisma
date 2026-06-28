@@ -28,6 +28,8 @@ model User {
   teacher           Teacher?
   discussions       Discussion[]
   discussionReplies DiscussionReply[]
+  sentMessages      Message[]         @relation("SentMessages")
+  receivedMessages  Message[]         @relation("ReceivedMessages")
 
   @@index([email])
 }
@@ -42,6 +44,7 @@ model Teacher {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   courses        Course[]
+  announcements  Announcement[]
   user           User      @relation(fields: [userId], references: [id])
 
   @@index([employeeCode])
@@ -82,6 +85,7 @@ model Course {
   studyMaterials StudyMaterial[]
   quizzes        Quiz[]
   discussions    Discussion[]
+  announcements  Announcement[]
 
   @@index([teacherId])
 }
@@ -354,4 +358,44 @@ model DiscussionReply {
   user         User       @relation(fields: [userId], references: [id])
 
   @@index([discussionId])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String   @db.Text
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  courseId  String?
+  teacherId String?
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  
+  course    Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([teacherId])
+}
+
+model Integration {
+  id          String   @id @default(uuid())
+  provider    String   @unique @db.VarChar(100) // e.g. "Zoom", "GoogleDrive", "Stripe"
+  isActive    Boolean  @default(false)
+  apiKey      String?  @db.Text
+  apiSecret   String?  @db.Text
+  config      Json?    // Store any additional config
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

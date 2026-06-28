@@ -8,7 +8,7 @@ import prisma from '../config/db';
 const createAssignmentSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
   description: z.string().optional(),
-  dueDate: z.string().datetime(),
+  dueDate: z.coerce.date(),
   totalMarks: z.number().positive(),
 });
 
@@ -157,5 +157,151 @@ export const getMySubmissions = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Get my submissions error:', error);
     res.status(500).json({ message: 'Failed to fetch my submissions' });
+  }
+};
+
+export const getTeacherAssessments = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const teacher = await prisma.teacher.findUnique({ where: { userId } });
+    if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+
+    const assignments = await prisma.assignment.findMany({
+      where: { course: { teacherId: teacher.id } },
+      include: {
+        course: { select: { title: true, _count: { select: { enrollments: true } } } },
+        _count: { select: { submissions: true } }
+      }
+    });
+
+    const quizzes = await prisma.quiz.findMany({
+      where: { course: { teacherId: teacher.id } },
+      include: {
+        course: { select: { title: true, _count: { select: { enrollments: true } } } },
+        _count: { select: { submissions: true } }
+      }
+    });
+
+    const formattedAssignments = assignments.map(a => ({
+      id: a.id,
+      title: a.title,
+      type: 'Assignment',
+      course: a.course.title,
+      submissions: a._count.submissions,
+      total: a.course._count.enrollments,
+      status: a.dueDate > new Date() ? 'Active' : 'Completed',
+      createdAt: a.createdAt
+    }));
+
+    const formattedQuizzes = quizzes.map(q => ({
+      id: q.id,
+      title: q.title,
+      type: 'Quiz',
+      course: q.course.title,
+      submissions: q._count.submissions,
+      total: q.course._count.enrollments,
+      status: 'Active',
+      createdAt: q.createdAt
+    }));
+
+    const allAssessments = [...formattedAssignments, ...formattedQuizzes].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    res.json({ assessments: allAssessments });
+  } catch (error) {
+    console.error('Get teacher assessments error:', error);
+    res.status(500).json({ message: 'Failed to fetch assessments' });
+  }
+};
+
+export const getAdminAssessments = async (req: AuthRequest, res: Response) => {
+  try {
+    const assignments = await prisma.assignment.findMany({
+      include: {
+        course: { select: { title: true, _count: { select: { enrollments: true } } } },
+        _count: { select: { submissions: true } }
+      }
+    });
+
+    const quizzes = await prisma.quiz.findMany({
+      include: {
+        course: { select: { title: true, _count: { select: { enrollments: true } } } },
+        _count: { select: { submissions: true } }
+      }
+    });
+
+    const formattedAssignments = assignments.map(a => ({
+      id: a.id,
+      title: a.title,
+      type: 'Assignment',
+      course: a.course.title,
+      submissions: a._count.submissions,
+      total: a.course._count.enrollments,
+      status: a.dueDate > new Date() ? 'Active' : 'Completed',
+      createdAt: a.createdAt
+    }));
+
+    const formattedQuizzes = quizzes.map(q => ({
+      id: q.id,
+      title: q.title,
+      type: 'Quiz',
+      course: q.course.title,
+      submissions: q._count.submissions,
+      total: q.course._count.enrollments,
+      status: 'Active',
+      createdAt: q.createdAt
+    }));
+
+    const allAssessments = [...formattedAssignments, ...formattedQuizzes].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    res.json({ assessments: allAssessments });
+  } catch (error) {
+    console.error('Get admin assessments error:', error);
+    res.status(500).json({ message: 'Failed to fetch all assessments' });
+  }
+};
+
+export const getStudentAssignments = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const student = await prisma.student.findUnique({ where: { userId } });
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+
+    const enrollments = await prisma.enrollment.findMany({ where: { studentId: student.id } });
+    const courseIds = enrollments.map(e => e.courseId);
+
+    const assignments = await prisma.assignment.findMany({
+      where: { courseId: { in: courseIds } },
+      include: {
+        course: { select: { title: true } },
+        submissions: {
+          where: { studentId: student.id },
+          select: { id: true, marks: true }
+        }
+      }
+    });
+
+    const formatted = assignments.map(a => {
+      const submission = a.submissions[0];
+      let currentStatus = 'Pending';
+      if (submission) {
+        currentStatus = submission.marks !== null ? 'GRADED' : 'SUBMITTED';
+      }
+      
+      return {
+        id: a.id,
+        title: a.title,
+        course: a.course.title,
+        dueDate: a.dueDate,
+        status: currentStatus,
+        grade: submission?.marks || null,
+        maxGrade: a.totalMarks,
+        createdAt: a.createdAt
+      };
+    });
+
+    res.json({ assignments: formatted });
+  } catch (error) {
+    console.error('Get student assignments error:', error);
+    res.status(500).json({ message: 'Failed to fetch student assignments' });
   }
 };

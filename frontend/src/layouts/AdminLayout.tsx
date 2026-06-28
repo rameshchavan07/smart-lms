@@ -19,15 +19,15 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard',     href: '/admin',             icon: LayoutDashboard },
-  { label: 'Courses',       href: '/admin/courses',     icon: BookOpen },
-  { label: 'Users',         href: '/admin/users',       icon: Users },
-  { label: 'Enrollments',   href: '/admin/enrollments', icon: GraduationCap },
-  { label: 'Assessments',   href: '#',                  icon: ClipboardList },
-  { label: 'Reports',       href: '#',                  icon: BarChart3 },
-  { label: 'Communication', href: '#',                  icon: MessageSquare },
-  { label: 'Integrations',  href: '#',                  icon: Globe },
-  { label: 'Settings',      href: '#',                  icon: Settings },
+  { label: 'Dashboard',     href: '/admin',               icon: LayoutDashboard },
+  { label: 'Courses',       href: '/admin/courses',       icon: BookOpen },
+  { label: 'Users',         href: '/admin/users',         icon: Users },
+  { label: 'Enrollments',   href: '/admin/enrollments',   icon: GraduationCap },
+  { label: 'Assessments',   href: '/admin/assessments',   icon: ClipboardList },
+  { label: 'Reports',       href: '/admin/reports',       icon: BarChart3 },
+  { label: 'Communication', href: '/admin/communication', icon: MessageSquare },
+  { label: 'Integrations',  href: '/admin/integrations',  icon: Globe },
+  { label: 'Settings',      href: '/admin/settings',      icon: Settings },
 ];
 
 const AdminLayout: React.FC = () => {
@@ -137,8 +137,8 @@ const AdminLayout: React.FC = () => {
         {/* Header */}
         <header className="glass sticky top-0 z-30 flex items-center gap-4 px-4 md:px-6 h-16 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
           <button
-            onClick={() => setIsMobileOpen(true)}
-            className="hidden sm:block lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            onClick={() => setIsMobileOpen(prev => !prev)}
+            className="block lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />

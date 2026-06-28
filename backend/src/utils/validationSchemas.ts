@@ -50,8 +50,8 @@ export const updateCourseSchema = createCourseSchema.partial();
 export const createLectureSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(255),
   description: z.string().optional(),
-  startTime: z.string().datetime(),
-  endTime: z.string().datetime(),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
 });
 
 // ─── Quiz Schemas ─────────────────────────────────────────────────────────────

@@ -10,6 +10,8 @@ import mediaRoutes from './mediaRoutes';
 import quizRoutes from './quizRoutes';
 import discussionRoutes from './discussionRoutes';
 import assignmentRoutes from './assignmentRoutes';
+import communicationRoutes from './communicationRoutes';
+import integrationRoutes from './integrationRoutes';
 
 const router = Router();
 
@@ -25,6 +27,7 @@ router.use('/media', mediaRoutes);
 router.use('/quizzes', quizRoutes);
 router.use('/discussions', discussionRoutes);
 router.use('/assignments', assignmentRoutes);
+router.use('/communications', communicationRoutes);
+router.use('/integrations', integrationRoutes);
 
 export default router;
-
