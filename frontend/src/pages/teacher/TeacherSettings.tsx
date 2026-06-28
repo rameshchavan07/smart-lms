@@ -1,24 +1,49 @@
 import React, { useState } from 'react';
 import { User, Bell, Shield, Save, Upload, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 
 const TeacherSettings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'security'>('profile');
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.profileImage || null);
+  const queryClient = useQueryClient();
 
   const updateProfile = useMutation({
     mutationFn: async () => {
       return api.put('/users/profile', { firstName, lastName });
     },
-    onSuccess: (data) => {
-      // Refresh the page or update auth context to reflect new name
-      window.location.reload(); // Quickest way to reflect user change globally for now
+    onSuccess: () => {
+      refreshUser();
+      alert('Profile updated successfully!');
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     }
   });
+
+  const updateAvatar = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const res = await api.post('/users/profile-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      refreshUser();
+    }
+  });
+
+  const handleSaveProfile = () => {
+    updateProfile.mutate();
+    if (avatarFile) {
+      updateAvatar.mutate(avatarFile);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -63,14 +88,31 @@ const TeacherSettings: React.FC = () => {
               <h2 className="text-[16px] font-bold border-b pb-4" style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>Personal Information</h2>
               
               <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-500 text-[32px] font-bold">
-                  {user?.firstName?.[0] || 'T'}
+                <div className="w-24 h-24 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-500 text-[32px] font-bold overflow-hidden shrink-0 relative group cursor-pointer" onClick={() => document.getElementById('teacher-avatar')?.click()}>
+                  {avatarPreview ? (
+                    <img src={avatarPreview.startsWith('http') || avatarPreview.startsWith('blob:') ? avatarPreview : `http://localhost:5000${avatarPreview}`} className="w-full h-full object-cover" />
+                  ) : (
+                    user?.firstName?.[0] || 'T'
+                  )}
+                  <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-[12px]">Edit</div>
                 </div>
                 <div>
-                  <button className="btn btn-outline btn-sm gap-2 mb-2">
+                  <input 
+                    id="teacher-avatar" 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setAvatarFile(e.target.files[0]);
+                        setAvatarPreview(URL.createObjectURL(e.target.files[0]));
+                      }
+                    }} 
+                  />
+                  <button onClick={() => document.getElementById('teacher-avatar')?.click()} className="btn btn-outline btn-sm gap-2 mb-2">
                     <Upload size={14} /> Upload Avatar
                   </button>
-                  <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>JPG, GIF or PNG. Max size 2MB.</p>
+                  <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>JPG, GIF or PNG. Max size 5MB.</p>
                 </div>
               </div>
 
@@ -94,8 +136,8 @@ const TeacherSettings: React.FC = () => {
               </div>
 
               <div className="flex justify-end pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-                <button onClick={() => updateProfile.mutate()} disabled={updateProfile.isPending} className="btn btn-primary gap-2">
-                  {updateProfile.isPending ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
+                <button onClick={handleSaveProfile} disabled={updateProfile.isPending || updateAvatar.isPending} className="btn btn-primary gap-2">
+                  {(updateProfile.isPending || updateAvatar.isPending) ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
                   Save Changes
                 </button>
               </div>

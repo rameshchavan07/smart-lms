@@ -30,6 +30,7 @@ model User {
   discussionReplies DiscussionReply[]
   sentMessages      Message[]         @relation("SentMessages")
   receivedMessages  Message[]         @relation("ReceivedMessages")
+  chatGroupMembers  ChatGroupMember[]
 
   @@index([email])
 }
@@ -86,6 +87,7 @@ model Course {
   quizzes        Quiz[]
   discussions    Discussion[]
   announcements  Announcement[]
+  chatGroups     ChatGroup[]
 
   @@index([teacherId])
 }
@@ -361,17 +363,50 @@ model DiscussionReply {
 }
 
 model Message {
-  id         String   @id @default(uuid())
+  id         String     @id @default(uuid())
   senderId   String
-  receiverId String
-  content    String   @db.Text
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
-  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId String?
+  groupId    String?
+  content    String     @db.Text
+  fileUrl    String?    @db.VarChar(255)
+  fileType   String?    @db.VarChar(50)
+  fileName   String?    @db.VarChar(255)
+  isRead     Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  sender     User       @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User?      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  group      ChatGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([senderId])
   @@index([receiverId])
+  @@index([groupId])
+}
+
+model ChatGroup {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(255)
+  courseId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  course    Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  members   ChatGroupMember[]
+  messages  Message[]
+
+  @@index([courseId])
+}
+
+model ChatGroupMember {
+  id        String    @id @default(uuid())
+  groupId   String
+  userId    String
+  joinedAt  DateTime  @default(now())
+  
+  group     ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
 }
 
 model Announcement {

@@ -41,6 +41,11 @@ export const initSocket = (server: HttpServer) => {
       console.log(`User ${socket.data.user?.id} joined course_${courseId}`);
     });
 
+    socket.on('join_group', (groupId: string) => {
+      socket.join(`group_${groupId}`);
+      console.log(`User ${socket.data.user?.id} joined group_${groupId}`);
+    });
+
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
     });

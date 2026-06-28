@@ -5,12 +5,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 
 const StudentSettings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const queryClient = useQueryClient();
 
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [bio, setBio] = useState(user?.profile?.bio || '');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.profileImage || null);
 
   const updateProfile = useMutation({
     mutationFn: async () => {
@@ -18,10 +20,31 @@ const StudentSettings: React.FC = () => {
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      refreshUser();
       alert('Profile updated successfully!');
     }
   });
+
+  const updateAvatar = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const res = await api.post('/users/profile-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      refreshUser();
+    }
+  });
+
+  const handleSave = () => {
+    updateProfile.mutate();
+    if (avatarFile) {
+      updateAvatar.mutate(avatarFile);
+    }
+  };
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -49,6 +72,33 @@ const StudentSettings: React.FC = () => {
           <div className="card">
             <h2 className="text-[16px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Personal Information</h2>
             
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center font-bold text-[20px] overflow-hidden shrink-0 relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
+                {avatarPreview ? (
+                  <img src={avatarPreview.startsWith('http') || avatarPreview.startsWith('blob:') ? avatarPreview : `http://localhost:5000${avatarPreview}`} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  user?.firstName?.[0] || 'U'
+                )}
+                <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-[10px]">Edit</div>
+              </div>
+              <input 
+                id="avatar-upload" 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    setAvatarFile(e.target.files[0]);
+                    setAvatarPreview(URL.createObjectURL(e.target.files[0]));
+                  }
+                }} 
+              />
+              <div>
+                <h3 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>Profile Picture</h3>
+                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>JPG, PNG or WebP, max 5MB.</p>
+              </div>
+            </div>
+
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -75,11 +125,11 @@ const StudentSettings: React.FC = () => {
 
             <div className="flex justify-end mt-6">
               <button 
-                onClick={() => updateProfile.mutate()}
-                disabled={updateProfile.isPending}
+                onClick={handleSave}
+                disabled={updateProfile.isPending || updateAvatar.isPending}
                 className="btn btn-primary gap-2"
               >
-                {updateProfile.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save size={16} />}
+                {(updateProfile.isPending || updateAvatar.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save size={16} />}
                 Save Changes
               </button>
             </div>

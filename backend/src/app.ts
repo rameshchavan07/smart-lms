@@ -26,6 +26,9 @@ app.use(cors({
 }));
 app.use(morgan('dev'));
 
+// Serve static uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 // Rate Limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

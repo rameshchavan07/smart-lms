@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 
@@ -9,20 +10,17 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType>({ socket: null, connected: false });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
-  const { token, user } = useAuth();
+  const { user } = useAuth();
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     if (!token || !user) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-        setConnected(false);
-      }
       return;
     }
 
@@ -41,10 +39,14 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setConnected(false);
     });
 
-    setSocket(socketInstance);
+    Promise.resolve().then(() => {
+      setSocket(socketInstance);
+    });
 
     return () => {
       socketInstance.disconnect();
+      setSocket(null);
+      setConnected(false);
     };
   }, [token, user]);
 

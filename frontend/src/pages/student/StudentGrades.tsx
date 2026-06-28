@@ -3,6 +3,15 @@ import { Award, Target, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 
+interface Assignment {
+  id: string;
+  title: string;
+  course: string;
+  status: string;
+  grade: number;
+  maxGrade: number;
+}
+
 const StudentGrades: React.FC = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['studentStats'],
@@ -20,7 +29,7 @@ const StudentGrades: React.FC = () => {
     }
   });
 
-  const gradedAssignments = assignments.filter((a: any) => a.status === 'GRADED');
+  const gradedAssignments = assignments.filter((a: Assignment) => a.status === 'GRADED');
 
   return (
     <div className="space-y-6">
@@ -70,7 +79,7 @@ const StudentGrades: React.FC = () => {
           ) : gradedAssignments.length === 0 ? (
             <div className="py-8 text-center text-[13px] text-gray-500">No graded assignments yet.</div>
           ) : (
-            gradedAssignments.map((a: any) => (
+            gradedAssignments.map((a: Assignment) => (
               <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-transparent hover:border-brand-500/30 transition-colors">
                 <div>
                   <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{a.title}</p>

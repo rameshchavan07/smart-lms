@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { getAnnouncements, createAnnouncement, getMessages, sendMessage } from '../controllers/communicationController';
+import { getAnnouncements, createAnnouncement, getMessages, sendMessage, getContacts, createGroupChat } from '../controllers/communicationController';
 import { protect, authorize } from '../middleware/auth';
+import { upload } from '../middleware/upload';
 
 const router = Router();
 
@@ -11,7 +12,11 @@ router.get('/announcements', getAnnouncements);
 router.post('/announcements', authorize('TEACHER'), createAnnouncement);
 
 // Messages
-router.get('/messages', getMessages);
-router.post('/messages', sendMessage);
+router.get('/contacts', getContacts);
+router.get('/messages/:id', getMessages);
+router.post('/messages', upload.single('file'), sendMessage);
+
+// Groups
+router.post('/groups', createGroupChat);
 
 export default router;

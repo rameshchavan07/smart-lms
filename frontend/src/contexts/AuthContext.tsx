@@ -8,6 +8,8 @@ interface User {
   lastName: string;
   email: string;
   role: 'ADMIN' | 'TEACHER' | 'STUDENT';
+  profileImage?: string;
+  profile?: { bio?: string };
 }
 
 export interface LoginData {
@@ -18,6 +20,8 @@ export interface LoginData {
   firstName?: string;
   lastName?: string;
   email?: string;
+  profileImage?: string;
+  profile?: { bio?: string };
 }
 
 interface AuthContextType {
@@ -27,38 +31,61 @@ interface AuthContextType {
   login: (data: LoginData) => Promise<void>;
   register: (data: LoginData) => void;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('token'));
   const navigate = useNavigate();
 
+  const checkAuth = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const { data } = await api.get('/auth/me');
+        setUser(data);
+      } catch (error) {
+        console.error('Auth verification failed', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const { data } = await api.get('/auth/me');
+    const token = localStorage.getItem('token');
+    if (token) {
+      api.get('/auth/me')
+        .then(({ data }) => {
           setUser(data);
-        } catch (error) {
+        })
+        .catch((error) => {
           console.error('Auth verification failed', error);
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
-        }
-      }
-      setIsLoading(false);
-    };
-    checkAuth();
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
   }, []);
+
+  const refreshUser = useCallback(async () => {
+    await checkAuth();
+  }, [checkAuth]);
 
   const login = useCallback(async (data: LoginData) => {
     localStorage.setItem('token', data.token);
     localStorage.setItem('refreshToken', data.refreshToken);
     
-    let userData = { ...data };
+    let userData: LoginData = { ...data };
     
     // If user details (like firstName, email) are missing (e.g. Google OAuth redirect callback),
     // fetch full user data from /auth/me before redirecting
@@ -77,6 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastName: userData.lastName || '',
       email: userData.email || '',
       role: userData.role,
+      profileImage: userData.profileImage,
+      profile: userData.profile,
     });
     
     if (userData.role === 'ADMIN') {
@@ -110,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [navigate]);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
