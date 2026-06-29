@@ -54,6 +54,7 @@ const CourseManagement: React.FC = () => {
       fetchCourses();
     }, 500);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
 
   const confirmDelete = (id: string) => {

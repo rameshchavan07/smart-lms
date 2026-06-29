@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Megaphone, MessageSquare, Loader2 } from 'lucide-react';
+import { Megaphone, Loader2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 
 const AdminCommunication: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'announcements'>('announcements');
+  // Removed activeTab state
   const [announcementTitle, setAnnouncementTitle] = useState('');
   const [announcementContent, setAnnouncementContent] = useState('');
   const queryClient = useQueryClient();
@@ -56,7 +56,7 @@ const AdminCommunication: React.FC = () => {
                 <div className="p-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-brand-500" /></div>
               ) : announcements.length === 0 ? (
                 <div className="p-8 text-center text-[12px] text-gray-500">No announcements posted.</div>
-              ) : announcements.map((a: any) => (
+              ) : announcements.map((a: { id: string; title: string; createdAt: string; content?: string }) => (
                 <div key={a.id} className="p-4 border-b text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: 'var(--border)' }}>
                   <div className="flex items-start justify-between mb-1">
                     <span className="text-[13px] font-bold truncate pr-2" style={{ color: 'var(--text-primary)' }}>{a.title}</span>

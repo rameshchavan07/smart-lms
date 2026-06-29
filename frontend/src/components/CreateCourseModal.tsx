@@ -31,7 +31,7 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
       const fetchTeachers = async () => {
         try {
           const { data } = await api.get('/users?role=TEACHER&limit=100');
-          setTeachers(data.users.filter((u: any) => u.teacher)); // Only keep users that have the teacher profile
+          setTeachers(data.users.filter((u: { teacher: unknown }) => u.teacher)); // Only keep users that have the teacher profile
         } catch (error) {
           console.error('Failed to fetch teachers', error);
         }
@@ -58,8 +58,10 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
         teacherId: formData.teacherId || null,
       });
       onSuccess();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create course');
+    } catch (err: unknown) {
+      const error = err as Error | { response?: { data?: { message?: string } } };
+      const msg = ('response' in error ? error.response?.data?.message : (error as Error).message) || 'Failed to create course';
+      setError(msg);
     } finally {
       setLoading(false);
     }

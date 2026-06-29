@@ -23,8 +23,8 @@ interface Reply {
 }
 
 export const DiscussionsTab: React.FC<{ courseId: string }> = ({ courseId }) => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+  // Removed user
+  // Removed queryClient
   const [showCreate, setShowCreate] = useState(false);
   const [activeThread, setActiveThread] = useState<string | null>(null);
 

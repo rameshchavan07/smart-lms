@@ -1,0 +1,649 @@
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Play, Square, Pause, RotateCcw, UploadCloud, Download,
+  ArrowLeft, Settings, Video, VideoOff, Mic, MicOff,
+  X, Check, Loader2, ChevronDown, ChevronUp, Monitor
+} from 'lucide-react';
+import { useScreenRecorder, type RecordingQuality } from '../../hooks/useScreenRecorder';
+import api from '../../services/api';
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+const formatTime = (s: number) => {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return h > 0 ? `${h}:${m}:${sec}` : `${m}:${sec}`;
+};
+
+// ─── Audio Level Bar ───────────────────────────────────────────────────────
+const AudioMeter: React.FC<{ level: number; active: boolean }> = ({ level, active }) => {
+  const bars = Array.from({ length: 20 }, (_, i) => i);
+  return (
+    <div className="flex items-end gap-[2px] h-8">
+      {bars.map(i => {
+        const threshold = (i / 20) * 100;
+        const lit = active && level > threshold;
+        const color = i < 10 ? '#10b981' : i < 15 ? '#f59e0b' : '#ef4444';
+        return (
+          <div
+            key={i}
+            className="w-2 rounded-sm transition-all duration-75"
+            style={{
+              height: `${Math.max(4, (i + 1) * 1.5)}px`,
+              background: lit ? color : 'rgba(255,255,255,0.08)',
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── Countdown Overlay ─────────────────────────────────────────────────────
+const CountdownOverlay: React.FC<{ count: number }> = ({ count }) => (
+  <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm rounded-2xl">
+    <div
+      key={count}
+      className="text-[100px] font-black text-white leading-none"
+      style={{ animation: 'countdown-pop 0.9s ease-out forwards' }}
+    >
+      {count}
+    </div>
+    <p className="text-white/60 text-base font-semibold tracking-widest uppercase mt-4">
+      Recording starts…
+    </p>
+    <style>{`
+      @keyframes countdown-pop {
+        0%   { transform: scale(1.8); opacity: 0; }
+        20%  { transform: scale(1);   opacity: 1; }
+        80%  { transform: scale(1);   opacity: 1; }
+        100% { transform: scale(0.5); opacity: 0; }
+      }
+    `}</style>
+  </div>
+);
+
+// ─── Preview Panel ─────────────────────────────────────────────────────────
+interface PreviewPanelProps {
+  blob: Blob;
+  duration: number;
+  lectureId?: string;
+  onDiscard: () => void;
+  onUploaded: () => void;
+}
+
+const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, onDiscard, onUploaded }) => {
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const videoUrl = URL.createObjectURL(blob);
+
+  const handleDownload = () => {
+    const a = document.createElement('a');
+    a.href = videoUrl;
+    a.download = `lecture-recording-${Date.now()}.webm`;
+    a.click();
+  };
+
+  const handleUpload = async () => {
+    if (!lectureId) { setUploadError('No lecture selected for upload.'); return; }
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadError(null);
+    abortRef.current = new AbortController();
+
+    const formData = new FormData();
+    formData.append('recording', new File([blob], `recording-${lectureId}.webm`, { type: 'video/webm' }));
+    formData.append('duration', duration.toString());
+
+    try {
+      await api.put(`/lectures/${lectureId}/recording`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        signal: abortRef.current.signal,
+        onUploadProgress: (e) => {
+          if (e.total) setUploadProgress(Math.round((e.loaded * 100) / e.total));
+        },
+      });
+      setUploadSuccess(true);
+      setTimeout(() => onUploaded(), 2000);
+    } catch (err: unknown) {
+      if ((err as Error).name !== 'CanceledError') {
+        const errorResponse = err as { response?: { data?: { message?: string } }, message?: string };
+        const msg = errorResponse?.response?.data?.message || errorResponse.message || 'Upload failed. Please try again.';
+        setUploadError(msg);
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-white font-bold text-xl">Preview Recording</h3>
+          <p className="text-white/40 text-sm mt-0.5">
+            Duration: {formatTime(duration)} · {(blob.size / (1024 * 1024)).toFixed(1)} MB · WebM
+          </p>
+        </div>
+        <button
+          onClick={onDiscard}
+          className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="rounded-2xl overflow-hidden bg-black flex-1 min-h-0 flex items-center justify-center">
+        <video
+          src={videoUrl}
+          controls
+          className="w-full h-full max-h-[340px] outline-none"
+        />
+      </div>
+
+      {/* Upload progress */}
+      {isUploading && (
+        <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10">
+          <div className="flex items-center justify-between text-sm text-white/60 mb-2">
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Uploading to Google Drive…
+            </span>
+            <span className="font-mono">{uploadProgress}%</span>
+          </div>
+          <div className="w-full bg-white/10 rounded-full h-2">
+            <div
+              className="h-2 rounded-full transition-all duration-300"
+              style={{
+                width: `${uploadProgress}%`,
+                background: 'linear-gradient(90deg, #4361f0, #8b5cf6)',
+              }}
+            />
+          </div>
+          <button
+            onClick={() => { abortRef.current?.abort(); setIsUploading(false); }}
+            className="mt-2 text-xs text-red-400 hover:text-red-300 transition"
+          >
+            Cancel upload
+          </button>
+        </div>
+      )}
+
+      {uploadSuccess && (
+        <div className="mt-4 flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <Check className="w-5 h-5 flex-shrink-0" />
+          <span className="font-medium">Uploaded successfully to Google Drive!</span>
+        </div>
+      )}
+
+      {uploadError && (
+        <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          {uploadError}
+        </div>
+      )}
+
+      <div className="flex gap-3 mt-4">
+        <button
+          onClick={onDiscard}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white hover:bg-white/10 transition"
+        >
+          <X className="w-4 h-4" /> Discard
+        </button>
+        <button
+          onClick={handleDownload}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/15 text-white transition"
+        >
+          <Download className="w-4 h-4" /> Download
+        </button>
+        <div className="flex-1" />
+        {!uploadSuccess && !isUploading && (
+          <button
+            onClick={handleUpload}
+            disabled={!lectureId}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: 'linear-gradient(135deg, #4361f0, #8b5cf6)' }}
+          >
+            <UploadCloud className="w-4 h-4" /> Upload to Cloud
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Page ─────────────────────────────────────────────────────────────
+const RecordingStudioPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [quality, setQuality] = useState<RecordingQuality>('720p');
+  const [enableWebcam, setEnableWebcam] = useState(false);
+  const [selectedLectureId, setSelectedLectureId] = useState('');
+  // Derived from recorder state — no setState-in-effect needed
+  const [settingsOpen, setSettingsOpen] = useState(true);
+  const webcamVideoRef = useRef<HTMLVideoElement>(null);
+
+  const {
+    status,
+    error,
+    duration,
+    countdown,
+    audioLevel,
+    webcamStream,
+    previewBlob,
+    pausedSegments,
+    startRecording,
+    pauseRecording,
+    resumeRecording,
+    stopRecording,
+    resetRecorder,
+  } = useScreenRecorder({ quality, enableWebcam });
+
+  useEffect(() => {
+    if (webcamVideoRef.current && webcamStream) {
+      webcamVideoRef.current.srcObject = webcamStream;
+    }
+  }, [webcamStream]);
+
+  // Derive showPreview directly from recorder state
+  const showPreview = status === 'stopped' && !!previewBlob;
+
+  const handleStop = useCallback(async () => { await stopRecording(); }, [stopRecording]);
+
+  const handleDiscard = async () => {
+    await resetRecorder();
+  };
+
+  const isActive = status === 'recording' || status === 'paused';
+  const isIdle = status === 'idle' || status === 'error' || status === 'stopped';
+
+  const statusMeta = {
+    idle:      { label: 'Ready', dot: '#94a3b8', pulse: false },
+    countdown: { label: 'Starting…', dot: '#f59e0b', pulse: true },
+    recording: { label: 'Recording', dot: '#ef4444', pulse: true },
+    paused:    { label: 'Paused', dot: '#f59e0b', pulse: false },
+    stopped:   { label: 'Stopped', dot: '#94a3b8', pulse: false },
+    error:     { label: 'Error', dot: '#ef4444', pulse: false },
+  }[status];
+
+  return (
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        background: 'linear-gradient(135deg, #0a0f1e 0%, #0f1729 50%, #0a0f1e 100%)',
+      }}
+    >
+      {/* ── Header ── */}
+      <header
+        className="flex items-center justify-between px-6 py-4 shrink-0"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-xl hover:bg-white/10 text-white/60 hover:text-white transition"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-white font-bold text-xl tracking-tight flex items-center gap-2">
+              🎬 Recording Studio
+            </h1>
+            <p className="text-white/40 text-xs">Standalone lecture recorder</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Status badge */}
+          <div
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: statusMeta.dot,
+            }}
+          >
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{
+                background: statusMeta.dot,
+                animation: statusMeta.pulse ? 'pulse 1.5s infinite' : 'none',
+              }}
+            />
+            {statusMeta.label}
+          </div>
+
+          {/* Timer */}
+          <div
+            className="font-mono text-2xl font-bold tabular-nums"
+            style={{ color: isActive ? 'white' : 'rgba(255,255,255,0.3)' }}
+          >
+            {formatTime(duration)}
+          </div>
+        </div>
+      </header>
+
+      {/* ── Body ── */}
+      <div className="flex flex-1 overflow-hidden gap-0">
+
+        {/* Left: Preview / Recording area */}
+        <div className="flex-1 flex flex-col p-6 relative">
+
+          {/* Countdown overlay */}
+          {status === 'countdown' && countdown !== null && (
+            <CountdownOverlay count={countdown} />
+          )}
+
+          {/* Main preview box */}
+          <div
+            className="flex-1 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden"
+            style={{
+              background: 'rgba(0,0,0,0.4)',
+              border: status === 'recording'
+                ? '2px solid rgba(239,68,68,0.5)'
+                : '1px solid rgba(255,255,255,0.06)',
+              boxShadow: status === 'recording' ? '0 0 40px rgba(239,68,68,0.1)' : 'none',
+              transition: 'all 0.3s ease',
+              minHeight: '300px',
+            }}
+          >
+            {showPreview && previewBlob ? (
+              <div className="w-full h-full p-6 flex flex-col">
+                <PreviewPanel
+                  blob={previewBlob}
+                  duration={duration}
+                  lectureId={selectedLectureId || undefined}
+                  onDiscard={handleDiscard}
+                  onUploaded={() => { resetRecorder(); }}
+                />
+              </div>
+            ) : (
+              <>
+                {/* Webcam PiP */}
+                {webcamStream && (
+                  <div className="absolute top-4 right-4 w-40 h-28 rounded-xl overflow-hidden border-2 border-white/20 shadow-2xl">
+                    <video
+                      ref={webcamVideoRef}
+                      autoPlay muted playsInline
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  </div>
+                )}
+
+                {/* Idle state */}
+                {isIdle && !showPreview && (
+                  <div className="flex flex-col items-center gap-4 text-center">
+                    <div
+                      className="w-20 h-20 rounded-2xl flex items-center justify-center mb-2"
+                      style={{ background: 'rgba(67,97,240,0.15)', border: '1px solid rgba(67,97,240,0.3)' }}
+                    >
+                      <Monitor className="w-10 h-10 text-brand-400" style={{ color: '#6183fb' }} />
+                    </div>
+                    <p className="text-white/40 text-sm max-w-xs">
+                      Press <strong className="text-white/60">Start Recording</strong> to begin capturing your screen.
+                      You'll be prompted to select a window or screen.
+                    </p>
+                    {error && (
+                      <div className="mt-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm max-w-sm">
+                        {error}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Recording indicator */}
+                {status === 'recording' && (
+                  <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold text-red-400"
+                    style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                    REC · {formatTime(duration)}
+                  </div>
+                )}
+
+                {/* Paused indicator */}
+                {status === 'paused' && (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                      style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                      <Pause className="w-8 h-8 text-amber-400" />
+                    </div>
+                    <p className="text-amber-400/80 text-sm font-semibold">Recording Paused</p>
+                    <p className="text-white/30 text-xs">{formatTime(duration)} recorded so far</p>
+                  </div>
+                )}
+
+                {/* Pause timeline bar */}
+                {isActive && (
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: '100%',
+                          background: status === 'recording'
+                            ? 'linear-gradient(90deg, #4361f0, #8b5cf6)'
+                            : '#f59e0b',
+                        }}
+                      />
+                      {pausedSegments.map((seg, i) => (
+                        <div
+                          key={i}
+                          className="absolute top-0 h-full"
+                          style={{
+                            left: `${(seg.pausedAt / Math.max(duration, 1)) * 100}%`,
+                            width: `${((seg.resumedAt - seg.pausedAt) / Math.max(duration, 1)) * 100}%`,
+                            background: 'rgba(10,15,30,0.8)',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex justify-between text-[10px] text-white/20 mt-1">
+                      <span>0:00</span>
+                      <span>{pausedSegments.length} pause{pausedSegments.length !== 1 ? 's' : ''}</span>
+                      <span>{formatTime(duration)}</span>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Control buttons */}
+          {!showPreview && (
+            <div className="flex items-center justify-center gap-4 mt-6">
+              {isIdle && (
+                <button
+                  onClick={startRecording}
+                  className="flex items-center gap-3 px-8 py-3.5 rounded-2xl text-base font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #4361f0, #6183fb)',
+                    boxShadow: '0 8px 24px rgba(67,97,240,0.4)',
+                  }}
+                >
+                  <Play className="w-5 h-5" /> Start Recording
+                </button>
+              )}
+
+              {status === 'countdown' && (
+                <div className="flex items-center gap-3 px-8 py-3.5 rounded-2xl text-base font-bold text-amber-400"
+                  style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                  <Loader2 className="w-5 h-5 animate-spin" /> Preparing…
+                </div>
+              )}
+
+              {status === 'recording' && (
+                <>
+                  <button
+                    onClick={pauseRecording}
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', boxShadow: '0 6px 20px rgba(245,158,11,0.3)' }}
+                  >
+                    <Pause className="w-5 h-5" /> Pause
+                  </button>
+                  <button
+                    onClick={handleStop}
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #ef4444, #f87171)', boxShadow: '0 6px 20px rgba(239,68,68,0.3)' }}
+                  >
+                    <Square className="w-5 h-5" /> Stop & Preview
+                  </button>
+                </>
+              )}
+
+              {status === 'paused' && (
+                <>
+                  <button
+                    onClick={resumeRecording}
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #10b981, #34d399)', boxShadow: '0 6px 20px rgba(16,185,129,0.3)' }}
+                  >
+                    <RotateCcw className="w-5 h-5" /> Resume
+                  </button>
+                  <button
+                    onClick={handleStop}
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #ef4444, #f87171)', boxShadow: '0 6px 20px rgba(239,68,68,0.3)' }}
+                  >
+                    <Square className="w-5 h-5" /> Stop & Preview
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Settings Panel */}
+        <div
+          className="w-72 shrink-0 flex flex-col"
+          style={{
+            borderLeft: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(255,255,255,0.02)',
+          }}
+        >
+          {/* Settings header */}
+          <button
+            onClick={() => setSettingsOpen(o => !o)}
+            className="flex items-center justify-between px-5 py-4 hover:bg-white/5 transition"
+            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="flex items-center gap-2 text-white/70">
+              <Settings className="w-4 h-4" />
+              <span className="text-sm font-semibold">Recording Settings</span>
+            </div>
+            {settingsOpen ? <ChevronUp className="w-4 h-4 text-white/30" /> : <ChevronDown className="w-4 h-4 text-white/30" />}
+          </button>
+
+          {settingsOpen && (
+            <div className="flex flex-col gap-5 px-5 py-5">
+
+              {/* Lecture ID (optional link) */}
+              <div>
+                <label className="text-white/40 text-[11px] uppercase tracking-wider block mb-2">
+                  Lecture ID (for cloud upload)
+                </label>
+                <input
+                  value={selectedLectureId}
+                  onChange={e => setSelectedLectureId(e.target.value)}
+                  placeholder="Paste lecture ID…"
+                  className="w-full px-3 py-2 rounded-xl text-sm text-white/80 outline-none"
+                  style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}
+                  disabled={isActive || status === 'countdown'}
+                />
+              </div>
+
+              {/* Quality */}
+              <div>
+                <label className="text-white/40 text-[11px] uppercase tracking-wider block mb-2">
+                  Video Quality
+                </label>
+                <div className="flex gap-2">
+                  {(['720p', '1080p', '4K'] as RecordingQuality[]).map(q => (
+                    <button
+                      key={q}
+                      onClick={() => setQuality(q)}
+                      disabled={isActive || status === 'countdown'}
+                      className="flex-1 py-2 rounded-xl text-sm font-bold transition disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: quality === q ? 'rgba(67,97,240,0.3)' : 'rgba(255,255,255,0.06)',
+                        color: quality === q ? '#93affd' : 'rgba(255,255,255,0.4)',
+                        border: quality === q ? '1px solid rgba(67,97,240,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                      }}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Webcam */}
+              <div>
+                <label className="text-white/40 text-[11px] uppercase tracking-wider block mb-2">
+                  Webcam Overlay (PiP)
+                </label>
+                <button
+                  onClick={() => setEnableWebcam(w => !w)}
+                  disabled={isActive || status === 'countdown'}
+                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: enableWebcam ? 'rgba(67,97,240,0.2)' : 'rgba(255,255,255,0.06)',
+                    border: enableWebcam ? '1px solid rgba(67,97,240,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <span className="flex items-center gap-2 text-sm font-medium text-white/70">
+                    {enableWebcam ? <Video className="w-4 h-4 text-brand-400" style={{ color: '#6183fb' }} /> : <VideoOff className="w-4 h-4" />}
+                    {enableWebcam ? 'Enabled' : 'Disabled'}
+                  </span>
+                  <div
+                    className="w-9 h-5 rounded-full relative transition-all"
+                    style={{ background: enableWebcam ? '#4361f0' : 'rgba(255,255,255,0.1)' }}
+                  >
+                    <div
+                      className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all"
+                      style={{ left: enableWebcam ? '18px' : '2px' }}
+                    />
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Audio Meter */}
+          <div className="px-5 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 text-white/40 text-[11px] uppercase tracking-wider">
+                {status === 'recording' ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
+                Audio Level
+              </div>
+              <span className="text-white/40 text-[11px] font-mono">{audioLevel}%</span>
+            </div>
+            <AudioMeter level={audioLevel} active={status === 'recording'} />
+          </div>
+
+          {/* Info Panel */}
+          <div className="mt-auto px-5 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="space-y-2 text-xs">
+              {[
+                { label: 'Quality', value: quality },
+                { label: 'Webcam', value: enableWebcam ? 'On' : 'Off' },
+                { label: 'Duration', value: formatTime(duration) },
+                { label: 'Pauses', value: `${pausedSegments.length}` },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex justify-between">
+                  <span className="text-white/30">{label}</span>
+                  <span className="text-white/60 font-medium">{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RecordingStudioPage;

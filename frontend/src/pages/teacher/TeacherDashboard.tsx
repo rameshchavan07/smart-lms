@@ -6,7 +6,7 @@ import api from '../../services/api';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import {
   BookOpen, Users, ClipboardList, TrendingUp,
-  Video, Calendar, GraduationCap
+  Video, Calendar, GraduationCap, Clapperboard
 } from 'lucide-react';
 import { StatCard, ErrorState } from '../../components';
 import { StatCardSkeleton } from '../../components/Skeleton';
@@ -107,14 +107,8 @@ const TeacherDashboard: React.FC = () => {
   const assignments = recentAssignments ?? [];
   const courseProgress = courseProgressData ?? [];
 
-  const dateLabel = (() => {
-    const now = new Date();
-    const mon = new Date(now);
-    mon.setDate(now.getDate() - now.getDay() + 1);
-    const sun = new Date(mon);
-    sun.setDate(mon.getDate() + 6);
-    return `${mon.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${sun.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-  })();
+
+
 
   if (metricsError) {
     return <ErrorState message="Failed to load teacher dashboard" onRetry={refetch} />;
@@ -136,11 +130,40 @@ const TeacherDashboard: React.FC = () => {
           <Link to="/teacher/courses" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700">
             <Calendar size={14} /> Schedule Class
           </Link>
+          <Link to="/teacher/recorder" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700">
+            <Clapperboard size={14} /> Recording Studio
+          </Link>
           <Link to="/teacher/courses" className="btn btn-primary btn-sm gap-2 text-sm shadow-sm">
             <BookOpen size={14} /> My Courses
           </Link>
         </div>
       </div>
+
+      {/* ── Recording Studio Banner ── */}
+      <Link
+        to="/teacher/recorder"
+        className="flex items-center gap-4 p-4 rounded-2xl border transition-all hover:scale-[1.01] cursor-pointer group"
+        style={{
+          background: 'linear-gradient(135deg, rgba(67,97,240,0.08), rgba(139,92,246,0.08))',
+          border: '1px solid rgba(67,97,240,0.2)',
+        }}
+      >
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition group-hover:scale-110"
+          style={{ background: 'linear-gradient(135deg, #4361f0, #8b5cf6)' }}
+        >
+          <Clapperboard className="w-6 h-6 text-white" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-bold text-[15px]" style={{ color: 'var(--text-primary)' }}>🎬 Open Recording Studio</h3>
+          <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            Record lectures with webcam PiP, audio meter, quality selector &amp; auto-save
+          </p>
+        </div>
+        <div className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(67,97,240,0.15)', color: '#6183fb' }}>
+          New ✨
+        </div>
+      </Link>
 
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

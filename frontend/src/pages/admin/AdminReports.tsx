@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Users, BookOpen, GraduationCap, Loader2 } from 'lucide-react';
+import { Users, BookOpen, GraduationCap, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar, Tooltip } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';

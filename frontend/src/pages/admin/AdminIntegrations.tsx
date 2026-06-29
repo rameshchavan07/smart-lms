@@ -60,7 +60,7 @@ const AdminIntegrations: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {integrations.map((integration: any) => (
+          {integrations.map((integration: { id: string; provider: string; isActive: boolean; name?: string; description?: string }) => (
             <div key={integration.id} className="card flex flex-col">
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center">

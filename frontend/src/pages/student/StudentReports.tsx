@@ -1,6 +1,6 @@
 import React from 'react';
 import { Target, Loader2 } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 
@@ -21,10 +21,10 @@ const StudentReports: React.FC = () => {
     }
   });
 
-  const gradedAssignments = assignments.filter((a: any) => a.status === 'GRADED');
+  const gradedAssignments = assignments.filter((a: { status: string, title: string, grade: number, maxGrade: number }) => a.status === 'GRADED');
   
   // Prepare data for bar chart
-  const barChartData = gradedAssignments.map((a: any) => ({
+  const barChartData = gradedAssignments.map((a: { status: string, title: string, grade: number, maxGrade: number }) => ({
     name: a.title,
     score: Math.round((a.grade / a.maxGrade) * 100)
   }));

@@ -68,7 +68,7 @@ const QuizView: React.FC = () => {
           setSubmissions(subRes.data.submissions);
         }
       } catch (err: unknown) {
-        const error = err as any;
+        const error = err as { response?: { status?: number, data?: { message?: string } } };
         if (error.response?.status === 400 && error.response?.data?.message?.includes('already submitted')) {
           // If student already submitted, maybe just show that
           toast.error('You have already submitted this quiz.');
@@ -114,7 +114,7 @@ const QuizView: React.FC = () => {
       toast.success('Quiz submitted successfully!');
       setResult({ score: data.score, totalMarks: data.totalMarks });
     } catch (err: unknown) {
-      const error = err as any;
+      const error = err as { response?: { data?: { message?: string } } };
       toast.error(error.response?.data?.message || 'Failed to submit quiz.');
     } finally {
       setSubmitting(false);

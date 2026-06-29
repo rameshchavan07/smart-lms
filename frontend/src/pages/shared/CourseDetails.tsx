@@ -49,6 +49,7 @@ interface LectureData {
   endTime: string;
   meetingUrl: string;
   thumbnailUrl?: string;
+  recordingUrl?: string;
 }
 
 interface MaterialData {
@@ -592,10 +593,12 @@ const CourseDetails: React.FC = () => {
                       )}
                       <button 
                         onClick={() => navigate(`/live/${lecture.id}`)}
-                        disabled={isEnded && !lecture.thumbnailUrl} // We can disable it if ended and no recording is present, but actually we will just let them navigate to see "Ended" screen or recording
+                        disabled={isEnded && !lecture.recordingUrl}
                         className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg transition font-semibold text-sm shadow-sm ${
                           isEnded
-                            ? 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                            ? lecture.recordingUrl
+                              ? 'bg-blue-600 text-white hover:bg-blue-700'
+                              : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                             : isLive
                             ? 'bg-green-600 text-white hover:bg-green-700'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -604,7 +607,7 @@ const CourseDetails: React.FC = () => {
                         {isEnded ? (
                           <>
                             <Video className="w-4 h-4" />
-                            View Class
+                            {lecture.recordingUrl ? 'Watch Recording' : 'Ended'}
                           </>
                         ) : (
                           <>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { BarChart3, Download, TrendingUp, Users, BookOpen, Loader2 } from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, MoreVertical, GraduationCap, Mail, Ban, Loader2 } from 'lucide-react';
+import { Search, Filter, GraduationCap, Mail, Ban, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 
@@ -15,9 +15,9 @@ const TeacherEnrollments: React.FC = () => {
     }
   });
 
-  const courses = ['All Courses', ...Array.from(new Set(enrollments.map((e: any) => e.course?.title)))];
+  const courses = ['All Courses', ...Array.from(new Set(enrollments.map((e: { course?: { title?: string } }) => e.course?.title)))];
 
-  const filteredEnrollments = enrollments.filter((e: any) => {
+  const filteredEnrollments = enrollments.filter((e: { student?: { user?: { firstName?: string, lastName?: string, email?: string } }, course?: { title?: string } }) => {
     const studentName = `${e.student?.user?.firstName} ${e.student?.user?.lastName}`.toLowerCase();
     const email = e.student?.user?.email?.toLowerCase() || '';
     const courseName = e.course?.title || '';
@@ -60,7 +60,7 @@ const TeacherEnrollments: React.FC = () => {
             value={filterCourse}
             onChange={(e) => setFilterCourse(e.target.value)}
           >
-            {courses.map(c => <option key={c} value={c}>{c}</option>)}
+            {courses.map((c: string | undefined) => c && <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>
@@ -85,7 +85,7 @@ const TeacherEnrollments: React.FC = () => {
                     <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: 'var(--brand-500)' }} />
                   </td>
                 </tr>
-              ) : filteredEnrollments.map((e: any, idx: number) => (
+              ) : filteredEnrollments.map((e: { id: string, student?: { user?: { firstName?: string, lastName?: string, email?: string } }, course?: { title?: string }, status: string, progress: number, grade?: number }, idx: number) => (
                 <tr key={e.id} className="group transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ borderBottom: idx !== filteredEnrollments.length - 1 ? '1px solid var(--border)' : 'none' }}>
                   <td className="py-3.5 px-5">
                     <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{e.student?.user?.firstName} {e.student?.user?.lastName}</p>

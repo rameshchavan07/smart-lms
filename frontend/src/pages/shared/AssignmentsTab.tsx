@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { EmptyState, Button, Card } from '../../components';
-import { FileText, Plus, CheckCircle2, Download, MessageSquare } from 'lucide-react';
+import { FileText, Plus, CheckCircle2, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Assignment {
@@ -28,7 +28,7 @@ interface AssignmentSubmission {
 export const AssignmentsTab: React.FC<{ courseId: string }> = ({ courseId }) => {
   const { user } = useAuth();
   const isTeacher = user?.role === 'TEACHER' || user?.role === 'ADMIN';
-  const queryClient = useQueryClient();
+  // Removed queryClient
 
   const [showCreate, setShowCreate] = useState(false);
   const [viewingAssignment, setViewingAssignment] = useState<string | null>(null);
@@ -164,7 +164,7 @@ const StudentSubmission = ({ assignmentId }: { assignmentId: string }) => {
     queryFn: () => api.get('/assignments/my-submissions').then(r => r.data.submissions as AssignmentSubmission[])
   });
 
-  const submission = mySubmissions?.find(s => s.id === assignmentId || (s as any).assignmentId === assignmentId);
+  const submission = mySubmissions?.find(s => s.id === assignmentId || (s as { assignmentId?: string }).assignmentId === assignmentId);
 
   const mutation = useMutation({
     mutationFn: () => api.post(`/assignments/${assignmentId}/submit`, { fileUrl }),

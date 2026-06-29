@@ -1,5 +1,5 @@
 import React from 'react';
-import { ClipboardList, Plus, FileText, CheckCircle, Clock, Loader2 } from 'lucide-react';
+import { Plus, FileText, CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
@@ -88,7 +88,7 @@ const TeacherAssessments: React.FC = () => {
                     No assessments found.
                   </td>
                 </tr>
-              ) : assessments.map((a: any, idx: number) => {
+              ) : assessments.map((a: { id: string; title: string; course: string; dueDate: string; submissions: number; total: number }, idx: number) => {
                 const pct = a.total > 0 ? Math.round((a.submissions / a.total) * 100) : 0;
                 return (
                   <tr key={a.id} className="group transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ borderBottom: idx !== assessments.length - 1 ? '1px solid var(--border)' : 'none' }}>

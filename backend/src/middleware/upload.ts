@@ -29,3 +29,33 @@ export const upload = multer({
     fileSize: 100 * 1024 * 1024 // 100MB limit for study materials
   }
 });
+
+export const uploadThumbnail = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit for thumbnails
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, WEBP, and GIF images are allowed.') as any, false);
+    }
+  }
+});
+
+export const uploadRecording = multer({
+  storage,
+  limits: {
+    fileSize: 2 * 1024 * 1024 * 1024 // 2GB limit for video recordings
+  },
+  fileFilter: (req, file, cb) => {
+    // Accepts common video formats
+    if (file.mimetype.startsWith('video/') || ['video/mp4', 'video/webm', 'video/x-matroska', 'video/avi'].includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only video files are allowed.') as any, false);
+    }
+  }
+});

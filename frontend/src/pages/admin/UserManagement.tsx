@@ -24,7 +24,7 @@ const UserManagement: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterRole, setFilterRole] = useState(currentUser?.role === 'TEACHER' ? 'STUDENT' : '');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<UserData | null>(null);
   
   // Custom Confirmation Dialog States
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -46,7 +46,9 @@ const UserManagement: React.FC = () => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterRole]);
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
@@ -82,7 +84,7 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const handleEditClick = (userToEdit: any) => {
+  const handleEditClick = (userToEdit: UserData) => {
     setSelectedUserForEdit(userToEdit);
     setIsEditModalOpen(true);
   };

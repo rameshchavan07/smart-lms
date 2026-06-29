@@ -197,7 +197,8 @@ export const uploadLectureThumbnail = async (req: AuthRequest, res: Response): P
     }
 
     const lecture = await prisma.lecture.findUnique({
-      where: { id: id as string }
+      where: { id: id as string },
+      include: { course: true }
     });
 
     if (!lecture) {
@@ -208,41 +209,47 @@ export const uploadLectureThumbnail = async (req: AuthRequest, res: Response): P
       return;
     }
 
-    // Resolve or create Google Drive folder structure: courses/lectures/thumbnails
-    const folderId = await getOrCreateFolderId([
-      { path: 'courses', name: 'Courses' },
-      { path: 'courses/lectures', name: 'Lectures' },
-      { path: 'courses/lectures/thumbnails', name: 'Lecture Thumbnails' }
-    ]);
+    // Resolve directories
+    const courseSlug = `${slugify(lecture.course.title)}_${lecture.course.id}`;
+    const lectureSlug = `${slugify(lecture.title)}_${lecture.id}`;
+    const targetDir = path.join(process.cwd(), 'uploads', 'Courses', courseSlug, 'Lectures', lectureSlug);
 
-    // Upload thumbnail file to Drive
-    const uploadResult = await uploadFileToDrive(
-      req.file.path,
-      `thumbnail-lecture-${lecture.id}-${Date.now()}${path.extname(req.file.originalname)}`,
-      req.file.mimetype,
-      folderId
-    );
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
 
-    // If there is an existing thumbnail, delete it from Drive
-    if (lecture.thumbnailUrl) {
-      const oldFileId = extractFileIdFromUrl(lecture.thumbnailUrl);
-      if (oldFileId) {
-        await deleteFileFromDrive(oldFileId);
+    // Save as thumbnail.{ext}
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const newFilename = `thumbnail${ext}`;
+    const newFilePath = path.join(targetDir, newFilename);
+
+    // If there is an existing local thumbnail, delete it
+    if (lecture.thumbnailUrl && lecture.thumbnailUrl.includes('/uploads/Courses/')) {
+      const oldRelativePath = lecture.thumbnailUrl.split('/uploads/')[1];
+      const oldLocalFilePath = path.join(process.cwd(), 'uploads', oldRelativePath);
+      if (fs.existsSync(oldLocalFilePath)) {
+        try {
+          fs.unlinkSync(oldLocalFilePath);
+        } catch (e) {
+          console.warn('Failed to delete old thumbnail:', e);
+        }
       }
     }
+
+    // Move file
+    fs.copyFileSync(req.file.path, newFilePath);
+    fs.unlinkSync(req.file.path);
+
+    // Build public URL path
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/Courses/${courseSlug}/Lectures/${lectureSlug}/${newFilename}`;
 
     // Update database
     const updatedLecture = await prisma.lecture.update({
       where: { id: id as string },
-      data: { thumbnailUrl: `https://drive.google.com/thumbnail?id=${uploadResult.fileId}&sz=w800` }
+      data: { thumbnailUrl: fileUrl }
     });
 
     await logActivity(req.user!.id, `Uploaded thumbnail for lecture: ${lecture.title}`, 'Lecture', lecture.id);
-
-    // Remove local temp file
-    if (fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
 
     res.json({ message: 'Lecture thumbnail uploaded successfully', lecture: updatedLecture });
   } catch (error: any) {
@@ -263,7 +270,8 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
     }
 
     const lecture = await prisma.lecture.findUnique({
-      where: { id: id as string }
+      where: { id: id as string },
+      include: { course: true }
     });
 
     if (!lecture) {
@@ -274,48 +282,81 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
       return;
     }
 
-    // Resolve or create Google Drive folder structure: courses/lectures/recordings
-    const folderId = await getOrCreateFolderId([
-      { path: 'courses', name: 'Courses' },
-      { path: 'courses/lectures', name: 'Lectures' },
-      { path: 'courses/lectures/recordings', name: 'Lecture Recordings' }
-    ]);
+    // Resolve directories
+    const courseSlug = `${slugify(lecture.course.title)}_${lecture.course.id}`;
+    const lectureSlug = `${slugify(lecture.title)}_${lecture.id}`;
+    const targetDir = path.join(process.cwd(), 'uploads', 'Courses', courseSlug, 'Lectures', lectureSlug);
 
-    // Upload recording file to Drive
-    const uploadResult = await uploadFileToDrive(
-      req.file.path,
-      `recording-lecture-${lecture.id}-${Date.now()}${path.extname(req.file.originalname)}`,
-      req.file.mimetype,
-      folderId
-    );
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
 
-    // If there is an existing recording, delete it from Drive
-    if (lecture.recordingUrl) {
-      const oldFileId = extractFileIdFromUrl(lecture.recordingUrl);
-      if (oldFileId) {
-        await deleteFileFromDrive(oldFileId);
+    // Create attachments/ and resources/ optional directories
+    const attachmentsDir = path.join(targetDir, 'attachments');
+    const resourcesDir = path.join(targetDir, 'resources');
+    if (!fs.existsSync(attachmentsDir)) {
+      fs.mkdirSync(attachmentsDir, { recursive: true });
+    }
+    if (!fs.existsSync(resourcesDir)) {
+      fs.mkdirSync(resourcesDir, { recursive: true });
+    }
+
+    // Save video inside lecture folder
+    const ext = path.extname(req.file.originalname) || '.mp4';
+    const newFilename = `video${ext}`;
+    const newFilePath = path.join(targetDir, newFilename);
+
+    // If there is an existing local recording, delete it
+    if (lecture.recordingUrl && lecture.recordingUrl.includes('/uploads/Courses/')) {
+      const oldRelativePath = lecture.recordingUrl.split('/uploads/')[1];
+      const oldLocalFilePath = path.join(process.cwd(), 'uploads', oldRelativePath);
+      if (fs.existsSync(oldLocalFilePath)) {
+        try {
+          fs.unlinkSync(oldLocalFilePath);
+        } catch (e) {
+          console.warn('Failed to delete old recording:', e);
+        }
       }
     }
 
+    // Move file
+    fs.copyFileSync(req.file.path, newFilePath);
+    fs.unlinkSync(req.file.path);
+
+    // Write metadata.json
     const recordingDuration = req.body.duration ? parseInt(req.body.duration, 10) : null;
     const recordingSize = req.file.size || null;
 
-    // Update database with the webViewLink (Google Drive player link)
+    const metadata = {
+      lectureId: lecture.id,
+      title: lecture.title,
+      courseId: lecture.course.id,
+      courseTitle: lecture.course.title,
+      uploadedAt: new Date().toISOString(),
+      durationSeconds: recordingDuration,
+      sizeBytes: recordingSize
+    };
+
+    try {
+      fs.writeFileSync(path.join(targetDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
+    } catch (e) {
+      console.warn('Failed to write metadata.json:', e);
+    }
+
+    // Build public URL path
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/Courses/${courseSlug}/Lectures/${lectureSlug}/${newFilename}`;
+
+    // Update database
     const updatedLecture = await prisma.lecture.update({
       where: { id: id as string },
       data: { 
-        recordingUrl: uploadResult.webViewLink,
+        recordingUrl: fileUrl,
         recordingDuration,
         recordingSize
       }
     });
 
     await logActivity(req.user!.id, `Uploaded recording for lecture: ${lecture.title}`, 'Lecture', lecture.id);
-
-    // Remove local temp file
-    if (fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
 
     res.json({ message: 'Lecture recording uploaded successfully', lecture: updatedLecture });
   } catch (error: any) {
@@ -325,3 +366,14 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
     res.status(500).json({ message: 'Failed to upload lecture recording: ' + error.message });
   }
 };
+
+// Helper function to slugify names
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')           // Replace spaces with -
+    .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+    .replace(/\-\-+/g, '-');        // Replace multiple - with single -
+}

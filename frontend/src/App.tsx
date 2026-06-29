@@ -40,6 +40,7 @@ const TeacherAssessments = React.lazy(() => import('./pages/teacher/TeacherAsses
 const TeacherReports     = React.lazy(() => import('./pages/teacher/TeacherReports'));
 const TeacherCommunication = React.lazy(() => import('./pages/teacher/TeacherCommunication'));
 const TeacherSettings    = React.lazy(() => import('./pages/teacher/TeacherSettings'));
+const RecordingStudioPage = React.lazy(() => import('./pages/teacher/RecordingStudioPage'));
 
 const StudentDashboard = React.lazy(() => import('./pages/student/StudentDashboard'));
 const StudentCourses = React.lazy(() => import('./pages/student/StudentCourses'));
@@ -151,6 +152,7 @@ function App() {
                 <Route path="reports" element={<Suspense fallback={<PageLoader />}><TeacherReports /></Suspense>} />
                 <Route path="communication" element={<Suspense fallback={<PageLoader />}><TeacherCommunication /></Suspense>} />
                 <Route path="settings" element={<Suspense fallback={<PageLoader />}><TeacherSettings /></Suspense>} />
+                <Route path="recorder" element={<Suspense fallback={<PageLoader />}><RecordingStudioPage /></Suspense>} />
               </Route>
 
               {/* ── Student Portal ── */}

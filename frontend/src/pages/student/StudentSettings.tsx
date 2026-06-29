@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Save, User, Shield, Loader2 } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import api from '../../services/api';
 
 const StudentSettings: React.FC = () => {
   const { user, refreshUser } = useAuth();
-  const queryClient = useQueryClient();
+  // Removed queryClient
 
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
