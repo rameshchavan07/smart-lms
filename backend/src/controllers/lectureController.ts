@@ -6,6 +6,7 @@ import { logActivity } from '../utils/auditLogger';
 import path from 'path';
 import fs from 'fs';
 import { getOrCreateFolderId, uploadFileToDrive, deleteFileFromDrive } from '../services/googleDriveService';
+import { createNotification } from '../services/notificationService';
 
 import prisma from '../config/db';
 
@@ -50,6 +51,22 @@ export const createLecture = async (req: AuthRequest, res: Response): Promise<vo
     });
 
     await logActivity(req.user!.id, `Scheduled lecture: ${title} for course: ${course.title}`, 'Lecture', lecture.id);
+
+    // Notify enrolled students
+    const enrollments = await prisma.enrollment.findMany({
+      where: { courseId },
+      include: { student: { select: { userId: true } } }
+    });
+
+    await Promise.all(
+      enrollments.map(e =>
+        createNotification(
+          e.student.userId,
+          'New Live Lecture Scheduled',
+          `A new lecture "${title}" has been scheduled for course "${course.title}".`
+        ).catch(err => console.error('Lecture notification error:', err))
+      )
+    );
 
     res.status(201).json({ message: 'Lecture scheduled successfully', lecture });
   } catch (error: any) {
@@ -128,6 +145,46 @@ export const getLectureDetails = async (req: AuthRequest, res: Response): Promis
 const extractFileIdFromUrl = (url: string): string | null => {
   const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
   return match ? match[1] : null;
+};
+
+// Update an existing lecture (Teacher only)
+export const updateLecture = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { title, description, startTime, endTime } = req.body;
+
+    const lecture = await prisma.lecture.findUnique({
+      where: { id },
+      include: { course: true }
+    });
+
+    if (!lecture) {
+      res.status(404).json({ message: 'Lecture not found' });
+      return;
+    }
+
+    if (lecture.createdBy !== req.user!.id && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ message: 'You can only edit your own lectures' });
+      return;
+    }
+
+    const updatedLecture = await prisma.lecture.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+      }
+    });
+
+    // @ts-ignore
+    await logActivity(req.user!.id, `Updated lecture: ${title} for course: ${lecture.course?.title || lecture.courseId}`, 'Lecture', lecture.id);
+
+    res.json({ message: 'Lecture updated successfully', lecture: updatedLecture });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const uploadLectureThumbnail = async (req: AuthRequest, res: Response): Promise<void> => {

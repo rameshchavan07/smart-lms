@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { uploadFileToDrive, deleteFileFromDrive, getOrCreateFolderId } from '../services/googleDriveService';
 import fs from 'fs';
 import { logActivity } from '../utils/auditLogger';
+import { createNotification } from '../services/notificationService';
 
 import prisma from '../config/db';
 
@@ -88,6 +89,22 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
     if (req.file && fs.existsSync(req.file.path)) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
     }
+
+    // Notify enrolled students
+    const enrollments = await prisma.enrollment.findMany({
+      where: { courseId },
+      include: { student: { select: { userId: true } } }
+    });
+
+    await Promise.all(
+      enrollments.map(e =>
+        createNotification(
+          e.student.userId,
+          'New Study Material Uploaded',
+          `New study material "${studyMaterial.title}" has been uploaded for course "${course.title}".`
+        ).catch(err => console.error('Study material notification error:', err))
+      )
+    );
 
     res.status(201).json({
       message: 'Study material uploaded successfully',

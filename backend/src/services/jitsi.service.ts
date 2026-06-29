@@ -13,28 +13,37 @@ export const generateJitsiToken = (user: { id: string, firstName: string, lastNa
   // Ensure newlines in the private key are real newline characters
   privateKey = privateKey.replace(/\\n/g, '\n');
 
+  const isModerator = user.role === 'TEACHER' || user.role === 'ADMIN';
   const now = Math.floor(Date.now() / 1000);
+
+  // System time may be mocked to the future (e.g. 2026), which causes live Jitsi servers
+  // to reject the token because 'nbf' is in the future.
+  // Offset by 3 years to ensure it is valid on real-world servers.
+  const pastOffset = 3 * 365 * 24 * 60 * 60;
+  
+  // JWT Payload for Jitsi as a Service (JaaS)
   const payload = {
     aud: 'jitsi',
     iss: 'chat',
-    sub: appId,
-    room: '*', // Wildcard room prevents auth mismatch issues on JaaS
-    nbf: now - 300, // 5 minutes ago to prevent clock drift issues
-    iat: now,
-    exp: now + 7200, // 2 hours
+    sub: appId,         // Must be the full AppID e.g. "vpaas-magic-cookie-..."
+    room: '*',          // Wildcard: allows this token for any room under this AppID
+    nbf: now - pastOffset, 
+    iat: now - pastOffset,
+    exp: now + 7200,    // Still valid for a few hours in the future
     context: {
       user: {
         id: user.id,
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
-        avatar: "",
-        affiliate: user.role === 'TEACHER' ? 'owner' : 'member',
-        moderator: user.role === 'TEACHER', // Grant moderator rights to teachers
+        avatar: '',
+        // JaaS requires moderator as a STRING "true"/"false", not boolean
+        moderator: isModerator ? 'true' : 'false',
       },
       features: {
-        recording: true,
-        livestreaming: true,
-        'screen-sharing': true,
+        // JaaS requires feature flags as STRING "true"/"false", not booleans
+        recording: isModerator ? 'true' : 'false',
+        livestreaming: isModerator ? 'true' : 'false',
+        'screen-sharing': 'true',
       }
     }
   };
@@ -51,3 +60,4 @@ export const generateJitsiToken = (user: { id: string, firstName: string, lastNa
     return null;
   }
 };
+

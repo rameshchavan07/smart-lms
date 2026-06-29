@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import EnrollStudentModal from '../../components/EnrollStudentModal';
 import { EmptyState, Button } from '../../components';
+import CustomDateTimePicker from '../../components/CustomDateTimePicker';
 import { getDirectDriveUrl } from '../../utils/drive';
+import AttendanceReportModal from '../../components/AttendanceReportModal';
+import UploadRecordingModal from '../../components/UploadRecordingModal';
 import { AssignmentsTab } from './AssignmentsTab';
 import { DiscussionsTab } from './DiscussionsTab';
 import { 
@@ -59,6 +62,7 @@ interface MaterialData {
 }
 
 interface StudentEnrollmentData {
+  studentId: string;
   student: {
     id: string;
     enrollmentNumber: string;
@@ -74,6 +78,7 @@ interface StudentEnrollmentData {
 const CourseDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
 
   const formatFileSize = (bytes: number | null) => {
@@ -85,7 +90,16 @@ const CourseDetails: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
   
-  const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students' | 'quizzes' | 'assignments' | 'discussions'>('lectures');
+  const queryParams = new URLSearchParams(location.search);
+  const tabParam = queryParams.get('tab');
+  
+  const isValidTab = (tab: string | null): tab is 'lectures' | 'materials' | 'students' | 'quizzes' | 'assignments' | 'discussions' => {
+    return ['lectures', 'materials', 'students', 'quizzes', 'assignments', 'discussions'].includes(tab || '');
+  };
+  
+  const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students' | 'quizzes' | 'assignments' | 'discussions'>(
+    isValidTab(tabParam) ? tabParam : 'lectures'
+  );
   
   // Lectures state
   const [lectures, setLectures] = useState<LectureData[]>([]);
@@ -97,6 +111,15 @@ const CourseDetails: React.FC = () => {
     startTime: '',
     endTime: ''
   });
+  const [editLectureId, setEditLectureId] = useState<string | null>(null);
+  
+  // Attendance Modal state
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [selectedLectureForAttendance, setSelectedLectureForAttendance] = useState<{ id: string, title: string } | null>(null);
+
+  // Upload Recording Modal state
+  const [showUploadRecordingModal, setShowUploadRecordingModal] = useState(false);
+  const [selectedLectureForRecording, setSelectedLectureForRecording] = useState<{ id: string, title: string } | null>(null);
 
   // Materials state
   const [materials, setMaterials] = useState<MaterialData[]>([]);
@@ -202,13 +225,29 @@ const CourseDetails: React.FC = () => {
   const handleCreateLecture = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post(`/lectures/course/${id}`, lectureForm);
+      if (editLectureId) {
+        await api.put(`/lectures/${editLectureId}`, lectureForm);
+      } else {
+        await api.post(`/lectures/course/${id}`, lectureForm);
+      }
       setShowCreateLecture(false);
+      setEditLectureId(null);
       setLectureForm({ title: '', description: '', startTime: '', endTime: '' });
       fetchLectures();
     } catch (error) {
-      console.error('Failed to create lecture', error);
+      console.error('Failed to save lecture', error);
     }
+  };
+
+  const handleEditClick = (lecture: LectureData) => {
+    setLectureForm({
+      title: lecture.title,
+      description: lecture.description,
+      startTime: new Date(lecture.startTime).toISOString().slice(0, 16),
+      endTime: new Date(lecture.endTime).toISOString().slice(0, 16)
+    });
+    setEditLectureId(lecture.id);
+    setShowCreateLecture(true);
   };
 
   const handleUploadMaterial = async (e: React.FormEvent) => {
@@ -379,7 +418,11 @@ const CourseDetails: React.FC = () => {
             {user?.role === 'TEACHER' && (
               <Button 
                 variant="primary"
-                onClick={() => setShowCreateLecture(!showCreateLecture)}
+                onClick={() => {
+                  setEditLectureId(null);
+                  setLectureForm({ title: '', description: '', startTime: '', endTime: '' });
+                  setShowCreateLecture(!showCreateLecture);
+                }}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Schedule New
@@ -389,7 +432,7 @@ const CourseDetails: React.FC = () => {
 
           {showCreateLecture && user?.role === 'TEACHER' && (
             <form onSubmit={handleCreateLecture} className="mb-8 p-4 bg-bg-subtle border border-border rounded-lg space-y-4 shadow-sm">
-              <h4 className="font-semibold text-slate-900 text-sm">Schedule a Live Class</h4>
+              <h4 className="font-semibold text-slate-900 text-sm">{editLectureId ? 'Edit Live Class' : 'Schedule a Live Class'}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-secondary mb-1">Title</label>
@@ -412,22 +455,18 @@ const CourseDetails: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-secondary mb-1">Start Time</label>
-                  <input 
-                    type="datetime-local" 
+                  <CustomDateTimePicker 
                     required 
                     value={lectureForm.startTime} 
-                    onChange={(e) => setLectureForm({...lectureForm, startTime: e.target.value})} 
-                    className="w-full border border-border-strong rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    onChange={(val) => setLectureForm({...lectureForm, startTime: val})} 
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-secondary mb-1">End Time</label>
-                  <input 
-                    type="datetime-local" 
+                  <CustomDateTimePicker 
                     required 
                     value={lectureForm.endTime} 
-                    onChange={(e) => setLectureForm({...lectureForm, endTime: e.target.value})} 
-                    className="w-full border border-border-strong rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500" 
+                    onChange={(val) => setLectureForm({...lectureForm, endTime: val})} 
                   />
                 </div>
               </div>
@@ -443,7 +482,7 @@ const CourseDetails: React.FC = () => {
                   variant="primary"
                   type="submit" 
                 >
-                  Create
+                  {editLectureId ? 'Update' : 'Create'}
                 </Button>
               </div>
             </form>
@@ -462,50 +501,122 @@ const CourseDetails: React.FC = () => {
             />
           ) : (
             <div className="space-y-4">
-              {lectures.map((lecture) => (
-                <div key={lecture.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-border rounded-xl hover:border-blue-200 hover:bg-bg-subtle/50 transition">
-                  <div className="flex items-start gap-4 mb-4 md:mb-0">
-                    <div className="relative group h-12 w-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 overflow-hidden">
-                      {lecture.thumbnailUrl ? (
-                        <img 
-                          src={getDirectDriveUrl(lecture.thumbnailUrl)} 
-                          alt="Thumbnail" 
-                          className="w-full h-full object-cover" 
-                        />
-                      ) : (
-                        <Calendar className="w-6 h-6" />
-                      )}
-                      
-                      {user?.role === 'TEACHER' && (
-                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity text-[10px] font-bold">
-                          Upload
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            className="hidden" 
-                            onChange={(e) => handleLectureThumbnailUpload(lecture.id, e)} 
+              {lectures.map((lecture) => {
+                const now = new Date();
+                const start = new Date(lecture.startTime);
+                const end = new Date(lecture.endTime);
+                const isLive = now >= start && now <= end;
+                const isEnded = now > end;
+
+                return (
+                  <div key={lecture.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-border rounded-xl hover:border-blue-200 hover:bg-bg-subtle/50 transition">
+                    <div className="flex items-start gap-4 mb-4 md:mb-0">
+                      <div className="relative group h-12 w-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 overflow-hidden">
+                        {lecture.thumbnailUrl ? (
+                          <img 
+                            src={getDirectDriveUrl(lecture.thumbnailUrl)} 
+                            alt="Thumbnail" 
+                            className="w-full h-full object-cover" 
                           />
-                        </label>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-base">{lecture.title}</h4>
-                      <p className="text-sm text-slate-500 mt-1 line-clamp-1">{lecture.description}</p>
-                      <div className="text-xs font-semibold text-indigo-600 mt-2 bg-indigo-50/50 border border-indigo-100/50 px-2 py-0.5 rounded w-max">
-                        {new Date(lecture.startTime).toLocaleString()} - {new Date(lecture.endTime).toLocaleTimeString()}
+                        ) : (
+                          <Calendar className="w-6 h-6" />
+                        )}
+                        
+                        {user?.role === 'TEACHER' && (
+                          <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity text-[10px] font-bold">
+                            Upload
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={(e) => handleLectureThumbnailUpload(lecture.id, e)} 
+                            />
+                          </label>
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-900 text-base">{lecture.title}</h4>
+                          {isLive && (
+                            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700 uppercase tracking-wide">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                              Live Now
+                            </span>
+                          )}
+                          {isEnded && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase tracking-wide">
+                              Ended
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-500 mt-1 line-clamp-1">{lecture.description}</p>
+                        <div className="text-xs font-semibold text-indigo-600 mt-2 bg-indigo-50/50 border border-indigo-100/50 px-2 py-0.5 rounded w-max flex items-center gap-2">
+                          {new Date(lecture.startTime).toLocaleString()} - {new Date(lecture.endTime).toLocaleTimeString()}
+                          
+                          {user?.role === 'TEACHER' && (
+                            <button 
+                              onClick={() => handleEditClick(lecture)}
+                              className="ml-2 text-indigo-500 hover:text-indigo-700 underline px-1 rounded-sm"
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    
+                    <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0 w-full md:w-auto shrink-0">
+                      {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
+                        <button 
+                          onClick={() => {
+                            setSelectedLectureForAttendance({ id: lecture.id, title: lecture.title });
+                            setShowAttendanceModal(true);
+                          }}
+                          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
+                        >
+                          <Users className="w-4 h-4" />
+                          Attendance
+                        </button>
+                      )}
+                      {isEnded && user?.role === 'TEACHER' && (
+                        <button 
+                          onClick={() => {
+                            setSelectedLectureForRecording({ id: lecture.id, title: lecture.title });
+                            setShowUploadRecordingModal(true);
+                          }}
+                          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
+                        >
+                          <UploadCloud className="w-4 h-4" />
+                          Upload Recording
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => navigate(`/live/${lecture.id}`)}
+                        disabled={isEnded && !lecture.thumbnailUrl} // We can disable it if ended and no recording is present, but actually we will just let them navigate to see "Ended" screen or recording
+                        className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg transition font-semibold text-sm shadow-sm ${
+                          isEnded
+                            ? 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                            : isLive
+                            ? 'bg-green-600 text-white hover:bg-green-700'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        }`}
+                      >
+                        {isEnded ? (
+                          <>
+                            <Video className="w-4 h-4" />
+                            View Class
+                          </>
+                        ) : (
+                          <>
+                            <ExternalLink className="w-4 h-4" />
+                            {user?.role === 'TEACHER' ? 'Start Class' : 'Join Class'}
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  
-                  <button 
-                    onClick={() => navigate(`/live/${lecture.id}`)}
-                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition font-semibold text-sm shadow-sm shrink-0"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    {user?.role === 'TEACHER' ? 'Start Class' : 'Join Class'}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -822,8 +933,31 @@ const CourseDetails: React.FC = () => {
           setShowEnrollModal(false);
         }}
         courseId={id || ''}
-        enrolledStudentIds={enrolledStudents.map((s: any) => s.studentId)}
+        enrolledStudentIds={enrolledStudents.map((s: StudentEnrollmentData) => s.studentId)}
       />
+      {/* Attendance Modal */}
+      {selectedLectureForAttendance && (
+        <AttendanceReportModal
+          lectureId={selectedLectureForAttendance.id}
+          lectureTitle={selectedLectureForAttendance.title}
+          isOpen={showAttendanceModal}
+          onClose={() => setShowAttendanceModal(false)}
+        />
+      )}
+      
+      {/* Upload Recording Modal */}
+      {selectedLectureForRecording && (
+        <UploadRecordingModal
+          lectureId={selectedLectureForRecording.id}
+          lectureTitle={selectedLectureForRecording.title}
+          isOpen={showUploadRecordingModal}
+          onClose={() => setShowUploadRecordingModal(false)}
+          onSuccess={() => {
+            alert('Recording uploaded successfully!');
+            fetchLectures();
+          }}
+        />
+      )}
     </div>
   );
 };

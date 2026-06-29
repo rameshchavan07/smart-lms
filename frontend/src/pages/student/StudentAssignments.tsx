@@ -1,8 +1,20 @@
 import React from 'react';
-import { ClipboardList, Calendar, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { ClipboardList, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
+
+interface StudentAssignmentData {
+  id: string;
+  title: string;
+  course: string;
+  courseId: string;
+  dueDate: string;
+  status: string;
+  grade: number | null;
+  maxGrade: number;
+  createdAt: string;
+}
 
 const StudentAssignments: React.FC = () => {
   const { data: assignments = [], isLoading } = useQuery({
@@ -61,7 +73,7 @@ const StudentAssignments: React.FC = () => {
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-[13px] text-gray-500">No assignments found.</td>
                 </tr>
-              ) : assignments.map((a: any, idx: number) => {
+              ) : assignments.map((a: StudentAssignmentData, idx: number) => {
                 const isOverdue = new Date(a.dueDate) < new Date() && a.status === 'Pending';
                 return (
                   <tr key={a.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderBottom: idx !== assignments.length - 1 ? '1px solid var(--border)' : 'none' }}>
@@ -90,7 +102,7 @@ const StudentAssignments: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-5 text-right">
                       {a.status === 'Pending' ? (
-                        <Link to={`/student/assignments/${a.id}`} className="btn btn-primary btn-sm rounded-lg px-3 py-1 text-[11px] h-auto">
+                        <Link to={`/student/courses/${a.courseId}?tab=assignments`} className="btn btn-primary btn-sm rounded-lg px-3 py-1 text-[11px] h-auto">
                           Submit
                         </Link>
                       ) : a.status === 'GRADED' ? (

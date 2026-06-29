@@ -4,6 +4,7 @@ import { getIO } from '../utils/socket';
 import { AuthRequest } from '../middleware/auth';
 
 import prisma from '../config/db';
+import { createNotification } from '../services/notificationService';
 
 const createDiscussionSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
@@ -139,6 +140,16 @@ export const addReply = async (req: AuthRequest, res: Response) => {
 
     // Emit event for real-time updates
     getIO().to(`course_${discussion.courseId}`).emit('new_reply', { discussionId: id, reply });
+
+    // Notify original discussion thread author
+    if (discussion.userId !== userId) {
+      const replierName = `${reply.user.firstName} ${reply.user.lastName}`;
+      await createNotification(
+        discussion.userId,
+        'New Reply on Discussion',
+        `"${replierName}" replied to your discussion thread "${discussion.title}".`
+      ).catch(err => console.error('Reply notification error:', err));
+    }
 
     res.status(201).json({ message: 'Reply added', reply });
   } catch (error) {

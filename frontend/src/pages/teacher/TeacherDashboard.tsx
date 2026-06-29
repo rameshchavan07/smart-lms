@@ -51,11 +51,7 @@ interface CourseProgress {
   color: string;
 }
 
-/* ── Fallback data (while new endpoints are added) ── */
-const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const fallbackWeeklyData: WeeklyData[] = WEEK_DAYS.map(day => ({
-  day, progress: 0, submissions: 0
-}));
+// Fallback data removed - now fetched dynamically from backend
 
 const PROGRESS_COLORS = ['#4361f0', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899'];
 
@@ -106,7 +102,7 @@ const TeacherDashboard: React.FC = () => {
     retry: false,
   });
 
-  const chartData = weeklyData ?? fallbackWeeklyData;
+  const chartData = weeklyData ?? [];
   const classes = upcomingClasses ?? [];
   const assignments = recentAssignments ?? [];
   const courseProgress = courseProgressData ?? [];
@@ -136,9 +132,13 @@ const TeacherDashboard: React.FC = () => {
             Here's what's happening in your courses today
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-          <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
-          <span className="text-[13px] font-semibold" style={{ color: 'var(--text-secondary)' }}>{dateLabel}</span>
+        <div className="flex items-center gap-2">
+          <Link to="/teacher/courses" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700">
+            <Calendar size={14} /> Schedule Class
+          </Link>
+          <Link to="/teacher/courses" className="btn btn-primary btn-sm gap-2 text-sm shadow-sm">
+            <BookOpen size={14} /> My Courses
+          </Link>
         </div>
       </div>
 

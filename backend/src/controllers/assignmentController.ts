@@ -4,6 +4,7 @@ import { getIO } from '../utils/socket';
 import { AuthRequest } from '../middleware/auth';
 
 import prisma from '../config/db';
+import { createNotification } from '../services/notificationService';
 
 const createAssignmentSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
@@ -54,6 +55,28 @@ export const createAssignment = async (req: AuthRequest, res: Response) => {
     });
 
     getIO().to(`course_${courseId}`).emit('new_assignment', { courseId, assignment });
+
+    // Notify enrolled students
+    const course = await prisma.course.findUnique({
+      where: { id: courseId as string },
+      select: { title: true }
+    });
+
+    const enrollments = await prisma.enrollment.findMany({
+      where: { courseId: courseId as string },
+      include: { student: { select: { userId: true } } }
+    });
+
+    await Promise.all(
+      enrollments.map(e =>
+        createNotification(
+          e.student.userId,
+          'New Assignment Posted',
+          `A new assignment "${title}" has been posted in course "${course?.title || ''}".`
+        ).catch(err => console.error('Assignment notification error:', err))
+      )
+    );
+
     res.status(201).json({ message: 'Assignment created', assignment });
   } catch (error) {
     console.error('Create assignment error:', error);
@@ -114,6 +137,12 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
         submissionId: id
       });
     }
+
+    await createNotification(
+      submission.student.userId,
+      'Assignment Graded',
+      `Your submission for "${submission.assignment.title}" has been graded: ${marks} marks.`
+    ).catch(err => console.error('Grading notification error:', err));
 
     res.json({ message: 'Submission graded', submission });
   } catch (error) {
@@ -291,6 +320,7 @@ export const getStudentAssignments = async (req: AuthRequest, res: Response) => 
         id: a.id,
         title: a.title,
         course: a.course.title,
+        courseId: a.courseId,
         dueDate: a.dueDate,
         status: currentStatus,
         grade: submission?.marks || null,

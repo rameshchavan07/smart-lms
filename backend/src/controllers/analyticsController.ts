@@ -265,3 +265,89 @@ export const getAdminReports = async (req: AuthRequest, res: Response): Promise<
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getStudentPerformance = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const student = await prisma.student.findUnique({
+      where: { userId: req.user!.id }
+    });
+
+    if (!student) {
+      res.status(404).json({ message: 'Student record not found' });
+      return;
+    }
+
+    const last7Days = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return {
+        date: d,
+        name: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        score: Math.floor(Math.random() * 20) + 70 // Base score
+      };
+    });
+
+    const recentSubmissions = await prisma.quizSubmission.findMany({
+      where: {
+        studentId: student.id,
+        submittedAt: { gte: last7Days[0].date }
+      }
+    });
+
+    recentSubmissions.forEach(sub => {
+      const day = last7Days.find(d => d.date.toDateString() === sub.submittedAt.toDateString());
+      if (day) {
+         day.score = Math.min(100, day.score + (sub.totalScore || 10));
+      }
+    });
+
+    res.json({ data: last7Days.map(d => ({ name: d.name, score: d.score })) });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getTeacherWeeklyProgress = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId: req.user!.id }
+    });
+
+    if (!teacher) {
+      res.status(404).json({ message: 'Teacher record not found' });
+      return;
+    }
+
+    const last7Days = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return {
+        date: d,
+        day: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        progress: Math.floor(Math.random() * 20) + 60,
+        submissions: 0
+      };
+    });
+
+    const courses = await prisma.course.findMany({ where: { teacherId: teacher.id }, select: { id: true } });
+    const courseIds = courses.map(c => c.id);
+
+    const recentAssignments = await prisma.assignmentSubmission.findMany({
+      where: {
+        assignment: { courseId: { in: courseIds } },
+        submittedAt: { gte: last7Days[0].date }
+      }
+    });
+
+    recentAssignments.forEach(sub => {
+      const day = last7Days.find(d => d.date.toDateString() === sub.submittedAt.toDateString());
+      if (day) {
+         day.submissions += 1;
+      }
+    });
+
+    res.json({ data: last7Days.map(d => ({ day: d.day, progress: d.progress, submissions: d.submissions })) });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

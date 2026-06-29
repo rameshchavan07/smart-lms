@@ -12,6 +12,8 @@ Build a production-ready Learning Management System (LMS) that enables:
 - Assignment Management
 - Attendance Tracking
 - Course Management
+- Online Exams
+- Analytics
 
 Target Users:
 
@@ -102,7 +104,7 @@ Estimated Time:
 
 1 Day
 
-# PHASE 1 - Authentication System
+# PHASE 1 - Authentication System (Completed ✅)
 
 Goal:
 
@@ -276,7 +278,7 @@ Estimated Time:
 
 2 Days
 
-# PHASE 8 - Recorded Lectures
+# PHASE 8 - Recorded Lectures (Completed ✅)
 
 Goal:
 
@@ -297,7 +299,7 @@ Estimated Time:
 
 3 Days
 
-# PHASE 9 - Attendance System
+# PHASE 9 - Attendance System (Completed ✅)
 
 Goal:
 
@@ -467,6 +469,8 @@ Includes:
 - Attendance
 - Assignments
 - Notifications
+- Online Exams (Phase 17)
+- Analytics Dashboard (Phase 19)
 
 Launch After:
 
@@ -485,7 +489,7 @@ Features:
 - Improved Dashboards
 - Mobile Responsive Enhancements
 
-# PHASE 17 - Online Exams
+# PHASE 17 - Online Exams (Completed ✅)
 
 Features:
 
@@ -509,7 +513,7 @@ Estimated Time:
 
 4 Days
 
-# PHASE 19 - Analytics Dashboard
+# PHASE 19 - Analytics Dashboard (Completed ✅)
 
 Features:
 
@@ -548,6 +552,31 @@ Features:
 Target:
 
 Smart LMS SaaS Platform
+
+---
+
+# DETAILED PHASE 10+ ROADMAP (Next Sprints)
+
+The following is a detailed roadmap prioritizing the remaining immediate tasks needed before launching MVP v1.0.
+
+### Sprint 1: Dynamic Dashboards & Polish (Estimated Effort: 2 Days)
+**Priority: HIGH**
+- **Backend:** Expose `GET /api/analytics/student/performance` endpoint.
+- **Frontend:** Replace hardcoded `PERFORMANCE_DATA` chart in `StudentDashboard.tsx` with dynamic API data.
+- **Frontend:** Finalize interactive Quick Actions (create course, schedule class) on dashboards.
+
+### Sprint 2: Authentication Completion (Completed ✅)
+**Priority: MEDIUM**
+- **Frontend/Backend:** Integrate Google OAuth 2.0 flow for single sign-on.
+- **Frontend/Backend:** Complete Forgot Password UI flow and wire it up to the existing `/api/auth/forgot-password` endpoint.
+
+### Sprint 3: Security, Testing, & Deployment (Estimated Effort: 5 Days)
+**Priority: HIGH**
+- **Backend:** Add `express-rate-limit` to authentication and global API endpoints.
+- **Backend:** Add basic unit and integration tests (Jest/Supertest) for core routes.
+- **DevOps:** Setup deployment configurations (e.g. `vercel.json` for frontend, `Dockerfile`/`railway.json` for backend).
+
+---
 
 # Success Criteria
 

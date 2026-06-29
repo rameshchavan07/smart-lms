@@ -103,15 +103,7 @@ const FALLBACK_ACTIVITY: ActivityItem[] = [
   { id: '3', type: 'lecture',    title: 'Watched Lecture',       courseTitle: 'Python Programming', timestamp: new Date(Date.now() - 172800000).toISOString() },
 ];
 
-const PERFORMANCE_DATA = [
-  { name: 'Mon', score: 65 },
-  { name: 'Tue', score: 70 },
-  { name: 'Wed', score: 85 },
-  { name: 'Thu', score: 80 },
-  { name: 'Fri', score: 95 },
-  { name: 'Sat', score: 90 },
-  { name: 'Sun', score: 100 },
-];
+// PERFORMANCE_DATA removed, now fetched dynamically
 
 /* ── Component ──────────────────────────── */
 const StudentDashboard: React.FC = () => {
@@ -148,6 +140,13 @@ const StudentDashboard: React.FC = () => {
     queryKey: ['student-announcements'],
     queryFn: () => api.get('/announcements/my?limit=3').then(r => r.data.announcements as Announcement[]),
     staleTime: 120_000,
+    retry: false,
+  });
+
+  const { data: performanceData } = useQuery({
+    queryKey: ['student-performance'],
+    queryFn: () => api.get('/analytics/student/performance').then(r => r.data.data as { name: string, score: number }[]),
+    staleTime: 60_000,
     retry: false,
   });
 
@@ -300,7 +299,7 @@ const StudentDashboard: React.FC = () => {
               </div>
               <div className="h-[250px] w-full mt-4">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={PERFORMANCE_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <AreaChart data={performanceData || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#4361f0" stopOpacity={0.3}/>

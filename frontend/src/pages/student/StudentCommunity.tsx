@@ -1,7 +1,18 @@
 import React from 'react';
-import { Users, MessageSquare, Loader2, Pin } from 'lucide-react';
+import { MessageSquare, Loader2, Pin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+
+interface DiscussionData {
+  id: string;
+  title: string;
+  content: string;
+  isPinned: boolean;
+  createdAt: string;
+  course: { title: string };
+  user: { firstName: string; lastName: string; role: string };
+  _count: { replies: number };
+}
 
 const StudentCommunity: React.FC = () => {
   const { data: discussions = [], isLoading } = useQuery({
@@ -29,7 +40,7 @@ const StudentCommunity: React.FC = () => {
           <div className="py-12 text-center text-[13px] text-gray-500">No active discussions in your courses.</div>
         ) : (
           <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
-            {discussions.map((d: any) => (
+            {discussions.map((d: DiscussionData) => (
               <div key={d.id} className="p-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex gap-4">
                 <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center flex-shrink-0 font-bold text-[14px]">
                   {d.user?.firstName?.[0] || 'U'}{d.user?.lastName?.[0] || ''}

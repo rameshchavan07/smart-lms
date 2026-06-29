@@ -54,7 +54,12 @@ const LiveClassRoom: React.FC = () => {
     );
   }
 
-  const isJaaS = !!import.meta.env.VITE_JITSI_APP_ID;
+  const appId = import.meta.env.VITE_JITSI_APP_ID as string;
+  const isJaaS = !!appId && appId.startsWith('vpaas-magic-cookie');
+
+  // For JaaS: roomName must be "AppID/room" but the JWT uses room: '*' wildcard
+  // so any token signed with the AppID will work for any room under that AppID
+  const jitsiRoomName = isJaaS ? `${appId}/${meetingUrl}` : meetingUrl;
 
   return (
     <div className="flex flex-col h-screen bg-slate-900">
@@ -69,7 +74,7 @@ const LiveClassRoom: React.FC = () => {
           </button>
           <div>
             <h1 className="font-bold text-lg">{lectureTitle || 'Live Class'}</h1>
-            <p className="text-xs text-slate-400">{courseName} • Powered by Jitsi Meet</p>
+            <p className="text-xs text-slate-400">{courseName} • Powered by {isJaaS ? 'JaaS (8x8.vc)' : 'Jitsi Meet'}</p>
           </div>
         </div>
         {recordingUrl ? (
@@ -102,13 +107,13 @@ const LiveClassRoom: React.FC = () => {
           </div>
         ) : (
           <JitsiMeeting
-            domain={isJaaS ? "8x8.vc" : "meet.jit.si"}
-            roomName={isJaaS ? `${import.meta.env.VITE_JITSI_APP_ID}/${meetingUrl}` : meetingUrl}
-            jwt={jwtToken || undefined}
+            domain={isJaaS ? '8x8.vc' : 'meet.jit.si'}
+            roomName={jitsiRoomName}
+            jwt={jwtToken ?? undefined}
             configOverwrite={{
               startWithAudioMuted: true,
-              disableModeratorIndicator: true,
-              startScreenSharing: true,
+              disableModeratorIndicator: false,
+              startScreenSharing: false,
               enableEmailInStats: false,
             }}
             interfaceConfigOverwrite={{
@@ -121,9 +126,27 @@ const LiveClassRoom: React.FC = () => {
             }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onApiReady={(externalApi: any) => {
-              // Here you can attach listeners, e.g. when user leaves
+              externalApi.addListener('videoConferenceJoined', () => {
+                console.log('[Attendance Hook] I Joined the conference');
+                if (user?.role === 'STUDENT') {
+                  api.post(`/attendance/lecture/${id}/mark`, { action: 'join' }).catch(err => console.error(err));
+                }
+              });
               externalApi.addListener('videoConferenceLeft', () => {
+                console.log('[Attendance Hook] I Left the conference');
+                if (user?.role === 'STUDENT') {
+                  api.post(`/attendance/lecture/${id}/mark`, { action: 'leave' }).catch(err => console.error(err));
+                }
                 navigate(-1);
+              });
+              externalApi.addListener('participantJoined', (participant: unknown) => {
+                console.log('[Attendance Hook] Participant Joined:', participant);
+              });
+              externalApi.addListener('participantLeft', (participant: unknown) => {
+                console.log('[Attendance Hook] Participant Left:', participant);
+              });
+              externalApi.addListener('errorOccurred', (err: unknown) => {
+                console.error('[Jitsi] Error occurred:', err);
               });
             }}
             getIFrameRef={(iframeRef) => {
