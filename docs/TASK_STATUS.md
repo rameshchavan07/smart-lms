@@ -13,8 +13,8 @@ This document tracks the implementation progress of the **Smart LMS** applicatio
 | **Phase 2: User Management** | 🟢 Done | 100% | 5 / 5 | 0 / 5 |
 | **Phase 3: Course Management** | 🟢 Done | 100% | 6 / 6 | 0 / 6 |
 | **Phase 4: Student Enrollment** | 🟢 Done | 100% | 4 / 4 | 0 / 4 |
-| **Phase 5: Dashboard Development** | 🟡 In Progress | 90% | 4 / 5 | 1 / 5 |
-| **Phase 6: Live Classes** | 🟡 In Progress | 90% | 4 / 5 | 1 / 5 |
+| **Phase 5: Dashboard Development** | 🟢 Done | 100% | 5 / 5 | 0 / 5 |
+| **Phase 6: Live Classes** | 🟢 Done | 100% | 5 / 5 | 0 / 5 |
 | **Phase 7: Study Materials** | 🟢 Done | 100% | 5 / 5 | 0 / 5 |
 | **Phase 7b: Real-Time Chat & File Sharing** | 🟢 Done | 100% | 5 / 5 | 0 / 5 |
 | **Phase 8: Recorded Lectures** | 🟢 Done | 100% | 4 / 4 | 0 / 4 |
@@ -24,7 +24,7 @@ This document tracks the implementation progress of the **Smart LMS** applicatio
 | **Phases 12-15: Hardening & Testing** | 🟡 In Progress | 40% | 2 / 5 | 3 / 5 |
 | **Phase 17: Online Exams** | 🟢 Done | 100% | 3 / 3 | 0 / 3 |
 | **Phase 19: Analytics Dashboard** | 🟢 Done | 100% | 3 / 3 | 0 / 3 |
-| **TOTALS** | **🟡 Developing** | **~95%** | **65 / 70** | **5 / 70** |
+| **TOTALS** | **🟡 Developing** | **~96%** | **67 / 70** | **3 / 70** |
 
 ---
 
@@ -63,19 +63,19 @@ This document tracks the implementation progress of the **Smart LMS** applicatio
 - [x] Admin/Teacher can view the enrollment list of a course
 - [x] Student can view their enrolled courses
 
-### Phase 5: Dashboard Development (90% Complete)
+### Phase 5: Dashboard Development (100% Complete)
 - [x] Admin Dashboard metrics (total users, teachers, students, courses, enrollments) & recent courses list
 - [x] Teacher Dashboard metrics (total courses, total students)
 - [x] Student Dashboard metrics (total enrolled courses)
 - [x] Recent activities feed / audit log integration
-- [ ] Interactive Dashboard Quick Actions (e.g. "Create Course", "Schedule Class")
+- [x] Interactive Dashboard Quick Actions (e.g. "Create Course", "Schedule Class")
 
-### Phase 6: Live Classes (90% Complete)
+### Phase 6: Live Classes (100% Complete)
 - [x] Teacher can schedule a live lecture (title, description, start/end time)
 - [x] System generates a unique Jitsi room ID and stores meeting URL
 - [x] System generates Jitsi JaaS JWT for authentication
 - [x] React Jitsi Meet Iframe integration in [LiveClassRoom.tsx](file:///d:/New%20folder/smart-lms/frontend/src/pages/shared/LiveClassRoom.tsx)
-- [ ] Advanced controls (Moderator tools, attendance hooks, stream status indicators)
+- [x] Advanced controls (Moderator tools, attendance hooks, stream status indicators)
 
 ### Phase 7: Study Materials (100% Complete)
 - [x] Google Drive API Helper configuration ([googleDriveService.ts](file:///d:/New%20folder/smart-lms/backend/src/services/googleDriveService.ts)) — *Updated to OAuth2 refresh token authentication for personal Drive storage integration*

@@ -115,6 +115,10 @@ const LiveClassRoom: React.FC = () => {
               disableModeratorIndicator: false,
               startScreenSharing: false,
               enableEmailInStats: false,
+              localRecording: {
+                enabled: true,
+                notifyAllParticipants: true,
+              },
             }}
             interfaceConfigOverwrite={{
               DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
