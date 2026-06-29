@@ -4,7 +4,7 @@ import { JitsiMeeting } from '@jitsi/react-sdk';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowLeft, Loader2, PlayCircle } from 'lucide-react';
-import { LectureRecordingPlayer } from '../../components';
+import { LectureRecordingPlayer, LectureRecorderUI } from '../../components';
 
 const LiveClassRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -156,6 +156,11 @@ const LiveClassRoom: React.FC = () => {
           />
         )}
       </div>
+
+      {/* Render custom Lecture Recorder UI for Teachers only when in a live class */}
+      {user?.role === 'TEACHER' && !recordingUrl && !isEnded && id && (
+        <LectureRecorderUI lectureId={id} />
+      )}
     </div>
   );
 };

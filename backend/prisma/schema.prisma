@@ -109,8 +109,10 @@ model Lecture {
   title        String       @db.VarChar(255)
   description  String?
   meetingUrl   String?
-  recordingUrl String?
-  thumbnailUrl String?
+  recordingUrl      String?
+  recordingDuration Int?
+  recordingSize     Int?
+  thumbnailUrl      String?
   startTime    DateTime
   endTime      DateTime
   createdBy    String

@@ -297,10 +297,17 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
       }
     }
 
+    const recordingDuration = req.body.duration ? parseInt(req.body.duration, 10) : null;
+    const recordingSize = req.file.size || null;
+
     // Update database with the webViewLink (Google Drive player link)
     const updatedLecture = await prisma.lecture.update({
       where: { id: id as string },
-      data: { recordingUrl: uploadResult.webViewLink }
+      data: { 
+        recordingUrl: uploadResult.webViewLink,
+        recordingDuration,
+        recordingSize
+      }
     });
 
     await logActivity(req.user!.id, `Uploaded recording for lecture: ${lecture.title}`, 'Lecture', lecture.id);
