@@ -320,6 +320,7 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
 
     res.redirect(`${process.env.FRONTEND_URL}/auth/callback?${params.toString()}`);
   } catch (error: any) {
+    console.error('Google OAuth Callback Error:', error);
     res.redirect(`${process.env.FRONTEND_URL}/login?error=google_failed`);
   }
 };
