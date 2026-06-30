@@ -8,6 +8,7 @@ import passport from 'passport';
 import session from 'express-session';
 import { configurePassport } from './services/passportService';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 
 const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:5173'];
 
@@ -20,6 +21,7 @@ configurePassport();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(cors({
   origin: allowedOrigins,
   credentials: true

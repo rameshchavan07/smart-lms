@@ -292,8 +292,15 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
     const targetFolderId = await getOrCreateFolderId(pathComponents);
 
     // If there is an existing Google Drive recording, delete it
-    if (lecture.recordingUrl && lecture.recordingUrl.includes('/api/media/drive/')) {
-      const oldFileId = lecture.recordingUrl.split('/api/media/drive/')[1];
+    if (lecture.recordingUrl) {
+      let oldFileId = null;
+      if (lecture.recordingUrl.includes('/api/media/drive/')) {
+        oldFileId = lecture.recordingUrl.split('/api/media/drive/')[1];
+      } else if (lecture.recordingUrl.includes('drive.google.com/file/d/')) {
+        const match = lecture.recordingUrl.match(/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (match) oldFileId = match[1];
+      }
+
       if (oldFileId) {
         try {
           await deleteFileFromDrive(oldFileId);
@@ -336,8 +343,8 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
       try { fs.unlinkSync(req.file.path); } catch (_) {}
     }
 
-    // Build API proxy URL path
-    const fileUrl = `${req.protocol}://${req.get('host')}/api/media/drive/${result.fileId}`;
+    // Use direct Google Drive web view link
+    const fileUrl = result.webViewLink || '';
 
     // Update database
     const updatedLecture = await prisma.lecture.update({

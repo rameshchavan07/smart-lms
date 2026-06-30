@@ -4,6 +4,8 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 
+import { StatCardSkeleton } from '../../components/Skeleton';
+
 const TeacherReports: React.FC = () => {
   const { data: reports, isLoading } = useQuery({
     queryKey: ['teacherReports'],
@@ -15,8 +17,13 @@ const TeacherReports: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--brand-500)' }} />
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+        </div>
       </div>
     );
   }

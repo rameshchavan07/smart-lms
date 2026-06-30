@@ -13,8 +13,8 @@ interface User {
 }
 
 export interface LoginData {
-  token: string;
-  refreshToken: string;
+  token?: string;
+  refreshToken?: string;
   role: 'ADMIN' | 'TEACHER' | 'STUDENT';
   id?: string;
   firstName?: string;
@@ -38,53 +38,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('token'));
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   const checkAuth = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const { data } = await api.get('/auth/me');
-        setUser(data);
-      } catch (error) {
-        console.error('Auth verification failed', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
+    try {
+      const { data } = await api.get('/auth/me');
+      setUser(data);
+    } catch (error) {
+      console.error('Auth verification failed', error);
+      setUser(null);
+    } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.get('/auth/me')
-        .then(({ data }) => {
-          setUser(data);
-        })
-        .catch((error) => {
-          console.error('Auth verification failed', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('refreshToken');
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
-  }, []);
+    checkAuth();
+  }, [checkAuth]);
 
   const refreshUser = useCallback(async () => {
     await checkAuth();
   }, [checkAuth]);
 
   const login = useCallback(async (data: LoginData) => {
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    
     let userData: LoginData = { ...data };
     
     // If user details (like firstName, email) are missing (e.g. Google OAuth redirect callback),
@@ -124,17 +101,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [login]);
 
   const logout = useCallback(async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
     setUser(null);
     navigate('/login');
-    if (refreshToken) {
-      try {
-        await api.post('/auth/logout', { refreshToken });
-      } catch (error) {
-        console.error('Server logout failed', error);
-      }
+    try {
+      await api.post('/auth/logout', {});
+    } catch (error) {
+      console.error('Server logout failed', error);
     }
   }, [navigate]);
 

@@ -13,6 +13,28 @@ import {
 } from '../services/emailService';
 import { OtpType, User } from '@prisma/client';
 
+// ─── Helper: Set Auth Cookies ───────────────────────────────────────────────
+export const setAuthCookies = (res: Response, token: string, refreshToken: string) => {
+  const isProd = process.env.NODE_ENV === 'production';
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'strict',
+    maxAge: 15 * 60 * 1000, // 15 minutes
+  });
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+};
+
+export const clearAuthCookies = (res: Response) => {
+  res.clearCookie('token');
+  res.clearCookie('refreshToken');
+};
+
 // ─── Helper: build auth response ────────────────────────────────────────────
 const buildAuthResponse = async (user: User) => {
   const token = generateToken(user.id, user.role);
@@ -117,9 +139,12 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
     await logActivity(user.id, 'Email verified successfully', 'User', user.id);
 
     const authData = await buildAuthResponse(user);
+    setAuthCookies(res, authData.token, authData.refreshToken);
+    const { token, refreshToken, ...userData } = authData;
+    
     res.status(200).json({
       message: 'Email verified successfully. Welcome!',
-      ...authData,
+      ...userData,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -192,7 +217,9 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     await logActivity(user.id, 'Logged in to dashboard', 'User', user.id);
 
     const authData = await buildAuthResponse(user);
-    res.json(authData);
+    setAuthCookies(res, authData.token, authData.refreshToken);
+    const { token, refreshToken, ...userData } = authData;
+    res.json(userData);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -311,10 +338,9 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
     const authData = await buildAuthResponse(user);
     await logActivity(user.id, 'Logged in via Google OAuth', 'User', user.id);
 
-    // Redirect to frontend with tokens in query params
+    // Redirect to frontend without tokens in query params; cookies are now used.
+    setAuthCookies(res, authData.token, authData.refreshToken);
     const params = new URLSearchParams({
-      token: authData.token,
-      refreshToken: authData.refreshToken,
       role: authData.role,
     });
 
@@ -333,7 +359,7 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
 
 export const refresh = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
       res.status(401).json({ message: 'No refresh token provided' });
       return;
@@ -353,7 +379,14 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     }
 
     const newToken = generateToken(user.id, user.role);
-    res.json({ token: newToken });
+    const isProd = process.env.NODE_ENV === 'production';
+    res.cookie('token', newToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
+    });
+    res.json({ message: 'Token refreshed successfully' });
   } catch (error: any) {
     res.status(401).json({ message: 'Token refresh failed' });
   }
@@ -361,7 +394,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
 
 export const logoutUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies.refreshToken;
     if (refreshToken) {
       const savedToken = await prisma.refreshToken.findUnique({ where: { token: refreshToken } });
       if (savedToken) {
@@ -369,6 +402,7 @@ export const logoutUser = async (req: Request, res: Response): Promise<void> => 
         await prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
       }
     }
+    clearAuthCookies(res);
     res.status(200).json({ message: 'Logged out successfully' });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

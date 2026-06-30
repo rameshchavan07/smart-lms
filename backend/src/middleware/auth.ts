@@ -13,11 +13,14 @@ const userCache = new Map<string, { user: any; expiresAt: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  let token;
+  let token = req.cookies?.token;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (token) {
     try {
-      token = req.headers.authorization.split(' ')[1];
       const decoded: any = verifyToken(token);
 
       // Check cache first

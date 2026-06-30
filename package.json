@@ -1,0 +1,29 @@
+{
+  "name": "smart-lms",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">",
+  "main": "fix-script-2.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rameshchavan07/smart-lms.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/rameshchavan07/smart-lms/issues"
+  },
+  "homepage": "https://github.com/rameshchavan07/smart-lms#readme",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
+    "prettier": "^3.9.4"
+  }
+}
