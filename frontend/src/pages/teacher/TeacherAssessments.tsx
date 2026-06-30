@@ -88,7 +88,7 @@ const TeacherAssessments: React.FC = () => {
                     No assessments found.
                   </td>
                 </tr>
-              ) : assessments.map((a: { id: string; title: string; course: string; dueDate: string; submissions: number; total: number }, idx: number) => {
+              ) : assessments.map((a: { id: string; title: string; course: string; type: string; dueDate: string; submissions: number; total: number; status: string }, idx: number) => {
                 const pct = a.total > 0 ? Math.round((a.submissions / a.total) * 100) : 0;
                 return (
                   <tr key={a.id} className="group transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ borderBottom: idx !== assessments.length - 1 ? '1px solid var(--border)' : 'none' }}>

@@ -282,69 +282,62 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
       return;
     }
 
-    // Resolve directories
-    const courseSlug = `${slugify(lecture.course.title)}_${lecture.course.id}`;
-    const lectureSlug = `${slugify(lecture.title)}_${lecture.id}`;
-    const targetDir = path.join(process.cwd(), 'uploads', 'Courses', courseSlug, 'Lectures', lectureSlug);
+    // Resolve Google Drive target folder: courses/courseId/Lectures/lectureId
+    const pathComponents = [
+      { path: `courses/${lecture.course.id}`, name: `Course - ${lecture.course.title}` },
+      { path: `courses/${lecture.course.id}/Lectures`, name: 'Lectures' },
+      { path: `courses/${lecture.course.id}/Lectures/${lecture.id}`, name: `Lecture - ${lecture.title}` },
+    ];
 
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
+    const targetFolderId = await getOrCreateFolderId(pathComponents);
 
-    // Create attachments/ and resources/ optional directories
-    const attachmentsDir = path.join(targetDir, 'attachments');
-    const resourcesDir = path.join(targetDir, 'resources');
-    if (!fs.existsSync(attachmentsDir)) {
-      fs.mkdirSync(attachmentsDir, { recursive: true });
-    }
-    if (!fs.existsSync(resourcesDir)) {
-      fs.mkdirSync(resourcesDir, { recursive: true });
-    }
-
-    // Save video inside lecture folder
-    const ext = path.extname(req.file.originalname) || '.mp4';
-    const newFilename = `video${ext}`;
-    const newFilePath = path.join(targetDir, newFilename);
-
-    // If there is an existing local recording, delete it
-    if (lecture.recordingUrl && lecture.recordingUrl.includes('/uploads/Courses/')) {
+    // If there is an existing Google Drive recording, delete it
+    if (lecture.recordingUrl && lecture.recordingUrl.includes('/api/media/drive/')) {
+      const oldFileId = lecture.recordingUrl.split('/api/media/drive/')[1];
+      if (oldFileId) {
+        try {
+          await deleteFileFromDrive(oldFileId);
+        } catch (e) {
+          console.warn('Failed to delete old recording from Google Drive:', e);
+        }
+      }
+    } else if (lecture.recordingUrl && lecture.recordingUrl.includes('/uploads/Courses/')) {
+      // Cleanup old local file if migrating
       const oldRelativePath = lecture.recordingUrl.split('/uploads/')[1];
       const oldLocalFilePath = path.join(process.cwd(), 'uploads', oldRelativePath);
       if (fs.existsSync(oldLocalFilePath)) {
-        try {
-          fs.unlinkSync(oldLocalFilePath);
-        } catch (e) {
-          console.warn('Failed to delete old recording:', e);
-        }
+        try { fs.unlinkSync(oldLocalFilePath); } catch (e) {}
       }
     }
 
-    // Move file
-    fs.copyFileSync(req.file.path, newFilePath);
-    fs.unlinkSync(req.file.path);
+    // Upload to Google Drive
+    const result = await uploadFileToDrive(
+      req.file.path,
+      req.file.originalname || `recording-${lecture.id}.webm`,
+      req.file.mimetype || 'video/webm',
+      targetFolderId
+    );
 
-    // Write metadata.json
+    // Save to GoogleDriveFile table
+    await prisma.googleDriveFile.create({
+      data: {
+        driveFileId: result.fileId,
+        fileName: req.file.originalname || `recording-${lecture.id}.webm`,
+        fileUrl: result.webViewLink || '',
+        uploadedBy: req.user!.id,
+      }
+    });
+
     const recordingDuration = req.body.duration ? parseInt(req.body.duration, 10) : null;
     const recordingSize = req.file.size || null;
 
-    const metadata = {
-      lectureId: lecture.id,
-      title: lecture.title,
-      courseId: lecture.course.id,
-      courseTitle: lecture.course.title,
-      uploadedAt: new Date().toISOString(),
-      durationSeconds: recordingDuration,
-      sizeBytes: recordingSize
-    };
-
-    try {
-      fs.writeFileSync(path.join(targetDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
-    } catch (e) {
-      console.warn('Failed to write metadata.json:', e);
+    // Cleanup temp file after successful upload
+    if (req.file && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
     }
 
-    // Build public URL path
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/Courses/${courseSlug}/Lectures/${lectureSlug}/${newFilename}`;
+    // Build API proxy URL path
+    const fileUrl = `${req.protocol}://${req.get('host')}/api/media/drive/${result.fileId}`;
 
     // Update database
     const updatedLecture = await prisma.lecture.update({
