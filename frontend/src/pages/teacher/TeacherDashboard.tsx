@@ -127,10 +127,10 @@ const TeacherDashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/teacher/courses" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700">
+          <Link to="/teacher/courses" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-surface hover:bg-bg-subtle dark:hover:bg-slate-700">
             <Calendar size={14} /> Schedule Class
           </Link>
-          <Link to="/teacher/recorder" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700">
+          <Link to="/teacher/recorder" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-surface hover:bg-bg-subtle dark:hover:bg-slate-700">
             <Clapperboard size={14} /> Recording Studio
           </Link>
           <Link to="/teacher/courses" className="btn btn-primary btn-sm gap-2 text-sm shadow-sm">

@@ -63,7 +63,7 @@ const AdminIntegrations: React.FC = () => {
           {integrations.map((integration: { id: string; provider: string; isActive: boolean; name?: string; description?: string }) => (
             <div key={integration.id} className="card flex flex-col">
               <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-black/5 dark:bg-surface/5 flex items-center justify-center">
                   {getIconForProvider(integration.provider)}
                 </div>
                 <button 
@@ -71,7 +71,7 @@ const AdminIntegrations: React.FC = () => {
                   disabled={toggleIntegration.isPending}
                   className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${integration.isActive ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'}`}
                 >
-                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${integration.isActive ? 'translate-x-4' : 'translate-x-1'}`} />
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-surface transition-transform ${integration.isActive ? 'translate-x-4' : 'translate-x-1'}`} />
                 </button>
               </div>
               <h3 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>{integration.provider}</h3>

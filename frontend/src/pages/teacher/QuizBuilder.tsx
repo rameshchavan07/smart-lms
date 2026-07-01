@@ -111,7 +111,7 @@ const QuizBuilder: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-6 pb-20">
       <div className="flex items-center gap-4">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-bg-subtle rounded-lg transition-colors">
-          <ArrowLeft className="w-5 h-5 text-slate-500" />
+          <ArrowLeft className="w-5 h-5 text-muted" />
         </button>
         <div>
           <h1 className="text-2xl font-bold text-primary">Create New Quiz</h1>
@@ -159,7 +159,7 @@ const QuizBuilder: React.FC = () => {
             {questions.length > 1 && (
               <button 
                 onClick={() => handleRemoveQuestion(qIndex)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"
+                className="absolute top-4 right-4 text-muted hover:text-red-500 transition-colors"
                 title="Remove question"
               >
                 <Trash2 className="w-5 h-5" />
@@ -190,7 +190,7 @@ const QuizBuilder: React.FC = () => {
             </div>
 
             <div className="space-y-3 pl-4 border-l-2 border-border ml-2">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Options</label>
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wider">Options</label>
               {q.options.map((opt, oIndex) => (
                 <div key={oIndex} className="flex items-center gap-3">
                   <button 
@@ -216,7 +216,7 @@ const QuizBuilder: React.FC = () => {
                   {q.options.length > 2 && (
                     <button 
                       onClick={() => handleRemoveOption(qIndex, oIndex)}
-                      className="text-slate-400 hover:text-red-500"
+                      className="text-muted hover:text-red-500"
                     >
                       <XIcon className="w-4 h-4" />
                     </button>

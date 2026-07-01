@@ -7,7 +7,7 @@ const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#080d18] p-8">
+    <div className="min-h-screen bg-bg-subtle dark:bg-[#080d18] p-8">
       <Card className="max-w-4xl mx-auto p-8">
         <div className="flex justify-between items-center mb-8 pb-4 border-b border-border">
           <div>

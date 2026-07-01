@@ -60,7 +60,7 @@ const TeacherEnrollments: React.FC = () => {
             value={filterCourse}
             onChange={(e) => setFilterCourse(e.target.value)}
           >
-            {courses.map((c: string | undefined) => c && <option key={c} value={c}>{c}</option>)}
+            {courses.map((c: any) => c && <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>
@@ -69,7 +69,7 @@ const TeacherEnrollments: React.FC = () => {
       <div className="card overflow-hidden p-0">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-black/5 dark:bg-white/5">
+            <thead className="bg-black/5 dark:bg-surface/5">
               <tr className="text-[11px] uppercase tracking-wider" style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <th className="py-3 px-5 font-semibold">Student</th>
                 <th className="py-3 px-5 font-semibold">Course</th>
@@ -86,7 +86,7 @@ const TeacherEnrollments: React.FC = () => {
                   </td>
                 </tr>
               ) : filteredEnrollments.map((e: { id: string, student?: { user?: { firstName?: string, lastName?: string, email?: string } }, course?: { title?: string }, status: string, progress: number, grade?: number }, idx: number) => (
-                <tr key={e.id} className="group transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ borderBottom: idx !== filteredEnrollments.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <tr key={e.id} className="group transition-colors hover:bg-black/5 dark:hover:bg-surface/5" style={{ borderBottom: idx !== filteredEnrollments.length - 1 ? '1px solid var(--border)' : 'none' }}>
                   <td className="py-3.5 px-5">
                     <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{e.student?.user?.firstName} {e.student?.user?.lastName}</p>
                     <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{e.student?.user?.email}</p>
@@ -109,10 +109,10 @@ const TeacherEnrollments: React.FC = () => {
                   </td>
                   <td className="py-3.5 px-5 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-brand-500" title="Message">
+                      <button className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-surface/10 text-brand-500" title="Message">
                         <Mail size={14} />
                       </button>
-                      <button className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-red-500" title="Revoke Access">
+                      <button className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-surface/10 text-red-500" title="Revoke Access">
                         <Ban size={14} />
                       </button>
                     </div>

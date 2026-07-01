@@ -130,14 +130,14 @@ const QuizView: React.FC = () => {
   }
 
   if (!quiz) {
-    return <div className="text-center py-20 text-slate-500">Quiz not found.</div>;
+    return <div className="text-center py-20 text-muted">Quiz not found.</div>;
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20">
       <div className="flex items-center gap-4">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-bg-subtle rounded-lg transition-colors">
-          <ArrowLeft className="w-5 h-5 text-slate-500" />
+          <ArrowLeft className="w-5 h-5 text-muted" />
         </button>
         <div>
           <h1 className="text-2xl font-bold text-primary">{quiz.title}</h1>
@@ -162,12 +162,12 @@ const QuizView: React.FC = () => {
           <div className="space-y-6">
             <div className="bg-surface rounded-xl shadow-sm border border-border p-6 flex justify-between items-center">
               <div>
-                <p className="text-sm text-slate-500">Total Marks</p>
+                <p className="text-sm text-muted">Total Marks</p>
                 <p className="font-bold text-lg text-primary">{quiz.totalMarks}</p>
               </div>
               {quiz.durationMins && (
                 <div className="text-right">
-                  <p className="text-sm text-slate-500">Duration</p>
+                  <p className="text-sm text-muted">Duration</p>
                   <p className="font-bold text-lg text-primary">{quiz.durationMins} Mins</p>
                 </div>
               )}
@@ -180,7 +180,7 @@ const QuizView: React.FC = () => {
                     <span className="text-blue-600 mr-2">{index + 1}.</span> 
                     {question.text}
                   </h3>
-                  <span className="bg-slate-100 dark:bg-slate-700 text-secondary text-xs font-bold px-2 py-1 rounded whitespace-nowrap">
+                  <span className="bg-bg-subtle dark:bg-slate-700 text-secondary text-xs font-bold px-2 py-1 rounded whitespace-nowrap">
                     {question.marks} Marks
                   </span>
                 </div>
@@ -192,7 +192,7 @@ const QuizView: React.FC = () => {
                       className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
                         selectedAnswers[question.id] === option.id 
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                          : 'border-border hover:bg-slate-50 dark:hover:bg-slate-900/50'
+                          : 'border-border hover:bg-bg-subtle dark:hover:bg-slate-900/50'
                       }`}
                     >
                       <input 
@@ -201,7 +201,7 @@ const QuizView: React.FC = () => {
                         value={option.id} 
                         checked={selectedAnswers[question.id] === option.id}
                         onChange={() => handleSelectOption(question.id, option.id)}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-slate-300 mr-3"
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-border-strong mr-3"
                       />
                       <span className="text-secondary">{option.text}</span>
                     </label>
@@ -245,7 +245,7 @@ const QuizView: React.FC = () => {
               <h3 className="text-lg font-bold text-primary">Student Submissions</h3>
             </div>
             {submissions.length === 0 ? (
-              <div className="p-12 text-center text-slate-500">
+              <div className="p-12 text-center text-muted">
                 No submissions yet.
               </div>
             ) : (
@@ -261,7 +261,7 @@ const QuizView: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                     {submissions.map(sub => (
-                      <tr key={sub.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                      <tr key={sub.id} className="hover:bg-bg-subtle dark:hover:bg-slate-900/50 transition-colors">
                         <td className="p-4 text-sm font-medium text-primary">
                           {sub.student.user.firstName} {sub.student.user.lastName}
                         </td>

@@ -58,21 +58,21 @@ const TeacherSettings: React.FC = () => {
         <div className="w-full md:w-64 flex-shrink-0">
           <nav className="flex md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0">
             <button 
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'profile' ? 'bg-black/5 dark:bg-white/5 text-brand-500' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'profile' ? 'bg-black/5 dark:bg-surface/5 text-brand-500' : 'hover:bg-black/5 dark:hover:bg-surface/5'}`}
               onClick={() => setActiveTab('profile')}
               style={{ color: activeTab === 'profile' ? 'var(--brand-500)' : 'var(--text-secondary)' }}
             >
               <User size={18} /> Profile
             </button>
             <button 
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'notifications' ? 'bg-black/5 dark:bg-white/5 text-brand-500' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'notifications' ? 'bg-black/5 dark:bg-surface/5 text-brand-500' : 'hover:bg-black/5 dark:hover:bg-surface/5'}`}
               onClick={() => setActiveTab('notifications')}
               style={{ color: activeTab === 'notifications' ? 'var(--brand-500)' : 'var(--text-secondary)' }}
             >
               <Bell size={18} /> Notifications
             </button>
             <button 
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'security' ? 'bg-black/5 dark:bg-white/5 text-brand-500' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-semibold transition-colors whitespace-nowrap ${activeTab === 'security' ? 'bg-black/5 dark:bg-surface/5 text-brand-500' : 'hover:bg-black/5 dark:hover:bg-surface/5'}`}
               onClick={() => setActiveTab('security')}
               style={{ color: activeTab === 'security' ? 'var(--brand-500)' : 'var(--text-secondary)' }}
             >
@@ -127,7 +127,7 @@ const TeacherSettings: React.FC = () => {
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-[12px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Email Address</label>
-                  <input type="email" className="input w-full text-[13px] bg-black/5 dark:bg-white/5 opacity-70" defaultValue={user?.email || ''} disabled />
+                  <input type="email" className="input w-full text-[13px] bg-black/5 dark:bg-surface/5 opacity-70" defaultValue={user?.email || ''} disabled />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-[12px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Bio / Professional Summary</label>
@@ -162,7 +162,7 @@ const TeacherSettings: React.FC = () => {
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" className="sr-only peer" defaultChecked={i !== 3} />
-                      <div className="w-11 h-6 bg-black/10 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                      <div className="w-11 h-6 bg-black/10 dark:bg-surface/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
                     </label>
                   </div>
                 ))}

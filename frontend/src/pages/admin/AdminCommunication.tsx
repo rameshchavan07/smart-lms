@@ -57,7 +57,7 @@ const AdminCommunication: React.FC = () => {
               ) : announcements.length === 0 ? (
                 <div className="p-8 text-center text-[12px] text-gray-500">No announcements posted.</div>
               ) : announcements.map((a: { id: string; title: string; createdAt: string; content?: string }) => (
-                <div key={a.id} className="p-4 border-b text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: 'var(--border)' }}>
+                <div key={a.id} className="p-4 border-b text-left hover:bg-black/5 dark:hover:bg-surface/5 transition-colors" style={{ borderColor: 'var(--border)' }}>
                   <div className="flex items-start justify-between mb-1">
                     <span className="text-[13px] font-bold truncate pr-2" style={{ color: 'var(--text-primary)' }}>{a.title}</span>
                     <span className="text-[11px] whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
@@ -73,7 +73,7 @@ const AdminCommunication: React.FC = () => {
 
         {/* Right Side - Composer */}
         <div className="flex-1 card flex flex-col p-0 overflow-hidden">
-          <div className="p-4 border-b bg-black/5 dark:bg-white/5" style={{ borderColor: 'var(--border)' }}>
+          <div className="p-4 border-b bg-black/5 dark:bg-surface/5" style={{ borderColor: 'var(--border)' }}>
             <h3 className="text-[14px] font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
               <Megaphone size={16} className="text-brand-500" /> New Broadcast Announcement
             </h3>

@@ -62,10 +62,10 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-background dark:bg-[#090e1a] text-slate-800 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen flex bg-slate-background dark:bg-[#090e1a] text-primary transition-colors duration-300">
       
       {/* Left Column - Branding and Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-16 bg-white dark:bg-[#0f172a] border-r border-slate-200/60 dark:border-slate-800/60 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-16 bg-surface dark:bg-[#0f172a] border-r border-border/60 dark:border-slate-800/60 relative overflow-hidden">
         {/* Ambient background glows */}
         <div className="absolute top-1/4 -left-20 w-80 h-80 rounded-full bg-primary-500/10 blur-[100px] pointer-events-none" />
         <div className="absolute bottom-1/4 -right-20 w-80 h-80 rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none" />
@@ -99,7 +99,7 @@ const Register: React.FC = () => {
           </div>
         </motion.div>
 
-        <div className="text-xs text-slate-400 font-semibold relative z-10">
+        <div className="text-xs text-muted font-semibold relative z-10">
           <span>&copy; 2026 OpenLearnX. All rights reserved.</span>
         </div>
       </div>
@@ -112,7 +112,7 @@ const Register: React.FC = () => {
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="max-w-md w-full glass-panel p-8 rounded-2xl shadow-lg border border-slate-200/60 dark:border-slate-800/60 space-y-6 relative z-10"
+          className="max-w-md w-full glass-panel p-8 rounded-2xl shadow-lg border border-border/60 dark:border-slate-800/60 space-y-6 relative z-10"
         >
           <div className="lg:hidden flex justify-center mb-4">
             <Logo size="md" />
@@ -131,7 +131,7 @@ const Register: React.FC = () => {
           <button
             type="button"
             onClick={handleGoogleSignup}
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-250 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-250 font-bold rounded-xl hover:bg-bg-subtle transition-colors cursor-pointer shadow-sm hover:shadow active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-slate-250 dark:border-slate-800 bg-surface/50 dark:bg-slate-900/50 text-secondary dark:text-slate-250 font-bold rounded-xl hover:bg-bg-subtle transition-colors cursor-pointer shadow-sm hover:shadow active:scale-[0.98]"
           >
             <svg className="h-4.5 w-4.5" viewBox="0 0 24 24">
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
@@ -145,10 +145,10 @@ const Register: React.FC = () => {
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200/60 dark:border-slate-800/80" />
+              <div className="w-full border-t border-border/60 dark:border-slate-800/80" />
             </div>
             <div className="relative flex justify-center text-xs font-bold uppercase">
-              <span className="px-3 bg-[#f8fafc] dark:bg-[#0f172a] text-slate-400">
+              <span className="px-3 bg-[#f8fafc] dark:bg-[#0f172a] text-muted">
                 or register with email
               </span>
             </div>
@@ -160,14 +160,14 @@ const Register: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">First Name</label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
                     <User className="w-4 h-4" />
                   </span>
                   <input
                     name="firstName"
                     type="text"
                     required
-                    className="pl-10 pr-4 py-2.5 w-full bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all dark:text-white"
+                    className="pl-10 pr-4 py-2.5 w-full bg-surface/50 dark:bg-slate-900/50 border border-border dark:border-slate-800 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all dark:text-white"
                     placeholder="John"
                     value={formData.firstName}
                     onChange={handleChange}
@@ -177,14 +177,14 @@ const Register: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">Last Name</label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
                     <User className="w-4 h-4" />
                   </span>
                   <input
                     name="lastName"
                     type="text"
                     required
-                    className="pl-10 pr-4 py-2.5 w-full bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all dark:text-white"
+                    className="pl-10 pr-4 py-2.5 w-full bg-surface/50 dark:bg-slate-900/50 border border-border dark:border-slate-800 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all dark:text-white"
                     placeholder="Doe"
                     value={formData.lastName}
                     onChange={handleChange}
@@ -196,14 +196,14 @@ const Register: React.FC = () => {
             <div>
               <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">Email address</label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
                   <Mail className="w-4 h-4" />
                 </span>
                 <input
                   name="email"
                   type="email"
                   required
-                  className="pl-10 pr-4 py-2.5 w-full bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all dark:text-white"
+                  className="pl-10 pr-4 py-2.5 w-full bg-surface/50 dark:bg-slate-900/50 border border-border dark:border-slate-800 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all dark:text-white"
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={handleChange}
@@ -214,14 +214,14 @@ const Register: React.FC = () => {
             <div>
               <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">Password</label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
                   <Lock className="w-4 h-4" />
                 </span>
                 <input
                   name="password"
                   type="password"
                   required
-                  className="pl-10 pr-4 py-2.5 w-full bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all dark:text-white"
+                  className="pl-10 pr-4 py-2.5 w-full bg-surface/50 dark:bg-slate-900/50 border border-border dark:border-slate-800 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all dark:text-white"
                   placeholder="Min. 6 characters"
                   value={formData.password}
                   onChange={handleChange}
@@ -232,17 +232,17 @@ const Register: React.FC = () => {
             <div>
               <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">Confirm Password</label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
                   <Lock className="w-4 h-4" />
                 </span>
                 <input
                   name="confirmPassword"
                   type="password"
                   required
-                  className={`pl-10 pr-4 py-2.5 w-full bg-white/50 dark:bg-slate-900/50 border rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 transition-all dark:text-white
+                  className={`pl-10 pr-4 py-2.5 w-full bg-surface/50 dark:bg-slate-900/50 border rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 transition-all dark:text-white
                     ${formData.confirmPassword && formData.confirmPassword !== formData.password
                       ? 'border-red-400 focus:border-red-400 focus:ring-red-400/20'
-                      : 'border-slate-200 dark:border-slate-800 focus:border-primary-500 focus:ring-primary-500/20'
+                      : 'border-border dark:border-slate-800 focus:border-primary-500 focus:ring-primary-500/20'
                     }`}
                   placeholder="Repeat your password"
                   value={formData.confirmPassword}
@@ -262,7 +262,7 @@ const Register: React.FC = () => {
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
 
-            <div className="text-center text-sm text-slate-500 pt-2 font-medium">
+            <div className="text-center text-sm text-muted pt-2 font-medium">
               Already have an account?{' '}
               <Link to="/login" className="font-bold text-primary-500 hover:text-primary-600 transition-colors">
                 Sign in here

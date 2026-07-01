@@ -39,7 +39,7 @@ const AdminAssessments: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b bg-black/5 dark:bg-white/5" style={{ borderColor: 'var(--border)' }}>
+              <tr className="border-b bg-black/5 dark:bg-surface/5" style={{ borderColor: 'var(--border)' }}>
                 <th className="py-3 px-5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Title</th>
                 <th className="py-3 px-5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Course</th>
                 <th className="py-3 px-5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Type</th>
@@ -61,7 +61,7 @@ const AdminAssessments: React.FC = () => {
               ) : assessments.map((a: { id: string; title: string; course: string; type: string; status: string; dueDate: string; submissions: number; total: number }, idx: number) => {
                 const pct = a.total > 0 ? Math.round((a.submissions / a.total) * 100) : 0;
                 return (
-                  <tr key={a.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderBottom: idx !== assessments.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <tr key={a.id} className="hover:bg-black/5 dark:hover:bg-surface/5 transition-colors" style={{ borderBottom: idx !== assessments.length - 1 ? '1px solid var(--border)' : 'none' }}>
                     <td className="py-3.5 px-5">
                       <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{a.title}</p>
                     </td>
@@ -74,7 +74,7 @@ const AdminAssessments: React.FC = () => {
                     <td className="py-3.5 px-5">
                       <div className="flex items-center gap-2">
                         <span className="text-[12px] font-bold" style={{ color: 'var(--text-primary)' }}>{a.submissions}/{a.total}</span>
-                        <div className="w-16 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                        <div className="w-16 h-1.5 rounded-full bg-black/10 dark:bg-surface/10 overflow-hidden">
                           <div className="h-full bg-brand-500 rounded-full" style={{ width: `${pct}%` }} />
                         </div>
                       </div>

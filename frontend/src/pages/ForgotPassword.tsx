@@ -160,7 +160,7 @@ const ForgotPassword: React.FC = () => {
                   <React.Fragment key={s.key}>
                     <div className="flex flex-col items-center gap-1">
                       <div className={`h-9 w-9 rounded-full flex items-center justify-center transition-all duration-300
-                        ${isDone ? 'bg-green-500' : isActive ? 'bg-indigo-600' : 'bg-slate-100 dark:bg-slate-700'}`}>
+                        ${isDone ? 'bg-green-500' : isActive ? 'bg-indigo-600' : 'bg-bg-subtle dark:bg-slate-700'}`}>
                         {isDone
                           ? <CheckCircle className="h-4 w-4 text-white" />
                           : <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-muted'}`} />
@@ -266,7 +266,7 @@ const ForgotPassword: React.FC = () => {
                       className="w-full px-4 py-3 pr-11 border border-border bg-surface rounded-xl text-primary focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition-all"
                     />
                     <button type="button" onClick={() => setShowPassword(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-slate-600 dark:hover:text-slate-300">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-secondary dark:hover:text-slate-300">
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>

@@ -92,7 +92,7 @@ const UserManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-primary">
           {currentUser?.role === 'TEACHER' ? 'My Students' : 'User Management'}
         </h1>
         <Button 
@@ -106,11 +106,11 @@ const UserManagement: React.FC = () => {
 
       <div className="bg-surface rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
         {currentUser?.role === 'ADMIN' && (
-          <div className="p-4 border-b border-border bg-slate-50/50 dark:bg-slate-800/40 flex gap-4">
+          <div className="p-4 border-b border-border bg-bg-subtle/50 dark:bg-slate-800/40 flex gap-4">
             <select 
               value={filterRole} 
               onChange={(e) => setFilterRole(e.target.value)}
-              className="border-slate-300 dark:border-slate-705 rounded-xl text-sm focus:ring-primary-500/20 focus:border-primary-500 bg-surface shadow-sm px-3 py-2 border transition-all text-slate-750 dark:text-slate-200"
+              className="border-border-strong dark:border-slate-705 rounded-xl text-sm focus:ring-primary-500/20 focus:border-primary-500 bg-surface shadow-sm px-3 py-2 border transition-all text-slate-750 dark:text-slate-200"
             >
               <option value="">All Roles</option>
               <option value="TEACHER">Teachers</option>
@@ -140,7 +140,7 @@ const UserManagement: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-              <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-muted text-xs font-bold uppercase tracking-wider">
+              <thead className="bg-bg-subtle/50 dark:bg-slate-800/40 text-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 text-left">User</th>
                   <th className="px-6 py-4 text-left">Role</th>
@@ -151,14 +151,14 @@ const UserManagement: React.FC = () => {
               </thead>
               <tbody className="bg-surface divide-y divide-slate-200 dark:divide-slate-700">
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                  <tr key={user.id} className="hover:bg-bg-subtle/50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0 bg-primary-100 dark:bg-primary-955/40 text-primary-600 dark:text-primary-400 rounded-full flex items-center justify-center font-bold text-sm shadow-xs">
                           {user.firstName[0]}{user.lastName[0]}
                         </div>
                         <div className="ml-4 text-left">
-                          <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{user.firstName} {user.lastName}</div>
+                          <div className="text-sm font-semibold text-primary">{user.firstName} {user.lastName}</div>
                           <div className="text-xs text-muted">{user.email}</div>
                         </div>
                       </div>
@@ -200,7 +200,7 @@ const UserManagement: React.FC = () => {
                           </Button>
                         </>
                       )}
-                      <button className="text-slate-400 hover:text-primary-500 transition-colors">
+                      <button className="text-muted hover:text-primary-500 transition-colors">
                         <MoreVertical className="h-5 w-5 inline" />
                       </button>
                     </td>

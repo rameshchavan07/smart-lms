@@ -54,7 +54,7 @@ const StudentAssignments: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b bg-black/5 dark:bg-white/5" style={{ borderColor: 'var(--border)' }}>
+              <tr className="border-b bg-black/5 dark:bg-surface/5" style={{ borderColor: 'var(--border)' }}>
                 <th className="py-3 px-5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Assignment</th>
                 <th className="py-3 px-5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Course</th>
                 <th className="py-3 px-5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Due Date</th>
@@ -76,7 +76,7 @@ const StudentAssignments: React.FC = () => {
               ) : assignments.map((a: StudentAssignmentData, idx: number) => {
                 const isOverdue = new Date(a.dueDate) < new Date() && a.status === 'Pending';
                 return (
-                  <tr key={a.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderBottom: idx !== assignments.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <tr key={a.id} className="hover:bg-black/5 dark:hover:bg-surface/5 transition-colors" style={{ borderBottom: idx !== assignments.length - 1 ? '1px solid var(--border)' : 'none' }}>
                     <td className="py-3.5 px-5">
                       <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{a.title}</p>
                     </td>

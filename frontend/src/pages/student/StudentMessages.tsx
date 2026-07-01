@@ -207,7 +207,7 @@ const StudentMessages: React.FC = () => {
                   <button 
                     key={g.id}
                     onClick={() => setSelectedChat(g)}
-                    className={`w-full text-left p-4 border-b transition-colors flex gap-3 ${selectedChat?.id === g.id ? 'bg-brand-500/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`} style={{ borderColor: 'var(--border)' }}
+                    className={`w-full text-left p-4 border-b transition-colors flex gap-3 ${selectedChat?.id === g.id ? 'bg-brand-500/10' : 'hover:bg-black/5 dark:hover:bg-surface/5'}`} style={{ borderColor: 'var(--border)' }}
                   >
                     <div className="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-[13px] flex-shrink-0">
                       <Users size={18} />
@@ -227,7 +227,7 @@ const StudentMessages: React.FC = () => {
                   <button 
                     key={c.id}
                     onClick={() => setSelectedChat(c)}
-                    className={`w-full text-left p-4 border-b transition-colors flex gap-3 ${selectedChat?.id === c.id ? 'bg-brand-500/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`} style={{ borderColor: 'var(--border)' }}
+                    className={`w-full text-left p-4 border-b transition-colors flex gap-3 ${selectedChat?.id === c.id ? 'bg-brand-500/10' : 'hover:bg-black/5 dark:hover:bg-surface/5'}`} style={{ borderColor: 'var(--border)' }}
                   >
                     <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center font-bold text-[13px] flex-shrink-0 overflow-hidden">
                       {c.profileImage ? <img src={c.profileImage.startsWith('http') ? c.profileImage : `http://localhost:5000${c.profileImage}`} className="w-full h-full object-cover" /> : c.firstName?.[0] || 'U'}
@@ -244,10 +244,10 @@ const StudentMessages: React.FC = () => {
         </div>
 
         {/* Right Side - Chat area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-black/[0.02] dark:bg-white/[0.02]">
+        <div className="flex-1 flex flex-col min-w-0 bg-black/[0.02] dark:bg-surface/[0.02]">
           {selectedChat ? (
             <>
-              <div className="p-3 border-b bg-[#f0f2f5] dark:bg-[#202c33] flex items-center gap-3 flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
+              <div className="p-3 border-b bg-bg-subtle flex items-center gap-3 flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
                 {selectedChat.name ? (
                   <div className="w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-[13px]">
                     <Users size={18} />
@@ -267,12 +267,12 @@ const StudentMessages: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#efeae2] dark:bg-[#0b141a]">
+              <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-bg">
                 {loadingMessages ? (
                    <div className="p-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-[#00a884]" /></div>
                 ) : messages.length === 0 ? (
                   <div className="h-full flex items-center justify-center">
-                    <div className="bg-[#ffeecd] dark:bg-[#182229] px-4 py-2 rounded-lg shadow-sm text-[12.5px] text-gray-600 dark:text-gray-400">
+                    <div className="bg-surface-raised px-4 py-2 rounded-lg shadow-sm text-[12.5px] text-gray-600 dark:text-gray-400">
                       Messages are end-to-end encrypted. No one outside of this chat, not even SmartLMS, can read them.
                     </div>
                   </div>
@@ -305,8 +305,8 @@ const StudentMessages: React.FC = () => {
                             
                             <div className={`p-2.5 px-4 rounded-2xl shadow-sm relative ${
                               isSentByMe 
-                                ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-br-none' 
-                                : 'bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-bl-none'
+                                ? 'bg-brand-500 text-white rounded-br-none' 
+                                : 'bg-surface border border-border text-primary rounded-bl-none'
                             }`}>
                               {/* Render files (images, PDFs, documents) */}
                               {m.fileUrl && (
@@ -316,15 +316,15 @@ const StudentMessages: React.FC = () => {
                                       <img src={`http://localhost:5000${m.fileUrl}`} alt={m.fileName} className="max-w-[200px] max-h-[200px] rounded object-cover cursor-pointer hover:opacity-90 transition-opacity" />
                                     </a>
                                   ) : (
-                                    <div className={`flex items-center gap-3 p-2 rounded ${isSentByMe ? 'bg-black/5 dark:bg-black/20' : 'bg-black/5 dark:bg-white/5'}`}>
-                                      <div className={`w-8 h-8 rounded flex items-center justify-center ${isSentByMe ? 'bg-[#005c4b]/20 text-[#005c4b] dark:text-white' : 'bg-[#202c33]/10 text-gray-600 dark:text-gray-300'}`}>
+                                    <div className={`flex items-center gap-3 p-2 rounded ${isSentByMe ? 'bg-black/5 dark:bg-black/20' : 'bg-black/5 dark:bg-surface/5'}`}>
+                                      <div className={`w-8 h-8 rounded flex items-center justify-center ${isSentByMe ? 'bg-brand-500/20 text-brand-500 dark:text-white' : 'bg-bg-subtle text-secondary'}`}>
                                         <FileText size={16} />
                                       </div>
                                       <div className="flex-1 min-w-0 pr-2">
                                         <p className="text-[12px] font-medium truncate leading-tight">{m.fileName}</p>
                                         <p className="text-[10px] opacity-70 truncate">{m.fileType || 'Document'}</p>
                                       </div>
-                                      <a href={`http://localhost:5000${m.fileUrl}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors" download>
+                                      <a href={`http://localhost:5000${m.fileUrl}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-surface/10 transition-colors" download>
                                         <Download size={16} />
                                       </a>
                                     </div>
@@ -338,7 +338,7 @@ const StudentMessages: React.FC = () => {
                                 <span className="text-[10px] text-gray-500 dark:text-gray-400">
                                   {new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                 </span>
-                                {isSentByMe && <CheckCheck size={13} className="text-[#53bdeb]" />}
+                                {isSentByMe && <CheckCheck size={13} className="text-white/80" />}
                               </div>
                             </div>
                           </div>
@@ -351,26 +351,26 @@ const StudentMessages: React.FC = () => {
               </div>
 
               {selectedFile && (
-                <div className="p-3 bg-[#f0f2f5] dark:bg-[#202c33] border-b flex items-center gap-3 flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
-                  <div className="w-10 h-10 rounded bg-[#d9fdd3] dark:bg-[#005c4b] flex items-center justify-center text-[#111b21] dark:text-[#e9edef]">
+                <div className="p-3 bg-bg-subtle border-b flex items-center gap-3 flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
+                  <div className="w-10 h-10 rounded bg-brand-500/20 flex items-center justify-center text-brand-500">
                     <FileText size={20} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{selectedFile.name}</p>
                     <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{(selectedFile.size / 1024).toFixed(1)} KB</p>
                   </div>
-                  <button onClick={() => setSelectedFile(null)} className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-gray-500 transition-colors">
+                  <button onClick={() => setSelectedFile(null)} className="p-1 rounded-full hover:bg-black/10 dark:hover:bg-surface/10 text-gray-500 transition-colors">
                     <X size={16} />
                   </button>
                 </div>
               )}
               
-              <div className="p-3 bg-[#f0f2f5] dark:bg-[#202c33] flex items-center gap-4 flex-shrink-0">
-                <button className="text-[#54656f] dark:text-[#aebac1] hover:text-gray-700 transition-colors">
+              <div className="p-3 bg-bg-subtle flex items-center gap-4 flex-shrink-0">
+                <button className="text-secondary hover:text-gray-700 transition-colors">
                   <Smile size={24} />
                 </button>
                 <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
-                <button onClick={() => fileInputRef.current?.click()} className="text-[#54656f] dark:text-[#aebac1] hover:text-gray-700 transition-colors">
+                <button onClick={() => fileInputRef.current?.click()} className="text-secondary hover:text-gray-700 transition-colors">
                   <Paperclip size={24} />
                 </button>
                 <input 
@@ -378,7 +378,7 @@ const StudentMessages: React.FC = () => {
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   placeholder="Type a message" 
-                  className="flex-1 h-10 text-[15px] rounded-lg px-4 bg-white dark:bg-[#2a3942] border-none focus:ring-0 text-[#111b21] dark:text-[#e9edef] placeholder-[#8696a0]"
+                  className="flex-1 h-10 text-[15px] rounded-lg px-4 bg-surface border border-border focus:ring-0 text-primary placeholder-muted"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && messageText.trim()) sendMessage.mutate();
                   }}
@@ -386,7 +386,7 @@ const StudentMessages: React.FC = () => {
                 <button 
                   onClick={() => sendMessage.mutate()} 
                   disabled={(!messageText.trim() && !selectedFile) || sendMessage.isPending} 
-                  className="text-[#54656f] dark:text-[#aebac1] hover:text-gray-700 transition-colors disabled:opacity-50 ml-1"
+                  className="text-secondary hover:text-gray-700 transition-colors disabled:opacity-50 ml-1"
                 >
                   {sendMessage.isPending ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} />}
                 </button>
@@ -394,7 +394,7 @@ const StudentMessages: React.FC = () => {
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
-              <div className="w-16 h-16 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center mb-4 text-gray-400">
+              <div className="w-16 h-16 rounded-2xl bg-black/5 dark:bg-surface/5 flex items-center justify-center mb-4 text-gray-400">
                 <Users size={32} />
               </div>
               <h3 className="text-[16px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Your Messages</h3>
@@ -406,7 +406,7 @@ const StudentMessages: React.FC = () => {
         {/* Create Group Modal */}
         {isCreatingGroup && (
           <div className="absolute inset-0 bg-black/50 z-10 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="bg-surface dark:bg-[#1a1a1a] rounded-2xl shadow-xl w-full max-w-md p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-[18px] font-bold" style={{ color: 'var(--text-primary)' }}>New Group Chat</h2>
                 <button onClick={() => setIsCreatingGroup(false)} className="text-gray-500 hover:text-black dark:hover:text-white transition-colors">
@@ -424,7 +424,7 @@ const StudentMessages: React.FC = () => {
                   <label className="block text-[12px] font-bold mb-2" style={{ color: 'var(--text-muted)' }}>Select Members (Peers & Teachers)</label>
                   <div className="max-h-[200px] overflow-y-auto border rounded-xl p-2 space-y-1" style={{ borderColor: 'var(--border)' }}>
                     {uniqueContacts.map(c => (
-                      <label key={c.id} className="flex items-center gap-3 p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg cursor-pointer">
+                      <label key={c.id} className="flex items-center gap-3 p-2 hover:bg-black/5 dark:hover:bg-surface/5 rounded-lg cursor-pointer">
                         <input 
                           type="checkbox" 
                           checked={selectedGroupMembers.includes(c.id)} 

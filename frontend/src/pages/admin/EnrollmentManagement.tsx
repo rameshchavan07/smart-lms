@@ -96,7 +96,7 @@ const EnrollmentManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">Student Enrollments</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold text-primary">Student Enrollments</h1>
         <Button 
           onClick={() => setIsModalOpen(true)}
           disabled={!selectedCourseId}
@@ -108,8 +108,8 @@ const EnrollmentManagement: React.FC = () => {
       </div>
 
       <div className="bg-surface rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
-        <div className="p-4 border-b border-border bg-slate-50/50 dark:bg-slate-850/20 flex gap-4 items-center">
-          <label className="text-sm font-semibold text-slate-700 dark:text-slate-305">Select Course:</label>
+        <div className="p-4 border-b border-border bg-bg-subtle/50 dark:bg-slate-850/20 flex gap-4 items-center">
+          <label className="text-sm font-semibold text-secondary dark:text-slate-305">Select Course:</label>
           <select
             value={selectedCourseId}
             onChange={(e) => setSelectedCourseId(e.target.value)}
@@ -150,7 +150,7 @@ const EnrollmentManagement: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-              <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-muted text-xs font-bold uppercase tracking-wider">
+              <thead className="bg-bg-subtle/50 dark:bg-slate-800/40 text-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 text-left">Student Name</th>
                   <th className="px-6 py-4 text-left">Email Address</th>
@@ -160,14 +160,14 @@ const EnrollmentManagement: React.FC = () => {
               </thead>
               <tbody className="bg-surface divide-y divide-slate-200 dark:divide-slate-700">
                 {enrollments.map((record) => (
-                  <tr key={record.student.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                  <tr key={record.student.id} className="hover:bg-bg-subtle/50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-10 w-10 flex-shrink-0 bg-primary-50 dark:bg-primary-955/40 text-primary-600 dark:text-primary-400 rounded-full flex items-center justify-center font-bold text-sm shadow-xs border border-primary-100 dark:border-primary-900/10">
                           {record.student.user.firstName[0]}{record.student.user.lastName[0]}
                         </div>
                         <div className="ml-4 text-left">
-                          <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          <div className="text-sm font-semibold text-primary">
                             {record.student.user.firstName} {record.student.user.lastName}
                           </div>
                         </div>
@@ -187,7 +187,7 @@ const EnrollmentManagement: React.FC = () => {
                       >
                         Unenroll
                       </Button>
-                      <button className="text-slate-400 hover:text-primary-500 transition-colors">
+                      <button className="text-muted hover:text-primary-500 transition-colors">
                         <MoreVertical className="h-5 w-5 inline" />
                       </button>
                     </td>

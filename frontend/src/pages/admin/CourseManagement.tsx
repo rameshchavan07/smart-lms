@@ -107,7 +107,7 @@ const CourseManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-slate-100">Course Management</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold text-primary">Course Management</h1>
         <Button 
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2"
@@ -118,17 +118,17 @@ const CourseManagement: React.FC = () => {
       </div>
 
       <div className="bg-surface rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
-        <div className="p-4 border-b border-border bg-slate-50/50 dark:bg-slate-850/20 flex gap-4">
+        <div className="p-4 border-b border-border bg-bg-subtle/50 dark:bg-slate-850/20 flex gap-4">
           <div className="relative flex-1 max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-slate-400" />
+              <Search className="h-4 w-4 text-muted" />
             </div>
             <input
               type="text"
               placeholder="Search courses..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 block w-full border-slate-250 dark:border-slate-700 rounded-xl bg-surface shadow-sm focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm px-3 py-2 border text-slate-900 dark:text-slate-100 transition-all"
+              className="pl-10 block w-full border-slate-250 dark:border-slate-700 rounded-xl bg-surface shadow-sm focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm px-3 py-2 border text-primary transition-all"
             />
           </div>
         </div>
@@ -153,7 +153,7 @@ const CourseManagement: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-              <thead className="bg-slate-50/50 dark:bg-slate-800/40 text-muted text-xs font-bold uppercase tracking-wider">
+              <thead className="bg-bg-subtle/50 dark:bg-slate-800/40 text-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 text-left">Course Name</th>
                   <th className="px-6 py-4 text-left">Teacher</th>
@@ -165,7 +165,7 @@ const CourseManagement: React.FC = () => {
               </thead>
               <tbody className="bg-surface divide-y divide-slate-200 dark:divide-slate-700">
                 {courses.map((course) => (
-                  <tr key={course.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                  <tr key={course.id} className="hover:bg-bg-subtle/50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {course.thumbnailUrl ? (
@@ -185,11 +185,11 @@ const CourseManagement: React.FC = () => {
                           </div>
                         )}
                         <div className="ml-4 text-left">
-                          <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{course.title}</div>
+                          <div className="text-sm font-semibold text-primary">{course.title}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-350">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary dark:text-slate-350">
                       {course.teacher ? (
                         <span className="font-semibold text-slate-850 dark:text-slate-200">
                           {course.teacher.user.firstName} {course.teacher.user.lastName}
@@ -198,10 +198,10 @@ const CourseManagement: React.FC = () => {
                         <Badge variant="warning">Unassigned</Badge>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-600 dark:text-slate-350">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-secondary dark:text-slate-350">
                       {course._count.enrollments}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-600 dark:text-slate-350">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-secondary dark:text-slate-350">
                       {course._count.lectures}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
@@ -209,7 +209,7 @@ const CourseManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold space-x-2">
                       {uploadingCourseId === course.id ? (
-                        <span className="inline-flex items-center gap-1.5 text-slate-400 mr-3 text-xs">
+                        <span className="inline-flex items-center gap-1.5 text-muted mr-3 text-xs">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           Uploading...
                         </span>
@@ -232,7 +232,7 @@ const CourseManagement: React.FC = () => {
                       >
                         Delete
                       </Button>
-                      <button className="text-slate-400 hover:text-primary-500 transition-colors">
+                      <button className="text-muted hover:text-primary-500 transition-colors">
                         <MoreVertical className="h-5 w-5 inline" />
                       </button>
                     </td>

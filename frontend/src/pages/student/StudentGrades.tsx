@@ -63,7 +63,7 @@ const StudentGrades: React.FC = () => {
               <p className="text-[12px] font-medium" style={{ color: 'var(--text-muted)' }}>Overall Progress</p>
               <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{isLoading ? '-' : `${stats?.overallProgress || 0}%`}</span>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+            <div className="w-full h-1.5 rounded-full bg-black/10 dark:bg-surface/10 overflow-hidden">
               <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${stats?.overallProgress || 0}%` }} />
             </div>
           </div>
@@ -80,7 +80,7 @@ const StudentGrades: React.FC = () => {
             <div className="py-8 text-center text-[13px] text-gray-500">No graded assignments yet.</div>
           ) : (
             gradedAssignments.map((a: Assignment) => (
-              <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-transparent hover:border-brand-500/30 transition-colors">
+              <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-black/5 dark:bg-surface/5 border border-transparent hover:border-brand-500/30 transition-colors">
                 <div>
                   <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{a.title}</p>
                   <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{a.course}</p>

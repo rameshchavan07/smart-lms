@@ -57,7 +57,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50 dark:bg-[#080d18] text-slate-900 dark:text-slate-100 font-sans">
+    <div className="min-h-screen flex bg-bg-subtle dark:bg-[#080d18] text-primary font-sans">
       {/* ── Left Panel: Branding ── */}
       <div className="hidden lg:flex flex-col w-[52%] bg-gradient-to-br from-[#0f1729] via-[#162040] to-[#0a0f1e] relative overflow-hidden p-12">
         {/* Decorative blobs */}
@@ -75,7 +75,7 @@ const Login: React.FC = () => {
 
         {/* Hero Content */}
         <div className="relative flex-1 flex flex-col justify-center py-12">
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6 w-fit">
+          <div className="inline-flex items-center gap-2 bg-surface/5 border border-white/10 rounded-full px-4 py-1.5 mb-6 w-fit">
             <Sparkles className="w-3.5 h-3.5 text-brand-400" />
             <span className="text-[12px] text-white/70 font-medium">Modern Enterprise LMS</span>
           </div>
@@ -94,7 +94,7 @@ const Login: React.FC = () => {
             {FEATURES.map((f) => (
               <div
                 key={f.label}
-                className="flex items-center gap-3 bg-white/5 border border-white/8 rounded-xl p-3.5 hover:bg-white/8 transition-colors"
+                className="flex items-center gap-3 bg-surface/5 border border-white/8 rounded-xl p-3.5 hover:bg-surface/8 transition-colors"
               >
                 <div className="w-8 h-8 rounded-lg bg-brand-500/20 flex items-center justify-center flex-shrink-0">
                   <f.icon className="w-4 h-4 text-brand-400" />
@@ -185,7 +185,7 @@ const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors text-muted hover:text-slate-600 dark:hover:text-slate-300"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors text-muted hover:text-secondary dark:hover:text-slate-300"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -247,7 +247,7 @@ const Login: React.FC = () => {
               Create one free
             </Link>
           </p>
-          <p className="text-center text-[11px] mt-4 text-slate-300 dark:text-slate-600">
+          <p className="text-center text-[11px] mt-4 text-slate-300 dark:text-secondary">
             © 2026 OpenLearnX. All rights reserved.
           </p>
         </div>

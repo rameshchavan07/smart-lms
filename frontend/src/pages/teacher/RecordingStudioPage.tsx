@@ -131,7 +131,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
         </div>
         <button
           onClick={onDiscard}
-          className="p-2 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition"
+          className="p-2 rounded-xl hover:bg-surface/10 text-white/40 hover:text-white transition"
         >
           <X className="w-5 h-5" />
         </button>
@@ -147,14 +147,14 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
 
       {/* Upload progress */}
       {isUploading && (
-        <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10">
+        <div className="mt-4 p-4 rounded-xl bg-surface/5 border border-white/10">
           <div className="flex items-center justify-between text-sm text-white/60 mb-2">
             <span className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" /> Uploading to Google Drive…
             </span>
             <span className="font-mono">{uploadProgress}%</span>
           </div>
-          <div className="w-full bg-white/10 rounded-full h-2">
+          <div className="w-full bg-surface/10 rounded-full h-2">
             <div
               className="h-2 rounded-full transition-all duration-300"
               style={{
@@ -188,13 +188,13 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
       <div className="flex gap-3 mt-4">
         <button
           onClick={onDiscard}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white hover:bg-white/10 transition"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white hover:bg-surface/10 transition"
         >
           <X className="w-4 h-4" /> Discard
         </button>
         <button
           onClick={handleDownload}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/15 text-white transition"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-surface/10 hover:bg-surface/15 text-white transition"
         >
           <Download className="w-4 h-4" /> Download
         </button>
@@ -282,7 +282,7 @@ const RecordingStudioPage: React.FC = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 rounded-xl hover:bg-white/10 text-white/60 hover:text-white transition"
+            className="p-2 rounded-xl hover:bg-surface/10 text-white/60 hover:text-white transition"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -417,7 +417,7 @@ const RecordingStudioPage: React.FC = () => {
                 {/* Pause timeline bar */}
                 {isActive && (
                   <div className="absolute bottom-4 left-4 right-4">
-                    <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-surface/10 rounded-full h-1.5 overflow-hidden">
                       <div
                         className="h-full rounded-full"
                         style={{
@@ -525,7 +525,7 @@ const RecordingStudioPage: React.FC = () => {
           {/* Settings header */}
           <button
             onClick={() => setSettingsOpen(o => !o)}
-            className="flex items-center justify-between px-5 py-4 hover:bg-white/5 transition"
+            className="flex items-center justify-between px-5 py-4 hover:bg-surface/5 transition"
             style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
           >
             <div className="flex items-center gap-2 text-white/70">
@@ -603,7 +603,7 @@ const RecordingStudioPage: React.FC = () => {
                     style={{ background: enableWebcam ? '#4361f0' : 'rgba(255,255,255,0.1)' }}
                   >
                     <div
-                      className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all"
+                      className="absolute top-0.5 w-4 h-4 bg-surface rounded-full shadow transition-all"
                       style={{ left: enableWebcam ? '18px' : '2px' }}
                     />
                   </div>

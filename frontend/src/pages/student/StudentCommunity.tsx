@@ -41,7 +41,7 @@ const StudentCommunity: React.FC = () => {
         ) : (
           <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
             {discussions.map((d: DiscussionData) => (
-              <div key={d.id} className="p-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex gap-4">
+              <div key={d.id} className="p-4 hover:bg-black/5 dark:hover:bg-surface/5 transition-colors flex gap-4">
                 <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center flex-shrink-0 font-bold text-[14px]">
                   {d.user?.firstName?.[0] || 'U'}{d.user?.lastName?.[0] || ''}
                 </div>
@@ -57,7 +57,7 @@ const StudentCommunity: React.FC = () => {
                   </div>
                   <p className="text-[12px] line-clamp-2 mt-1" style={{ color: 'var(--text-secondary)' }}>{d.content}</p>
                   <div className="flex items-center gap-4 mt-3">
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/5" style={{ color: 'var(--text-muted)' }}>
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-black/5 dark:bg-surface/5" style={{ color: 'var(--text-muted)' }}>
                       {d.course?.title}
                     </span>
                     <span className="text-[11px] font-medium flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>

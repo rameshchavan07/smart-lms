@@ -39,9 +39,9 @@ const LiveClassRoom: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-bg-subtle">
         <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-        <p className="text-slate-600 font-medium">Preparing virtual classroom...</p>
+        <p className="text-secondary font-medium">Preparing virtual classroom...</p>
       </div>
     );
   }
@@ -74,7 +74,7 @@ const LiveClassRoom: React.FC = () => {
           </button>
           <div>
             <h1 className="font-bold text-lg">{lectureTitle || 'Live Class'}</h1>
-            <p className="text-xs text-slate-400">{courseName} • Powered by {isJaaS ? 'JaaS (8x8.vc)' : 'Jitsi Meet'}</p>
+            <p className="text-xs text-muted">{courseName} • Powered by {isJaaS ? 'JaaS (8x8.vc)' : 'Jitsi Meet'}</p>
           </div>
         </div>
         {recordingUrl ? (
@@ -101,7 +101,7 @@ const LiveClassRoom: React.FC = () => {
             <LectureRecordingPlayer url={recordingUrl} />
           </div>
         ) : isEnded ? (
-          <div className="text-center text-slate-400 p-8">
+          <div className="text-center text-muted p-8">
             <p className="text-xl font-semibold mb-2">This live class has ended.</p>
             <p className="text-sm">The recording will be available here soon.</p>
           </div>

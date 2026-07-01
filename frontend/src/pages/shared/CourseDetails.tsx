@@ -320,7 +320,7 @@ const CourseDetails: React.FC = () => {
     if (type.includes('zip') || type.includes('rar') || type.includes('tar') || type.includes('compressed')) {
       return <FolderOpen className="w-6 h-6 text-yellow-600 shrink-0" />;
     }
-    return <FileText className="w-6 h-6 text-slate-400 shrink-0" />;
+    return <FileText className="w-6 h-6 text-muted shrink-0" />;
   };
 
   return (
@@ -331,11 +331,11 @@ const CourseDetails: React.FC = () => {
           onClick={() => navigate(-1)} 
           className="p-2 bg-surface rounded-full border border-border hover:bg-bg-subtle transition shadow-sm"
         >
-          <ArrowLeft className="w-5 h-5 text-slate-600" />
+          <ArrowLeft className="w-5 h-5 text-secondary" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Course Classroom</h1>
-          <p className="text-slate-500 mt-1">Access live lectures and study materials.</p>
+          <h1 className="text-2xl font-bold text-primary">Course Classroom</h1>
+          <p className="text-muted mt-1">Access live lectures and study materials.</p>
         </div>
       </div>
 
@@ -346,7 +346,7 @@ const CourseDetails: React.FC = () => {
           className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'lectures'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+              : 'border-transparent text-muted hover:text-secondary dark:hover:text-slate-200 dark:text-slate-300'
           }`}
         >
           <Video className="w-4 h-4" />
@@ -357,7 +357,7 @@ const CourseDetails: React.FC = () => {
           className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'materials'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+              : 'border-transparent text-muted hover:text-secondary dark:hover:text-slate-200 dark:text-slate-300'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -368,7 +368,7 @@ const CourseDetails: React.FC = () => {
           className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'quizzes'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+              : 'border-transparent text-muted hover:text-secondary dark:hover:text-slate-200 dark:text-slate-300'
           }`}
         >
           <CheckSquare className="w-4 h-4" />
@@ -379,7 +379,7 @@ const CourseDetails: React.FC = () => {
           className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'assignments'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+              : 'border-transparent text-muted hover:text-secondary dark:hover:text-slate-200 dark:text-slate-300'
           }`}
         >
           <FileTextIcon className="w-4 h-4" />
@@ -390,7 +390,7 @@ const CourseDetails: React.FC = () => {
           className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'discussions'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+              : 'border-transparent text-muted hover:text-secondary dark:hover:text-slate-200 dark:text-slate-300'
           }`}
         >
           <MessageCircle className="w-4 h-4" />
@@ -402,7 +402,7 @@ const CourseDetails: React.FC = () => {
             className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
               activeTab === 'students'
                 ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-muted hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'
+                : 'border-transparent text-muted hover:text-secondary dark:hover:text-slate-200 dark:text-slate-300'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -433,7 +433,7 @@ const CourseDetails: React.FC = () => {
 
           {showCreateLecture && user?.role === 'TEACHER' && (
             <form onSubmit={handleCreateLecture} className="mb-8 p-4 bg-bg-subtle border border-border rounded-lg space-y-4 shadow-sm">
-              <h4 className="font-semibold text-slate-900 text-sm">{editLectureId ? 'Edit Live Class' : 'Schedule a Live Class'}</h4>
+              <h4 className="font-semibold text-primary text-sm">{editLectureId ? 'Edit Live Class' : 'Schedule a Live Class'}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-secondary mb-1">Title</label>
@@ -490,8 +490,8 @@ const CourseDetails: React.FC = () => {
           )}
 
           {lecturesLoading ? (
-            <div className="text-center py-8 text-slate-500">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
+            <div className="text-center py-8 text-muted">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted" />
               <span className="text-xs mt-2 block">Loading lectures...</span>
             </div>
           ) : lectures.length === 0 ? (
@@ -537,20 +537,20 @@ const CourseDetails: React.FC = () => {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-slate-900 text-base">{lecture.title}</h4>
+                          <h4 className="font-bold text-primary text-base">{lecture.title}</h4>
                           {isLive && (
-                            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700 uppercase tracking-wide">
+                            <span className="flex items-center gap-1.5 badge badge-green uppercase tracking-wide">
                               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                               Live Now
                             </span>
                           )}
                           {isEnded && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase tracking-wide">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-bg-subtle text-muted uppercase tracking-wide">
                               Ended
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-slate-500 mt-1 line-clamp-1">{lecture.description}</p>
+                        <p className="text-sm text-muted mt-1 line-clamp-1">{lecture.description}</p>
                         <div className="text-xs font-semibold text-indigo-600 mt-2 bg-indigo-50/50 border border-indigo-100/50 px-2 py-0.5 rounded w-max flex items-center gap-2">
                           {new Date(lecture.startTime).toLocaleString()} - {new Date(lecture.endTime).toLocaleTimeString()}
                           
@@ -573,7 +573,7 @@ const CourseDetails: React.FC = () => {
                             setSelectedLectureForAttendance({ id: lecture.id, title: lecture.title });
                             setShowAttendanceModal(true);
                           }}
-                          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
+                          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition font-semibold text-sm border border-border text-secondary hover:bg-bg-subtle shadow-sm"
                         >
                           <Users className="w-4 h-4" />
                           Attendance
@@ -585,7 +585,7 @@ const CourseDetails: React.FC = () => {
                             setSelectedLectureForRecording({ id: lecture.id, title: lecture.title });
                             setShowUploadRecordingModal(true);
                           }}
-                          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition font-semibold text-sm border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
+                          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition font-semibold text-sm border border-border text-secondary hover:bg-bg-subtle shadow-sm"
                         >
                           <UploadCloud className="w-4 h-4" />
                           Upload Recording
@@ -598,7 +598,7 @@ const CourseDetails: React.FC = () => {
                           isEnded
                             ? lecture.recordingUrl
                               ? 'bg-blue-600 text-white hover:bg-blue-700'
-                              : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                              : 'bg-bg-subtle text-muted cursor-not-allowed'
                             : isLive
                             ? 'bg-green-600 text-white hover:bg-green-700'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -652,7 +652,7 @@ const CourseDetails: React.FC = () => {
 
           {showUploadMaterial && user?.role === 'TEACHER' && (
             <form onSubmit={handleUploadMaterial} className="mb-8 p-4 bg-bg-subtle border border-border rounded-lg space-y-4 shadow-sm">
-              <h4 className="font-semibold text-slate-900 text-sm">Upload Study Material</h4>
+              <h4 className="font-semibold text-primary text-sm">Upload Study Material</h4>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-secondary mb-1">Material Title</label>
@@ -679,11 +679,11 @@ const CourseDetails: React.FC = () => {
                   <div className="flex items-center justify-center w-full">
                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border-strong rounded-lg cursor-pointer bg-surface hover:bg-bg-subtle transition">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <UploadCloud className="w-8 h-8 text-slate-400 mb-2" />
-                        <p className="text-sm text-slate-500">
+                        <UploadCloud className="w-8 h-8 text-muted mb-2" />
+                        <p className="text-sm text-muted">
                           <span className="font-semibold">Click to upload</span> or drag and drop
                         </p>
-                        <p className="text-xs text-slate-400 mt-1">PDF, DOCX, PPTX, ZIP (Max 100MB)</p>
+                        <p className="text-xs text-muted mt-1">PDF, DOCX, PPTX, ZIP (Max 100MB)</p>
                       </div>
                       <input 
                         type="file" 
@@ -721,8 +721,8 @@ const CourseDetails: React.FC = () => {
           )}
 
           {materialsLoading ? (
-            <div className="text-center py-8 text-slate-500">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
+            <div className="text-center py-8 text-muted">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted" />
               <span className="text-xs mt-2 block">Loading materials...</span>
             </div>
           ) : materials.length === 0 ? (
@@ -738,13 +738,13 @@ const CourseDetails: React.FC = () => {
                   <div className="flex items-center gap-4 min-w-0">
                     {getFileIcon(material.fileType)}
                     <div className="min-w-0">
-                      <h4 className="font-bold text-slate-900 text-sm truncate">{material.title}</h4>
+                      <h4 className="font-bold text-primary text-sm truncate">{material.title}</h4>
                       {material.description && (
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed bg-slate-100 dark:bg-slate-700/50 p-1.5 rounded border border-slate-100 max-w-md">
+                        <p className="text-xs text-muted mt-1 line-clamp-2 leading-relaxed bg-bg-subtle dark:bg-slate-700/50 p-1.5 rounded border border-border max-w-md">
                           {material.description}
                         </p>
                       )}
-                      <p className="text-xs text-slate-400 mt-1.5">
+                      <p className="text-xs text-muted mt-1.5">
                         {material.fileSize ? `${formatFileSize(material.fileSize)} • ` : ''}Uploaded {new Date(material.uploadedAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -755,7 +755,7 @@ const CourseDetails: React.FC = () => {
                       href={material.fileUrl} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                      className="p-2 text-muted hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
                       title="Download/View"
                     >
                       <Download className="w-5 h-5" />
@@ -763,7 +763,7 @@ const CourseDetails: React.FC = () => {
                     {user?.role === 'TEACHER' && (
                       <button 
                         onClick={() => handleDeleteMaterial(material.id)}
-                        className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                        className="p-2 text-muted hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
                         title="Delete"
                       >
                         <Trash2 className="w-5 h-5" />
@@ -789,8 +789,8 @@ const CourseDetails: React.FC = () => {
           </div>
 
           {studentsLoading ? (
-            <div className="text-center py-8 text-slate-500">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
+            <div className="text-center py-8 text-muted">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted" />
               <span className="text-xs mt-2 block">Loading enrolled students...</span>
             </div>
           ) : enrolledStudents.length === 0 ? (
@@ -802,7 +802,7 @@ const CourseDetails: React.FC = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-bg-subtle text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                <thead className="bg-bg-subtle text-muted text-xs font-semibold uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-4 text-left">Student Name</th>
                     <th className="px-6 py-4 text-left">Email Address</th>
@@ -819,17 +819,17 @@ const CourseDetails: React.FC = () => {
                             {record.student.user.firstName[0]}{record.student.user.lastName[0]}
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-slate-900">
+                            <div className="text-sm font-medium text-primary">
                               {record.student.user.firstName} {record.student.user.lastName}
                             </div>
-                            <div className="text-xs text-slate-400">{record.student.enrollmentNumber}</div>
+                            <div className="text-xs text-muted">{record.student.enrollmentNumber}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary">
                         {record.student.user.email}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                         {new Date(record.enrolledAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -864,8 +864,8 @@ const CourseDetails: React.FC = () => {
           </div>
 
           {quizzesLoading ? (
-            <div className="text-center py-8 text-slate-500">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
+            <div className="text-center py-8 text-muted">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted" />
               <span className="text-xs mt-2 block">Loading assessments...</span>
             </div>
           ) : quizzes.length === 0 ? (
@@ -883,17 +883,17 @@ const CourseDetails: React.FC = () => {
                       <CheckSquare className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-900 text-base">{quiz.title}</h4>
-                      <p className="text-sm text-slate-500 mt-1 line-clamp-1">{quiz.description}</p>
-                      <div className="flex items-center gap-3 mt-2 text-xs font-semibold text-slate-500">
-                        <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                      <h4 className="font-bold text-primary text-base">{quiz.title}</h4>
+                      <p className="text-sm text-muted mt-1 line-clamp-1">{quiz.description}</p>
+                      <div className="flex items-center gap-3 mt-2 text-xs font-semibold text-muted">
+                        <span className="bg-bg-subtle dark:bg-slate-700 px-2 py-0.5 rounded">
                           {quiz._count.questions} Questions
                         </span>
-                        <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                        <span className="bg-bg-subtle dark:bg-slate-700 px-2 py-0.5 rounded">
                           {quiz.totalMarks} Marks
                         </span>
                         {quiz.durationMins && (
-                          <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                          <span className="bg-bg-subtle dark:bg-slate-700 px-2 py-0.5 rounded">
                             {quiz.durationMins} Mins
                           </span>
                         )}

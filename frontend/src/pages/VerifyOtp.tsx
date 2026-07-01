@@ -198,7 +198,7 @@ const VerifyOtp: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/register')}
-              className="text-xs text-muted hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              className="text-xs text-muted hover:text-secondary dark:hover:text-slate-300 transition-colors"
             >
               ← Use a different email
             </button>

@@ -57,11 +57,11 @@ const StudentSettings: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left Col - Navigation */}
         <div className="flex flex-col gap-2">
-          <button className="flex items-center gap-3 p-3 rounded-xl text-left bg-black/5 dark:bg-white/5 font-bold" style={{ color: 'var(--text-primary)' }}>
+          <button className="flex items-center gap-3 p-3 rounded-xl text-left bg-black/5 dark:bg-surface/5 font-bold" style={{ color: 'var(--text-primary)' }}>
             <User size={18} className="text-brand-500" />
             Profile Info
           </button>
-          <button className="flex items-center gap-3 p-3 rounded-xl text-left hover:bg-black/5 dark:hover:bg-white/5 font-semibold transition-colors" style={{ color: 'var(--text-muted)' }}>
+          <button className="flex items-center gap-3 p-3 rounded-xl text-left hover:bg-black/5 dark:hover:bg-surface/5 font-semibold transition-colors" style={{ color: 'var(--text-muted)' }}>
             <Shield size={18} />
             Security
           </button>
@@ -113,7 +113,7 @@ const StudentSettings: React.FC = () => {
               
               <div>
                 <label className="block text-[12px] font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>Email Address</label>
-                <input type="email" className="input w-full text-[13px] bg-black/5 dark:bg-white/5 cursor-not-allowed" value={user?.email || ''} disabled />
+                <input type="email" className="input w-full text-[13px] bg-black/5 dark:bg-surface/5 cursor-not-allowed" value={user?.email || ''} disabled />
                 <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>Contact support to change your email address.</p>
               </div>
 

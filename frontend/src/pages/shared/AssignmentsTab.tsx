@@ -122,7 +122,7 @@ const CreateAssignmentModal = ({ courseId, onClose }: { courseId: string, onClos
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg p-6 shadow-xl">
+      <div className="bg-surface dark:bg-slate-900 rounded-2xl w-full max-w-lg p-6 shadow-xl">
         <h3 className="text-lg font-bold mb-4">New Assignment</h3>
         <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-4">
           <div>

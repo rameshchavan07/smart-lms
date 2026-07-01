@@ -65,7 +65,7 @@ const TeacherAssessments: React.FC = () => {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-black/5 dark:bg-white/5">
+            <thead className="bg-black/5 dark:bg-surface/5">
               <tr className="text-[11px] uppercase tracking-wider" style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                 <th className="py-3 px-5 font-semibold">Title</th>
                 <th className="py-3 px-5 font-semibold">Course</th>
@@ -91,7 +91,7 @@ const TeacherAssessments: React.FC = () => {
               ) : assessments.map((a: { id: string; title: string; course: string; type: string; dueDate: string; submissions: number; total: number; status: string }, idx: number) => {
                 const pct = a.total > 0 ? Math.round((a.submissions / a.total) * 100) : 0;
                 return (
-                  <tr key={a.id} className="group transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ borderBottom: idx !== assessments.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <tr key={a.id} className="group transition-colors hover:bg-black/5 dark:hover:bg-surface/5" style={{ borderBottom: idx !== assessments.length - 1 ? '1px solid var(--border)' : 'none' }}>
                     <td className="py-3.5 px-5">
                       <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{a.title}</p>
                     </td>
