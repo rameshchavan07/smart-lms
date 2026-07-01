@@ -47,10 +47,35 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
   const [seeking, setSeeking] = useState(false);
   const [hoveredChapter, setHoveredChapter] = useState<Chapter | null>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const playerRef = useRef<any>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync state to native video
+  useEffect(() => {
+    if (videoRef.current) {
+      if (playing) {
+        videoRef.current.play().catch(e => {
+          console.warn('Play interrupted', e);
+          setPlaying(false);
+        });
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [playing]);
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = muted;
+  }, [muted]);
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = playbackRate;
+  }, [playbackRate]);
 
   // Auto-hide controls
   const showControlsTemporarily = () => {
@@ -88,21 +113,14 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
   const handleSeekMouseUp = (e: React.MouseEvent<HTMLInputElement>) => {
     setSeeking(false);
     const value = parseFloat((e.target as HTMLInputElement).value);
-    if (typeof playerRef.current?.seekTo === 'function') {
-      playerRef.current.seekTo(value);
-    } else {
-      const video = wrapperRef.current?.querySelector('video');
-      if (video) video.currentTime = value * duration;
+    if (videoRef.current) {
+      videoRef.current.currentTime = value * duration;
     }
   };
 
   const skip = (seconds: number) => {
-    if (typeof playerRef.current?.getCurrentTime === 'function' && typeof playerRef.current?.seekTo === 'function') {
-      const current = playerRef.current.getCurrentTime() || 0;
-      playerRef.current.seekTo(Math.max(0, Math.min(duration, current + seconds)));
-    } else {
-      const video = wrapperRef.current?.querySelector('video');
-      if (video) video.currentTime = Math.max(0, Math.min(duration, video.currentTime + seconds));
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds));
     }
   };
 
@@ -120,24 +138,22 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
       <div className="pt-[56.25%] relative">
         <div className="absolute inset-0">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {(() => { const AnyPlayer = ReactPlayer as any; return (
-          <AnyPlayer
-            ref={playerRef}
-            url={playableUrl}
-            playing={playing}
-            muted={muted}
-            volume={volume}
-            playbackRate={playbackRate}
-            width="100%"
-            height="100%"
-            config={{ file: { forceVideo: true } }}
-            onProgress={(state: { played: number }) => { if (!seeking) setPlayed(state.played); }}
-            onDuration={setDuration}
-            onBuffer={() => setBuffering(true)}
-            onBufferEnd={() => setBuffering(false)}
+          <video
+            ref={videoRef}
+            src={playableUrl}
+            className="w-full h-full object-contain"
+            onTimeUpdate={(e) => {
+              if (!seeking && duration > 0) {
+                setPlayed(e.currentTarget.currentTime / duration);
+              }
+            }}
+            onDurationChange={(e) => setDuration(e.currentTarget.duration)}
+            onWaiting={() => setBuffering(true)}
+            onPlaying={() => setBuffering(false)}
             onEnded={() => setPlaying(false)}
+            onPause={() => setPlaying(false)}
+            onPlay={() => setPlaying(true)}
           />
-          ); })()}
         </div>
       </div>
 
