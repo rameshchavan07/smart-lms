@@ -415,7 +415,7 @@ const CourseDetails: React.FC = () => {
       {activeTab === 'lectures' ? (
         <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-slate-900">Scheduled Classes</h3>
+            <h3 className="text-lg font-bold text-primary">Scheduled Classes</h3>
             {user?.role === 'TEACHER' && (
               <Button 
                 variant="primary"
@@ -626,7 +626,7 @@ const CourseDetails: React.FC = () => {
       ) : activeTab === 'materials' ? (
         <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-slate-900">Study Materials</h3>
+            <h3 className="text-lg font-bold text-primary">Study Materials</h3>
             {user?.role === 'TEACHER' && (
               <Button 
                 variant="primary"
@@ -778,7 +778,7 @@ const CourseDetails: React.FC = () => {
       ) : activeTab === 'students' ? (
         <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-slate-900">Enrolled Students</h3>
+            <h3 className="text-lg font-bold text-primary">Enrolled Students</h3>
             <Button 
               variant="primary"
               onClick={() => setShowEnrollModal(true)}
@@ -851,7 +851,7 @@ const CourseDetails: React.FC = () => {
       ) : activeTab === 'quizzes' ? (
         <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-slate-900">Assessments</h3>
+            <h3 className="text-lg font-bold text-primary">Assessments</h3>
             {user?.role === 'TEACHER' && (
               <Button 
                 variant="primary"

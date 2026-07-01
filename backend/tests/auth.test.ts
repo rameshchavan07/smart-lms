@@ -37,11 +37,14 @@ describe('Auth Endpoints', () => {
     const setCookieHeader = res.headers['set-cookie'];
     expect(setCookieHeader).toBeDefined();
     
+    // Supertest/Express headers can type 'set-cookie' as string | string[]
+    const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader as string];
+    
     // Verify cookies are set and httpOnly
-    const tokenCookie = setCookieHeader.find((c: string) => c.startsWith('token='));
+    const tokenCookie = cookies.find((c: string) => c.startsWith('token='));
     expect(tokenCookie).toContain('HttpOnly');
     
-    const refreshCookie = setCookieHeader.find((c: string) => c.startsWith('refreshToken='));
+    const refreshCookie = cookies.find((c: string) => c.startsWith('refreshToken='));
     expect(refreshCookie).toContain('HttpOnly');
   });
 });
