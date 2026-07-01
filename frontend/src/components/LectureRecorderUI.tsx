@@ -148,21 +148,16 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ blob, duration, lectureId, 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div
-        className="w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col"
-        style={{
-          background: 'var(--surface, #1e293b)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
-        }}
+        className="w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col bg-surface shadow-xl border border-border"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
-            <h3 className="text-white font-bold text-lg">Preview Recording</h3>
-            <p className="text-white/50 text-xs mt-0.5">Duration: {formatTime(duration)}</p>
+            <h3 className="text-primary font-bold text-lg">Preview Recording</h3>
+            <p className="text-muted text-xs mt-0.5">Duration: {formatTime(duration)}</p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-white/40">
-            <span className="px-2 py-1 rounded-full bg-white/10">WebM · {(blob.size / (1024 * 1024)).toFixed(1)} MB</span>
+          <div className="flex items-center gap-2 text-xs text-secondary">
+            <span className="px-2 py-1 rounded-full bg-bg-subtle border border-border">WebM · {(blob.size / (1024 * 1024)).toFixed(1)} MB</span>
           </div>
         </div>
 
@@ -178,17 +173,17 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ blob, duration, lectureId, 
 
         {/* Upload Progress */}
         {isUploading && (
-          <div className="px-5 py-3 bg-black/30">
-            <div className="flex items-center justify-between text-xs text-white/60 mb-2">
+          <div className="px-5 py-3 bg-bg-subtle border-t border-border">
+            <div className="flex items-center justify-between text-xs text-secondary mb-2">
               <span className="flex items-center gap-2">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Uploading to Google Drive…
               </span>
               <span>{uploadProgress}%</span>
             </div>
-            <div className="w-full bg-white/10 rounded-full h-1.5">
+            <div className="w-full bg-surface border border-border rounded-full h-1.5 overflow-hidden">
               <div
-                className="h-1.5 rounded-full transition-all duration-300"
+                className="h-full rounded-full transition-all duration-300"
                 style={{
                   width: `${uploadProgress}%`,
                   background: 'linear-gradient(90deg, #4361f0, #8b5cf6)',
@@ -199,30 +194,30 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ blob, duration, lectureId, 
         )}
 
         {uploadSuccess && (
-          <div className="px-5 py-3 bg-emerald-500/10 border-t border-emerald-500/20 flex items-center gap-2 text-emerald-400 text-sm">
+          <div className="px-5 py-3 bg-green-50 dark:bg-green-500/10 border-t border-green-200 dark:border-green-500/20 flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
             <Check className="w-4 h-4" /> Uploaded successfully to Google Drive!
           </div>
         )}
 
         {uploadError && (
-          <div className="px-5 py-2 bg-red-500/10 border-t border-red-500/20 text-red-400 text-xs">
+          <div className="px-5 py-3 bg-red-50 dark:bg-red-500/10 border-t border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm">
             {uploadError}
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-3 px-5 py-4 border-t border-white/10">
+        <div className="flex items-center gap-3 px-5 py-4 border-t border-border bg-surface">
           <button
             onClick={onDiscard}
             disabled={isUploading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-white/10 transition disabled:opacity-40"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-muted hover:text-primary hover:bg-bg-subtle transition disabled:opacity-40"
           >
             <X className="w-4 h-4" /> Discard
           </button>
 
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/20 text-white transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-bg-subtle border border-border hover:bg-border text-primary transition"
           >
             <Download className="w-4 h-4" /> Download
           </button>
@@ -232,14 +227,14 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ blob, duration, lectureId, 
           {isUploading ? (
             <button
               onClick={handleCancelUpload}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-red-500/20 hover:bg-red-500/30 text-red-400 transition"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:text-red-400 transition"
             >
               <X className="w-4 h-4" /> Cancel
             </button>
           ) : !uploadSuccess ? (
             <button
               onClick={handleUpload}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white transition"
+              className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
               style={{ background: 'linear-gradient(135deg, #4361f0, #8b5cf6)' }}
             >
               <UploadCloud className="w-4 h-4" /> Upload to Cloud

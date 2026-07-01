@@ -25,8 +25,14 @@ const formatTime = (s: number) => {
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, chapters = [] }) => {
-  const isGoogleDrive = url.includes('drive.google.com');
-  const embedUrl = isGoogleDrive ? url.replace('/view', '/preview') : url;
+  let playableUrl = url;
+  if (url.includes('drive.google.com')) {
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      // confirm=t helps bypass virus scan warnings for large files
+      playableUrl = `https://drive.google.com/uc?export=download&confirm=t&id=${match[1]}`;
+    }
+  }
 
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -91,20 +97,6 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
 
   const currentChapter = chapters.findLast(c => c.time <= played * duration);
 
-  if (isGoogleDrive) {
-    return (
-      <div className="relative pt-[56.25%] bg-black rounded-2xl overflow-hidden shadow-xl border border-white/10">
-        <iframe
-          src={embedUrl}
-          className="absolute top-0 left-0 w-full h-full border-0"
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-          title="Lecture Recording"
-        />
-      </div>
-    );
-  }
-
   return (
     <div
       ref={wrapperRef}
@@ -120,7 +112,7 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
           {(() => { const AnyPlayer = ReactPlayer as any; return (
           <AnyPlayer
             ref={playerRef}
-            url={url}
+            url={playableUrl}
             playing={playing}
             muted={muted}
             volume={volume}
