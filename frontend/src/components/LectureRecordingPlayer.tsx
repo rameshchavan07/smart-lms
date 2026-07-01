@@ -90,8 +90,9 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
     const value = parseFloat((e.target as HTMLInputElement).value);
     if (typeof playerRef.current?.seekTo === 'function') {
       playerRef.current.seekTo(value);
-    } else if (playerRef.current && 'currentTime' in playerRef.current) {
-      playerRef.current.currentTime = value * duration;
+    } else {
+      const video = wrapperRef.current?.querySelector('video');
+      if (video) video.currentTime = value * duration;
     }
   };
 
@@ -99,8 +100,9 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
     if (typeof playerRef.current?.getCurrentTime === 'function' && typeof playerRef.current?.seekTo === 'function') {
       const current = playerRef.current.getCurrentTime() || 0;
       playerRef.current.seekTo(Math.max(0, Math.min(duration, current + seconds)));
-    } else if (playerRef.current && 'currentTime' in playerRef.current) {
-      playerRef.current.currentTime = Math.max(0, Math.min(duration, playerRef.current.currentTime + seconds));
+    } else {
+      const video = wrapperRef.current?.querySelector('video');
+      if (video) video.currentTime = Math.max(0, Math.min(duration, video.currentTime + seconds));
     }
   };
 
@@ -128,6 +130,7 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
             playbackRate={playbackRate}
             width="100%"
             height="100%"
+            config={{ file: { forceVideo: true } }}
             onProgress={(state: { played: number }) => { if (!seeking) setPlayed(state.played); }}
             onDuration={setDuration}
             onBuffer={() => setBuffering(true)}
