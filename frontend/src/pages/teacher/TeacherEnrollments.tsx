@@ -60,7 +60,7 @@ const TeacherEnrollments: React.FC = () => {
             value={filterCourse}
             onChange={(e) => setFilterCourse(e.target.value)}
           >
-            {courses.map((c: any) => c && <option key={c} value={c}>{c}</option>)}
+            {courses.map((c: string) => c && <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>

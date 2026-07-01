@@ -29,8 +29,8 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
   if (url.includes('drive.google.com')) {
     const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      // confirm=t helps bypass virus scan warnings for large files
-      playableUrl = `https://drive.google.com/uc?export=download&confirm=t&id=${match[1]}`;
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      playableUrl = `${baseUrl}/media/drive/${match[1]}`;
     }
   }
 
@@ -87,12 +87,21 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
   const handleSeekMouseDown = () => setSeeking(true);
   const handleSeekMouseUp = (e: React.MouseEvent<HTMLInputElement>) => {
     setSeeking(false);
-    playerRef.current?.seekTo(parseFloat((e.target as HTMLInputElement).value));
+    const value = parseFloat((e.target as HTMLInputElement).value);
+    if (typeof playerRef.current?.seekTo === 'function') {
+      playerRef.current.seekTo(value);
+    } else if (playerRef.current && 'currentTime' in playerRef.current) {
+      playerRef.current.currentTime = value * duration;
+    }
   };
 
   const skip = (seconds: number) => {
-    const current = (playerRef.current?.getCurrentTime() ?? 0);
-    playerRef.current?.seekTo(Math.max(0, Math.min(duration, current + seconds)));
+    if (typeof playerRef.current?.getCurrentTime === 'function' && typeof playerRef.current?.seekTo === 'function') {
+      const current = playerRef.current.getCurrentTime() || 0;
+      playerRef.current.seekTo(Math.max(0, Math.min(duration, current + seconds)));
+    } else if (playerRef.current && 'currentTime' in playerRef.current) {
+      playerRef.current.currentTime = Math.max(0, Math.min(duration, playerRef.current.currentTime + seconds));
+    }
   };
 
   const currentChapter = chapters.findLast(c => c.time <= played * duration);

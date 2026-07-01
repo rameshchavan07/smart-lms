@@ -254,7 +254,7 @@ export const deleteFileFromDrive = async (fileId: string) => {
 /**
  * Gets a file stream from Google Drive
  */
-export const getFileStreamFromDrive = async (fileId: string) => {
+export const getFileStreamFromDrive = async (fileId: string, rangeHeader?: string) => {
   const drive = getDriveClient();
   if (!drive) {
     throw new Error('Google Drive not configured.');
@@ -263,20 +263,28 @@ export const getFileStreamFromDrive = async (fileId: string) => {
   // Get file metadata to find mime type
   const metadata = await drive.files.get({
     fileId,
-    fields: 'mimeType, name',
+    fields: 'mimeType, name, size',
     supportsAllDrives: true,
   });
+
+  const headers: any = {};
+  if (rangeHeader) {
+    headers['Range'] = rangeHeader;
+  }
 
   // Get file content as a stream
   const response = await drive.files.get(
     { fileId, alt: 'media', supportsAllDrives: true },
-    { responseType: 'stream' }
+    { responseType: 'stream', headers }
   );
 
   return {
     stream: response.data,
     mimeType: metadata.data.mimeType,
     fileName: metadata.data.name,
+    size: metadata.data.size,
+    status: response.status,
+    headers: response.headers,
   };
 };
 
