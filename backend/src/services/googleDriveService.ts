@@ -252,7 +252,13 @@ export const deleteFileFromDrive = async (fileId: string) => {
 };
 
 /**
- * Gets a file stream from Google Drive
+ * Gets a file stream from Google Drive with proper Range request support.
+ * HTML5 <video> elements require HTTP 206 Partial Content responses to play
+ * and seek through video files. This function:
+ *   1. Gets file metadata (size, mimeType) from Google Drive
+ *   2. Parses the browser's Range header
+ *   3. Downloads only the requested byte range from Google Drive
+ *   4. Returns proper headers for the <video> element
  */
 export const getFileStreamFromDrive = async (fileId: string, rangeHeader?: string) => {
   const drive = getDriveClient();
@@ -260,31 +266,68 @@ export const getFileStreamFromDrive = async (fileId: string, rangeHeader?: strin
     throw new Error('Google Drive not configured.');
   }
 
-  // Get file metadata to find mime type
+  // Step 1: Get file metadata (we need the total file size for Range responses)
   const metadata = await drive.files.get({
     fileId,
     fields: 'mimeType, name, size',
     supportsAllDrives: true,
   });
 
-  const headers: any = {};
-  if (rangeHeader) {
-    headers['Range'] = rangeHeader;
+  const totalSize = parseInt(metadata.data.size || '0', 10);
+  const mimeType = metadata.data.mimeType || 'video/webm';
+  const fileName = metadata.data.name || 'recording';
+
+  // Step 2: Parse Range header and calculate byte range
+  let start = 0;
+  let end = totalSize - 1;
+  let isRangeRequest = false;
+
+  if (rangeHeader && totalSize > 0) {
+    const match = rangeHeader.match(/bytes=(\d*)-(\d*)/);
+    if (match) {
+      isRangeRequest = true;
+      start = match[1] ? parseInt(match[1], 10) : 0;
+      end = match[2] ? parseInt(match[2], 10) : totalSize - 1;
+
+      // Clamp end to file size
+      if (end >= totalSize) end = totalSize - 1;
+      if (start >= totalSize) start = totalSize - 1;
+    }
   }
 
-  // Get file content as a stream
+  const chunkSize = end - start + 1;
+
+  // Step 3: Request the byte range from Google Drive
+  const requestHeaders: Record<string, string> = {};
+  if (isRangeRequest) {
+    requestHeaders['Range'] = `bytes=${start}-${end}`;
+  }
+
   const response = await drive.files.get(
     { fileId, alt: 'media', supportsAllDrives: true },
-    { responseType: 'stream', headers }
+    { responseType: 'stream', headers: requestHeaders }
   );
+
+  // Step 4: Build response headers for the browser's <video> element
+  const responseHeaders: Record<string, string> = {
+    'Accept-Ranges': 'bytes',
+    'Content-Type': mimeType,
+  };
+
+  if (isRangeRequest && totalSize > 0) {
+    responseHeaders['Content-Range'] = `bytes ${start}-${end}/${totalSize}`;
+    responseHeaders['Content-Length'] = String(chunkSize);
+  } else if (totalSize > 0) {
+    responseHeaders['Content-Length'] = String(totalSize);
+  }
 
   return {
     stream: response.data,
-    mimeType: metadata.data.mimeType,
-    fileName: metadata.data.name,
-    size: metadata.data.size,
-    status: response.status,
-    headers: response.headers,
+    mimeType,
+    fileName,
+    size: totalSize,
+    isRangeRequest,
+    responseHeaders,
   };
 };
 

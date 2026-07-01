@@ -13,23 +13,18 @@ router.get('/drive/:fileId', async (req: Request, res: Response): Promise<void> 
 
   try {
     const rangeHeader = req.headers.range;
-    const { stream, mimeType, size, status, headers } = await getFileStreamFromDrive(fileId as string, rangeHeader);
+    const { stream, isRangeRequest, responseHeaders } = await getFileStreamFromDrive(fileId as string, rangeHeader);
 
-    // Set correct MIME type and caching headers to optimize loading
-    if (mimeType) {
-      res.setHeader('Content-Type', mimeType);
-    }
-    res.setHeader('Accept-Ranges', 'bytes');
-    
-    if (rangeHeader && status === 206) {
-      res.status(206);
-      if (headers['content-range']) res.setHeader('Content-Range', headers['content-range']);
-      if (headers['content-length']) res.setHeader('Content-Length', headers['content-length']);
-    } else {
-      if (size) res.setHeader('Content-Length', size);
+    // Set all computed headers (Content-Type, Accept-Ranges, Content-Length, Content-Range)
+    for (const [key, value] of Object.entries(responseHeaders)) {
+      res.setHeader(key, value);
     }
 
-    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    // Cache for 24 hours
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+
+    // Use 206 for Range requests, 200 for full content
+    res.status(isRangeRequest ? 206 : 200);
 
     // Pipe Google Drive file stream straight to client response
     stream.on('error', (err: any) => {

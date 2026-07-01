@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import ReactPlayer from 'react-player';
 import {
   Play, Pause, Volume2, VolumeX, Maximize, Minimize,
-  SkipBack, SkipForward, Settings
+  SkipBack, SkipForward, Settings, AlertTriangle, ExternalLink
 } from 'lucide-react';
 
 interface Chapter {
@@ -25,6 +24,9 @@ const formatTime = (s: number) => {
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, chapters = [] }) => {
+  // Keep the original URL for fallback "Open in Drive" link
+  const originalUrl = url;
+
   let playableUrl = url;
   if (url.includes('drive.google.com')) {
     const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -46,6 +48,7 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
   const [buffering, setBuffering] = useState(false);
   const [seeking, setSeeking] = useState(false);
   const [hoveredChapter, setHoveredChapter] = useState<Chapter | null>(null);
+  const [videoError, setVideoError] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -153,9 +156,49 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
             onEnded={() => setPlaying(false)}
             onPause={() => setPlaying(false)}
             onPlay={() => setPlaying(true)}
+            onError={() => setVideoError(true)}
           />
         </div>
       </div>
+
+      {/* Error Overlay */}
+      {videoError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20" style={{ background: 'rgba(0,0,0,0.85)' }}>
+          <AlertTriangle className="w-12 h-12 text-amber-400 mb-4" />
+          <p className="text-white text-lg font-semibold mb-2">Unable to play this recording</p>
+          <p className="text-white/60 text-sm mb-6 text-center max-w-md px-4">
+            The video format may not be supported by your browser, or the file is temporarily unavailable.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setVideoError(false);
+                if (videoRef.current) {
+                  videoRef.current.load();
+                }
+              }}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-white transition"
+              style={{ background: 'rgba(255,255,255,0.15)' }}
+            >
+              Retry
+            </button>
+            {originalUrl.includes('drive.google.com') && (
+              <a
+                href={originalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-white flex items-center gap-2 transition"
+                style={{ background: 'rgba(67,97,240,0.8)' }}
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open in Google Drive
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Buffering Spinner */}
       {buffering && (
