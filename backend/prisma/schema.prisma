@@ -67,6 +67,7 @@ model Student {
   quizSubmissions  QuizSubmission[]
   attendance       Attendance[]
   enrollments      Enrollment[]
+  certificates     Certificate[]
   user             User                   @relation(fields: [userId], references: [id])
 
   @@index([enrollmentNumber])
@@ -91,6 +92,7 @@ model Course {
   discussions    Discussion[]
   announcements  Announcement[]
   chatGroups     ChatGroup[]
+  certificates   Certificate[]
 
   @@index([teacherId])
 }
@@ -445,11 +447,25 @@ model Integration {
 model PushSubscription {
   id        String   @id @default(uuid())
   userId    String
-  endpoint  String   @unique
+  endpoint  String   @unique @db.Text
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Certificate {
+  id          String   @id @default(uuid())
+  studentId   String
+  courseId    String
+  issueDate   DateTime @default(now())
+  certificateUrl String?
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
 }

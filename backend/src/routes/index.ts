@@ -14,6 +14,8 @@ import communicationRoutes from './communicationRoutes';
 import integrationRoutes from './integrationRoutes';
 import notificationRoutes from './notificationRoutes';
 import attendanceRoutes from './attendanceRoutes';
+import progressRoutes from './progressRoutes';
+import certificateRoutes from './certificateRoutes';
 
 const router = Router();
 
@@ -33,5 +35,7 @@ router.use('/communications', communicationRoutes);
 router.use('/integrations', integrationRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/attendance', attendanceRoutes);
+router.use('/progress', progressRoutes);
+router.use('/certificates', certificateRoutes);
 
 export default router;

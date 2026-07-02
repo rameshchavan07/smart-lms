@@ -62,7 +62,10 @@ const buildAuthResponse = async (user: User) => {
 // ─── REGISTER ────────────────────────────────────────────────────────────────
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, phoneNumber, address } = req.body;
+    const { firstName, lastName, email, password, phoneNumber, address, role } = req.body;
+    
+    // Default to STUDENT if no valid role is provided
+    const userRole = (role === 'TEACHER' || role === 'ADMIN') ? role : 'STUDENT';
 
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
@@ -81,17 +84,28 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
         phoneNumber,
         address,
         passwordHash,
-        role: 'STUDENT',
+        role: userRole,
         isEmailVerified: false,
       },
     });
 
-    await prisma.student.create({
-      data: {
-        userId: user.id,
-        enrollmentNumber: `STU-${Date.now()}`,
-      },
-    });
+    if (userRole === 'STUDENT') {
+      await prisma.student.create({
+        data: {
+          userId: user.id,
+          enrollmentNumber: `STU-${Date.now()}`,
+        },
+      });
+    } else if (userRole === 'TEACHER') {
+      await prisma.teacher.create({
+        data: {
+          userId: user.id,
+          employeeCode: `EMP-${Date.now()}`,
+          joiningDate: new Date(),
+        },
+      });
+    }
+    // Note: Admin doesn't need an explicit linked profile model in this architecture
 
     // Generate & send OTP
     const otp = await createOtp(email, OtpType.EMAIL_VERIFICATION);

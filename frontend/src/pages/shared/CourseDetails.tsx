@@ -8,6 +8,9 @@ import WatchRecordingModal from '../../components/WatchRecordingModal';
 import SubmitAssignmentModal from '../../components/SubmitAssignmentModal';
 import TakeQuizModal from '../../components/TakeQuizModal';
 import ViewSubmissionsModal from '../../components/ViewSubmissionsModal';
+import { DiscussionsTab } from './DiscussionsTab';
+import { AnnouncementsTab } from './AnnouncementsTab';
+import { AttendanceTab } from './AttendanceTab';
 import { getDirectDriveUrl } from '../../utils/drive';
 import { 
   Video, 
@@ -21,10 +24,14 @@ import {
   FolderOpen, 
   UploadCloud, 
   Loader2,
+  Award,
   Users,
   UserMinus,
   ClipboardList,
-  CheckCircle
+  CheckCircle,
+  MessageSquare,
+  Megaphone,
+  UserCheck
 } from 'lucide-react';
 
 interface LectureData {
@@ -75,13 +82,23 @@ const CourseDetails: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
   
-  const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students' | 'assignments' | 'quizzes'>('lectures');
+  const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students' | 'assignments' | 'quizzes' | 'discussions' | 'announcements' | 'attendance'>('lectures');
   
   // Tab sync with query params (since clicking 'Submit' in student dashboard redirects to ?tab=assignments)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const tabs = [
+      { id: 'lectures', label: 'Lectures', icon: Video },
+      { id: 'materials', label: 'Study Materials', icon: FileText },
+      { id: 'students', label: 'Students', icon: Users },
+      { id: 'assignments', label: 'Assignments', icon: ClipboardList },
+      { id: 'quizzes', label: 'Quizzes', icon: CheckCircle },
+      { id: 'discussions', label: 'Discussions', icon: MessageSquare },
+      { id: 'announcements', label: 'Announcements', icon: Megaphone },
+      { id: 'attendance', label: 'Attendance', icon: UserCheck }
+    ];
     const tab = params.get('tab');
-    if (tab && ['lectures', 'materials', 'students', 'assignments', 'quizzes'].includes(tab)) {
+    if (tab && tabs.find(t => t.id === tab)) {
       setActiveTab(tab as any);
     }
   }, []);
@@ -110,10 +127,13 @@ const CourseDetails: React.FC = () => {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
-  // Enrolled Students state
   const [enrolledStudents, setEnrolledStudents] = useState<StudentEnrollmentData[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
+
+  // Progress state (Students only)
+  const [progress, setProgress] = useState<number | null>(null);
+  const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
 
   const fetchLectures = async () => {
     try {
@@ -217,8 +237,42 @@ const CourseDetails: React.FC = () => {
       if (user?.role === 'TEACHER' || user?.role === 'ADMIN') {
         fetchEnrolledStudents();
       }
+      if (user?.role === 'STUDENT') {
+        fetchProgress();
+      }
     }
   }, [id, user]);
+
+  const fetchProgress = async () => {
+    try {
+      const { data } = await api.get(`/progress/course/${id}`);
+      setProgress(data.progress);
+    } catch (error) {
+      console.error('Failed to fetch course progress', error);
+    }
+  };
+
+  const handleDownloadCertificate = async () => {
+    try {
+      setIsGeneratingCertificate(true);
+      const response = await api.get(`/certificates/generate/${id}`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'Certificate.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (error) {
+      console.error('Failed to download certificate', error);
+      alert('Failed to generate certificate. Please try again.');
+    } finally {
+      setIsGeneratingCertificate(false);
+    }
+  };
 
   const handleCreateLecture = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -306,17 +360,44 @@ const CourseDetails: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="p-2 bg-white rounded-full border border-slate-200 hover:bg-slate-50 transition shadow-sm"
-        >
-          <ArrowLeft className="w-5 h-5 text-slate-600" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Course Classroom</h1>
-          <p className="text-slate-500 mt-1">Access live lectures and study materials.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="p-2 bg-white rounded-full border border-slate-200 hover:bg-slate-50 transition shadow-sm"
+          >
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Course Classroom</h1>
+            <p className="text-slate-500 mt-1">Access live lectures and study materials.</p>
+          </div>
         </div>
+
+        {user?.role === 'STUDENT' && progress !== null && (
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-6 min-w-[300px]">
+            <div className="flex-1">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm font-semibold text-slate-700">Course Progress</span>
+                <span className="text-sm font-bold text-blue-600">{progress}%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2.5">
+                <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+              </div>
+            </div>
+            
+            {progress === 100 && (
+              <button 
+                onClick={handleDownloadCertificate}
+                disabled={isGeneratingCertificate}
+                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white px-4 py-2 rounded-lg hover:from-amber-600 hover:to-amber-700 transition font-medium text-sm shadow-md disabled:opacity-50"
+              >
+                {isGeneratingCertificate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
+                Certificate
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -377,6 +458,39 @@ const CourseDetails: React.FC = () => {
         >
           <CheckCircle className="w-4 h-4" />
           Quizzes
+        </button>
+        <button
+          onClick={() => setActiveTab('discussions')}
+          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'discussions'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          Discussions
+        </button>
+        <button
+          onClick={() => setActiveTab('announcements')}
+          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'announcements'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Megaphone className="w-4 h-4" />
+          Announcements
+        </button>
+        <button
+          onClick={() => setActiveTab('attendance')}
+          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'attendance'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          Attendance
         </button>
       </div>
 
@@ -506,13 +620,15 @@ const CourseDetails: React.FC = () => {
                   </div>
                   
                   <div className="flex flex-col gap-2 w-full md:w-auto shrink-0">
-                    <button 
-                      onClick={() => navigate(`/live/${lecture.id}`)}
-                      className="w-full md:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition font-semibold text-sm shadow-sm"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      {user?.role === 'TEACHER' ? 'Start Class' : 'Join Class'}
-                    </button>
+                    {!lecture.recordingUrl && (
+                      <button 
+                        onClick={() => navigate(`/live/${lecture.id}`)}
+                        className="w-full md:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition font-semibold text-sm shadow-sm"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        {user?.role === 'TEACHER' ? 'Start Class' : 'Join Class'}
+                      </button>
+                    )}
                     {lecture.recordingUrl && (
                       <button
                         onClick={() => setWatchingLecture({ id: lecture.id, title: lecture.title, recordingUrl: lecture.recordingUrl! })}
@@ -525,10 +641,14 @@ const CourseDetails: React.FC = () => {
                     {user?.role === 'TEACHER' && (
                       <button
                         onClick={() => setSelectedRecordingLecture({ id: lecture.id, title: lecture.title })}
-                        className="w-full md:w-auto flex items-center justify-center gap-2 bg-white text-indigo-600 border border-indigo-200 px-5 py-2.5 rounded-lg hover:bg-indigo-50 transition font-semibold text-sm shadow-sm"
+                        className={`w-full md:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg transition font-semibold text-sm shadow-sm ${
+                          lecture.recordingUrl 
+                            ? 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-slate-700' 
+                            : 'bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50'
+                        }`}
                       >
                         <UploadCloud className="w-4 h-4" />
-                        Upload Recording
+                        {lecture.recordingUrl ? 'Replace Recording' : 'Upload Recording'}
                       </button>
                     )}
                   </div>
@@ -711,7 +831,7 @@ const CourseDetails: React.FC = () => {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === 'students' ? (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-slate-900">Enrolled Students</h3>
@@ -923,12 +1043,24 @@ const CourseDetails: React.FC = () => {
               quizId={takingQuiz.id}
               quizTitle={takingQuiz.title}
               onSuccess={() => {
-                fetchQuizzes(); // Refresh to get updated status if needed, though status logic isn't fully there yet for quizzes
+                fetchQuizzes();
               }}
             />
           )}
         </div>
-      )}
+      ) : activeTab === 'discussions' ? (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <DiscussionsTab courseId={id!} />
+        </div>
+      ) : activeTab === 'announcements' ? (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <AnnouncementsTab courseId={id!} />
+        </div>
+      ) : activeTab === 'attendance' ? (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <AttendanceTab courseId={id!} />
+        </div>
+      ) : null}
     </div>
   );
 };

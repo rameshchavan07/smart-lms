@@ -15,12 +15,13 @@ const Register: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    role: 'STUDENT',
   });
-  const [, setError] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
@@ -41,6 +42,7 @@ const Register: React.FC = () => {
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
+        role: formData.role,
       };
       const { data } = await api.post('/auth/register', dataToSend);
 
@@ -156,6 +158,12 @@ const Register: React.FC = () => {
 
           {/* Email Registration Form */}
           <form className="space-y-4" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 text-sm p-3 rounded-lg flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                {error}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">First Name</label>
@@ -252,6 +260,25 @@ const Register: React.FC = () => {
               {formData.confirmPassword && formData.confirmPassword !== formData.password && (
                 <p className="text-red-500 text-[11px] font-semibold mt-1.5">Passwords do not match</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-muted mb-1.5 uppercase tracking-wider">Account Role</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
+                  <User className="w-4 h-4" />
+                </span>
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="pl-10 pr-4 py-2.5 w-full bg-surface/50 dark:bg-slate-900/50 border border-border dark:border-slate-800 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all dark:text-white appearance-none"
+                >
+                  <option value="STUDENT">🎓 Student</option>
+                  <option value="TEACHER">👨‍🏫 Teacher</option>
+                  <option value="ADMIN">🛡️ Admin</option>
+                </select>
+              </div>
             </div>
 
             <button
