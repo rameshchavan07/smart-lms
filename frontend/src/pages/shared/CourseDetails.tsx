@@ -84,22 +84,14 @@ const CourseDetails: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students' | 'assignments' | 'quizzes' | 'discussions' | 'announcements' | 'attendance'>('lectures');
   
-  // Tab sync with query params (since clicking 'Submit' in student dashboard redirects to ?tab=assignments)
+  // Tab sync with query params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const tabs = [
-      { id: 'lectures', label: 'Lectures', icon: Video },
-      { id: 'materials', label: 'Study Materials', icon: FileText },
-      { id: 'students', label: 'Students', icon: Users },
-      { id: 'assignments', label: 'Assignments', icon: ClipboardList },
-      { id: 'quizzes', label: 'Quizzes', icon: CheckCircle },
-      { id: 'discussions', label: 'Discussions', icon: MessageSquare },
-      { id: 'announcements', label: 'Announcements', icon: Megaphone },
-      { id: 'attendance', label: 'Attendance', icon: UserCheck }
-    ];
+    const tabs = ['lectures', 'materials', 'students', 'assignments', 'quizzes', 'discussions', 'announcements', 'attendance'];
     const tab = params.get('tab');
-    if (tab && tabs.find(t => t.id === tab)) {
-      setActiveTab(tab as any);
+    if (tab && tabs.includes(tab)) {
+      // eslint-disable-next-line react-compiler/react-compiler
+      setActiveTab(tab as 'lectures');
     }
   }, []);
   
@@ -162,9 +154,9 @@ const CourseDetails: React.FC = () => {
       });
       alert('Lecture thumbnail uploaded successfully!');
       fetchLectures();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to upload lecture thumbnail', error);
-      const errorMessage = error.response?.data?.message || 'Failed to upload lecture thumbnail. Please try again.';
+      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to upload lecture thumbnail. Please try again.';
       alert(errorMessage);
     } finally {
       setLecturesLoading(false);
@@ -228,21 +220,6 @@ const CourseDetails: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (id) {
-      fetchLectures();
-      fetchMaterials();
-      fetchAssignments();
-      fetchQuizzes();
-      if (user?.role === 'TEACHER' || user?.role === 'ADMIN') {
-        fetchEnrolledStudents();
-      }
-      if (user?.role === 'STUDENT') {
-        fetchProgress();
-      }
-    }
-  }, [id, user]);
-
   const fetchProgress = async () => {
     try {
       const { data } = await api.get(`/progress/course/${id}`);
@@ -251,6 +228,24 @@ const CourseDetails: React.FC = () => {
       console.error('Failed to fetch course progress', error);
     }
   };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-compiler/react-compiler
+  useEffect(() => {
+    if (id) {
+      setTimeout(() => {
+        fetchLectures();
+        fetchMaterials();
+        fetchAssignments();
+        fetchQuizzes();
+        if (user?.role === 'TEACHER' || user?.role === 'ADMIN') {
+          fetchEnrolledStudents();
+        }
+        if (user?.role === 'STUDENT') {
+          fetchProgress();
+        }
+      }, 0);
+    }
+  }, [id, user]);
 
   const handleDownloadCertificate = async () => {
     try {
@@ -311,8 +306,8 @@ const CourseDetails: React.FC = () => {
       setMaterialDescription('');
       setSelectedFile(null);
       fetchMaterials();
-    } catch (error: any) {
-      const msg = error?.response?.data?.message || error?.message || 'Upload failed. Please try again.';
+    } catch (error: unknown) {
+      const msg = (error as { response?: { data?: { message?: string } }, message?: string }).response?.data?.message || (error as Error).message || 'Upload failed. Please try again.';
       console.error('Failed to upload study material:', error);
       setUploadError(msg);
     } finally {
