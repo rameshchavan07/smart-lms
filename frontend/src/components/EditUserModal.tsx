@@ -102,6 +102,20 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
             {error && <div className="mb-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md text-sm">{error}</div>}
             
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1">User Role</label>
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-border-strong bg-surface text-primary focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
+                >
+                  <option value="TEACHER">Teacher</option>
+                  <option value="STUDENT">Student</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-secondary mb-1">First Name</label>

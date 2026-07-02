@@ -224,21 +224,34 @@ export const updateUser = async (req: AuthRequest, res: Response): Promise<void>
         }
       });
 
-      if (user.role === 'STUDENT' && user.student) {
-        await tx.student.update({
-          where: { id: user.student.id },
-          data: {
-            enrollmentNumber: profileData.enrollmentNumber || user.student.enrollmentNumber,
-            academicYear: profileData.academicYear || user.student.academicYear
+      if (role === 'STUDENT') {
+        await tx.student.upsert({
+          where: { userId: user.id },
+          update: {
+            enrollmentNumber: profileData.enrollmentNumber || user.student?.enrollmentNumber,
+            academicYear: profileData.academicYear || user.student?.academicYear
+          },
+          create: {
+            userId: user.id,
+            enrollmentNumber: profileData.enrollmentNumber || `ENR-${Date.now()}`,
+            academicYear: profileData.academicYear || new Date().getFullYear().toString(),
+            admissionDate: new Date()
           }
         });
-      } else if (user.role === 'TEACHER' && user.teacher) {
-        await tx.teacher.update({
-          where: { id: user.teacher.id },
-          data: {
-            employeeCode: profileData.employeeCode || user.teacher.employeeCode,
-            specialization: profileData.specialization || user.teacher.specialization,
-            qualification: profileData.qualification || user.teacher.qualification
+      } else if (role === 'TEACHER') {
+        await tx.teacher.upsert({
+          where: { userId: user.id },
+          update: {
+            employeeCode: profileData.employeeCode || user.teacher?.employeeCode,
+            specialization: profileData.specialization || user.teacher?.specialization,
+            qualification: profileData.qualification || user.teacher?.qualification
+          },
+          create: {
+            userId: user.id,
+            employeeCode: profileData.employeeCode || `EMP-${Date.now()}`,
+            specialization: profileData.specialization || '',
+            qualification: profileData.qualification || '',
+            joiningDate: new Date()
           }
         });
       }

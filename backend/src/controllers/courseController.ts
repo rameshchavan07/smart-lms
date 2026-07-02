@@ -107,9 +107,29 @@ export const deleteCourse = async (req: AuthRequest, res: Response): Promise<voi
   try {
     const { id } = req.params;
 
-    await prisma.course.delete({
-      where: { id: id as string },
-    });
+    const courseId = id as string;
+
+    // Fetch related IDs for nested deletion
+    const lectures = await prisma.lecture.findMany({ where: { courseId }, select: { id: true } });
+    const lectureIds = lectures.map(l => l.id);
+
+    const assignments = await prisma.assignment.findMany({ where: { courseId }, select: { id: true } });
+    const assignmentIds = assignments.map(a => a.id);
+
+    await prisma.$transaction([
+      // Delete grandchild records
+      prisma.attendance.deleteMany({ where: { lectureId: { in: lectureIds } } }),
+      prisma.assignmentSubmission.deleteMany({ where: { assignmentId: { in: assignmentIds } } }),
+      
+      // Delete child records without cascade
+      prisma.studyMaterial.deleteMany({ where: { courseId } }),
+      prisma.enrollment.deleteMany({ where: { courseId } }),
+      prisma.lecture.deleteMany({ where: { courseId } }),
+      prisma.assignment.deleteMany({ where: { courseId } }),
+      
+      // Finally delete the course
+      prisma.course.delete({ where: { id: courseId } })
+    ]);
 
     await logActivity(req.user!.id, `Deleted course ID: ${id}`, 'Course', id as string);
 
