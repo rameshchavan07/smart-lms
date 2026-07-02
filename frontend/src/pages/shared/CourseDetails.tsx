@@ -3,6 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import EnrollStudentModal from '../../components/EnrollStudentModal';
+import UploadRecordingModal from '../../components/UploadRecordingModal';
+import WatchRecordingModal from '../../components/WatchRecordingModal';
+import SubmitAssignmentModal from '../../components/SubmitAssignmentModal';
+import TakeQuizModal from '../../components/TakeQuizModal';
+import ViewSubmissionsModal from '../../components/ViewSubmissionsModal';
 import { getDirectDriveUrl } from '../../utils/drive';
 import { 
   Video, 
@@ -17,7 +22,9 @@ import {
   UploadCloud, 
   Loader2,
   Users,
-  UserMinus
+  UserMinus,
+  ClipboardList,
+  CheckCircle
 } from 'lucide-react';
 
 interface LectureData {
@@ -28,6 +35,7 @@ interface LectureData {
   endTime: string;
   meetingUrl: string;
   thumbnailUrl?: string;
+  recordingUrl?: string;
 }
 
 interface MaterialData {
@@ -67,7 +75,16 @@ const CourseDetails: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
   
-  const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students'>('lectures');
+  const [activeTab, setActiveTab] = useState<'lectures' | 'materials' | 'students' | 'assignments' | 'quizzes'>('lectures');
+  
+  // Tab sync with query params (since clicking 'Submit' in student dashboard redirects to ?tab=assignments)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab && ['lectures', 'materials', 'students', 'assignments', 'quizzes'].includes(tab)) {
+      setActiveTab(tab as any);
+    }
+  }, []);
   
   // Lectures state
   const [lectures, setLectures] = useState<LectureData[]>([]);
@@ -79,6 +96,8 @@ const CourseDetails: React.FC = () => {
     startTime: '',
     endTime: ''
   });
+  const [selectedRecordingLecture, setSelectedRecordingLecture] = useState<{id: string, title: string} | null>(null);
+  const [watchingLecture, setWatchingLecture] = useState<{id: string, title: string, recordingUrl: string} | null>(null);
 
   // Materials state
   const [materials, setMaterials] = useState<MaterialData[]>([]);
@@ -143,6 +162,41 @@ const CourseDetails: React.FC = () => {
     }
   };
 
+  // Assignments state
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+  const [submittingAssignment, setSubmittingAssignment] = useState<any | null>(null);
+  const [gradingAssignment, setGradingAssignment] = useState<any | null>(null);
+
+  // Quizzes state
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [quizzesLoading, setQuizzesLoading] = useState(false);
+  const [takingQuiz, setTakingQuiz] = useState<any | null>(null);
+
+  const fetchAssignments = async () => {
+    setAssignmentsLoading(true);
+    try {
+      const res = await api.get(`/assignments/course/${id}`);
+      setAssignments(res.data.assignments);
+    } catch (error) {
+      console.error('Failed to fetch assignments', error);
+    } finally {
+      setAssignmentsLoading(false);
+    }
+  };
+
+  const fetchQuizzes = async () => {
+    setQuizzesLoading(true);
+    try {
+      const res = await api.get(`/quizzes/course/${id}`);
+      setQuizzes(res.data.quizzes);
+    } catch (error) {
+      console.error('Failed to fetch quizzes', error);
+    } finally {
+      setQuizzesLoading(false);
+    }
+  };
+
   const fetchEnrolledStudents = async () => {
     try {
       const { data } = await api.get(`/enrollments/course/${id}/students`);
@@ -158,6 +212,8 @@ const CourseDetails: React.FC = () => {
     if (id) {
       fetchLectures();
       fetchMaterials();
+      fetchAssignments();
+      fetchQuizzes();
       if (user?.role === 'TEACHER' || user?.role === 'ADMIN') {
         fetchEnrolledStudents();
       }
@@ -300,6 +356,28 @@ const CourseDetails: React.FC = () => {
             Students
           </button>
         )}
+        <button
+          onClick={() => setActiveTab('assignments')}
+          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'assignments'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          Assignments
+        </button>
+        <button
+          onClick={() => setActiveTab('quizzes')}
+          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'quizzes'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <CheckCircle className="w-4 h-4" />
+          Quizzes
+        </button>
       </div>
 
       {/* Content Area */}
@@ -427,15 +505,57 @@ const CourseDetails: React.FC = () => {
                     </div>
                   </div>
                   
-                  <button 
-                    onClick={() => navigate(`/live/${lecture.id}`)}
-                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition font-semibold text-sm shadow-sm shrink-0"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    {user?.role === 'TEACHER' ? 'Start Class' : 'Join Class'}
-                  </button>
+                  <div className="flex flex-col gap-2 w-full md:w-auto shrink-0">
+                    <button 
+                      onClick={() => navigate(`/live/${lecture.id}`)}
+                      className="w-full md:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition font-semibold text-sm shadow-sm"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      {user?.role === 'TEACHER' ? 'Start Class' : 'Join Class'}
+                    </button>
+                    {lecture.recordingUrl && (
+                      <button
+                        onClick={() => setWatchingLecture({ id: lecture.id, title: lecture.title, recordingUrl: lecture.recordingUrl! })}
+                        className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-700 transition font-semibold text-sm shadow-sm"
+                      >
+                        <Video className="w-4 h-4" />
+                        Watch Recording
+                      </button>
+                    )}
+                    {user?.role === 'TEACHER' && (
+                      <button
+                        onClick={() => setSelectedRecordingLecture({ id: lecture.id, title: lecture.title })}
+                        className="w-full md:w-auto flex items-center justify-center gap-2 bg-white text-indigo-600 border border-indigo-200 px-5 py-2.5 rounded-lg hover:bg-indigo-50 transition font-semibold text-sm shadow-sm"
+                      >
+                        <UploadCloud className="w-4 h-4" />
+                        Upload Recording
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
+              
+              {selectedRecordingLecture && (
+                <UploadRecordingModal
+                  lectureId={selectedRecordingLecture.id}
+                  lectureTitle={selectedRecordingLecture.title}
+                  isOpen={!!selectedRecordingLecture}
+                  onClose={() => setSelectedRecordingLecture(null)}
+                  onSuccess={() => {
+                    fetchLectures();
+                    alert('Recording uploaded successfully!');
+                  }}
+                />
+              )}
+              
+              {watchingLecture && (
+                <WatchRecordingModal
+                  isOpen={!!watchingLecture}
+                  onClose={() => setWatchingLecture(null)}
+                  recordingUrl={watchingLecture.recordingUrl}
+                  title={watchingLecture.title}
+                />
+              )}
             </div>
           )}
         </div>
@@ -672,6 +792,141 @@ const CourseDetails: React.FC = () => {
               fetchEnrolledStudents();
             }}
           />
+        </div>
+      ) : activeTab === 'assignments' ? (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-slate-900">Assignments</h3>
+          </div>
+          {assignmentsLoading ? (
+            <div className="text-center py-8 text-slate-500">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
+            </div>
+          ) : assignments.length === 0 ? (
+            <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+              <ClipboardList className="mx-auto h-12 w-12 text-slate-300 mb-3" />
+              <p className="text-slate-500 text-sm">No assignments available yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {assignments.map(assignment => {
+                const isOverdue = new Date(assignment.dueDate) < new Date();
+                return (
+                  <div key={assignment.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-slate-200 rounded-xl hover:border-blue-200 hover:bg-slate-50/50 transition">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-base">{assignment.title}</h4>
+                      <p className="text-sm text-slate-500 mt-1">{assignment.description}</p>
+                      <div className={`text-xs font-semibold mt-2 px-2 py-0.5 rounded w-max ${isOverdue ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                        Due: {new Date(assignment.dueDate).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="mt-4 md:mt-0 flex gap-2">
+                      {user?.role === 'TEACHER' ? (
+                        <button 
+                          onClick={() => setGradingAssignment(assignment)}
+                          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700"
+                        >
+                          Grade Submissions
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => setSubmittingAssignment(assignment)}
+                          className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-700"
+                        >
+                          Submit Work
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {submittingAssignment && (
+            <SubmitAssignmentModal
+              isOpen={!!submittingAssignment}
+              onClose={() => setSubmittingAssignment(null)}
+              assignmentId={submittingAssignment?.id}
+              assignmentTitle={submittingAssignment?.title}
+              onSuccess={() => {
+                fetchAssignments();
+                alert('Successfully submitted!');
+              }}
+            />
+          )}
+
+          {gradingAssignment && (
+            <ViewSubmissionsModal
+              isOpen={!!gradingAssignment}
+              onClose={() => setGradingAssignment(null)}
+              assignmentId={gradingAssignment.id}
+              assignmentTitle={gradingAssignment.title}
+            />
+          )}
+        </div>
+      ) : activeTab === 'quizzes' ? (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-slate-900">Quizzes</h3>
+          </div>
+          {quizzesLoading ? (
+            <div className="text-center py-8 text-slate-500">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
+            </div>
+          ) : quizzes.length === 0 ? (
+            <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+              <CheckCircle className="mx-auto h-12 w-12 text-slate-300 mb-3" />
+              <p className="text-slate-500 text-sm">No quizzes available yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {quizzes.map(quiz => (
+                <div key={quiz.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-slate-200 rounded-xl hover:border-blue-200 hover:bg-slate-50/50 transition">
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-base">{quiz.title}</h4>
+                    <p className="text-sm text-slate-500 mt-1">{quiz.description}</p>
+                    <div className="flex gap-2 mt-2">
+                      <div className="text-xs font-semibold bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded w-max">
+                        {quiz.totalMarks} Marks
+                      </div>
+                      {quiz.durationMins && (
+                        <div className="text-xs font-semibold bg-amber-50 text-amber-600 px-2 py-0.5 rounded w-max">
+                          {quiz.durationMins} Mins
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-4 md:mt-0 flex gap-2">
+                    {user?.role === 'TEACHER' ? (
+                      <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700">
+                        View Results
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => setTakingQuiz(quiz)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700"
+                      >
+                        Attempt Quiz
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {takingQuiz && (
+            <TakeQuizModal
+              isOpen={!!takingQuiz}
+              onClose={() => setTakingQuiz(null)}
+              quizId={takingQuiz.id}
+              quizTitle={takingQuiz.title}
+              onSuccess={() => {
+                fetchQuizzes(); // Refresh to get updated status if needed, though status logic isn't fully there yet for quizzes
+              }}
+            />
+          )}
         </div>
       )}
     </div>

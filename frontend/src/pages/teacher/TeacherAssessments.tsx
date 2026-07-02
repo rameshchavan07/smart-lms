@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, FileText, CheckCircle, Clock } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { TableRowSkeleton } from '../../components/Skeleton';
+import CreateAssignmentModal from '../../components/CreateAssignmentModal';
+import CreateQuizModal from '../../components/CreateQuizModal';
 
 const TeacherAssessments: React.FC = () => {
+  const queryClient = useQueryClient();
+  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+
   const { data: assessments = [], isLoading } = useQuery({
     queryKey: ['teacherAssessments'],
     queryFn: async () => {
@@ -13,8 +18,25 @@ const TeacherAssessments: React.FC = () => {
       return res.data.assessments;
     }
   });
+
+  const handleSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['teacherAssessments'] });
+    alert('Successfully created!');
+  };
+
   return (
     <div className="space-y-6">
+      <CreateAssignmentModal 
+        isOpen={isAssignmentModalOpen} 
+        onClose={() => setIsAssignmentModalOpen(false)} 
+        onSuccess={handleSuccess} 
+      />
+      <CreateQuizModal 
+        isOpen={isQuizModalOpen} 
+        onClose={() => setIsQuizModalOpen(false)} 
+        onSuccess={handleSuccess} 
+      />
+
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -22,9 +44,12 @@ const TeacherAssessments: React.FC = () => {
           <p className="text-[14px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Manage quizzes and assignments for your courses.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="#" className="btn btn-primary btn-sm gap-2">
-            <Plus size={14} /> Create Assessment
-          </Link>
+          <button onClick={() => setIsAssignmentModalOpen(true)} className="btn btn-primary btn-sm gap-2">
+            <Plus size={14} /> Create Assignment
+          </button>
+          <button onClick={() => setIsQuizModalOpen(true)} className="btn btn-primary btn-sm gap-2 bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Plus size={14} /> Create Quiz
+          </button>
         </div>
       </div>
 
