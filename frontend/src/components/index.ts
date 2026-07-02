@@ -19,3 +19,5 @@ export { default as ErrorState } from './ErrorState';
 export { Skeleton, StatCardSkeleton, CourseCardSkeleton, TableRowSkeleton } from './Skeleton';
 export { default as LectureRecordingPlayer } from './LectureRecordingPlayer';
 export { LectureRecorderUI } from './LectureRecorderUI';
+export { default as ConfirmDeleteModal } from './ConfirmDeleteModal';
+

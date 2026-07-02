@@ -367,6 +367,84 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
   }
 };
 
+// Delete lecture recording (Teacher only)
+export const deleteLectureRecording = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const lecture = await prisma.lecture.findUnique({
+      where: { id },
+      include: { course: true },
+    });
+
+    if (!lecture) {
+      res.status(404).json({ message: 'Lecture not found' });
+      return;
+    }
+
+    // Authorisation: must be the teacher who created the lecture or an admin
+    if (lecture.createdBy !== req.user!.id && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ message: 'You can only delete recordings from your own lectures' });
+      return;
+    }
+
+    if (!lecture.recordingUrl) {
+      res.status(400).json({ message: 'This lecture has no recording to delete' });
+      return;
+    }
+
+    // Extract Google Drive file ID from the stored URL
+    let driveFileId: string | null = null;
+    if (lecture.recordingUrl.includes('/api/media/drive/')) {
+      driveFileId = lecture.recordingUrl.split('/api/media/drive/')[1];
+    } else if (lecture.recordingUrl.includes('drive.google.com')) {
+      const match = lecture.recordingUrl.match(/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (match) driveFileId = match[1];
+    }
+
+    // Delete from Google Drive and the tracking table
+    if (driveFileId) {
+      try {
+        await deleteFileFromDrive(driveFileId);
+      } catch (e) {
+        console.warn('Failed to delete recording from Google Drive:', e);
+      }
+
+      // Remove the GoogleDriveFile record (match by fileId)
+      const driveRecord = await prisma.googleDriveFile.findFirst({
+        where: { driveFileId },
+      });
+      if (driveRecord) {
+        await prisma.googleDriveFile.delete({ where: { id: driveRecord.id } });
+      }
+    } else if (lecture.recordingUrl.includes('/uploads/Courses/')) {
+      // Fallback: local file (legacy)
+      const oldRelativePath = lecture.recordingUrl.split('/uploads/')[1];
+      const oldLocalFilePath = path.join(process.cwd(), 'uploads', oldRelativePath);
+      if (fs.existsSync(oldLocalFilePath)) {
+        try { fs.unlinkSync(oldLocalFilePath); } catch (_) {}
+      }
+    }
+
+    // Clear recording fields on the lecture
+    const updatedLecture = await prisma.lecture.update({
+      where: { id },
+      data: {
+        recordingUrl: null,
+        recordingDuration: null,
+        recordingSize: null,
+      },
+    });
+
+    // @ts-ignore
+    await logActivity(req.user!.id, `Deleted recording for lecture: ${lecture.title} in course: ${lecture.course?.title || lecture.courseId}`, 'Lecture', lecture.id);
+
+    res.json({ message: 'Lecture recording deleted successfully', lecture: updatedLecture });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Failed to delete lecture recording: ' + error.message });
+  }
+};
+
 // Helper function to slugify names
 function slugify(text: string): string {
   return text

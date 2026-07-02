@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createLecture, getCourseLectures, getLectureDetails, uploadLectureThumbnail, uploadLectureRecording, updateLecture } from '../controllers/lectureController';
+import { createLecture, getCourseLectures, getLectureDetails, uploadLectureThumbnail, uploadLectureRecording, updateLecture, deleteLectureRecording } from '../controllers/lectureController';
 import { protect, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { uploadThumbnail, uploadRecording } from '../middleware/upload';
@@ -15,5 +15,6 @@ router.get('/:id', authorize('TEACHER', 'STUDENT', 'ADMIN'), getLectureDetails);
 router.put('/:id', authorize('TEACHER'), updateLecture);
 router.put('/:id/thumbnail', authorize('TEACHER'), uploadThumbnail.single('thumbnail'), uploadLectureThumbnail);
 router.put('/:id/recording', authorize('TEACHER'), uploadRecording.single('recording'), uploadLectureRecording);
+router.delete('/:id/recording', authorize('TEACHER'), deleteLectureRecording);
 
 export default router;
