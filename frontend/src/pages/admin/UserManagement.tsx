@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import CreateUserModal from '../../components/CreateUserModal';
 import EditUserModal from '../../components/EditUserModal';
@@ -19,8 +20,7 @@ interface UserData {
 
 const UserManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<UserData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterRole, setFilterRole] = useState(currentUser?.role === 'TEACHER' ? 'STUDENT' : '');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -29,37 +29,32 @@ const UserManagement: React.FC = () => {
   // Custom Confirmation Dialog States
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [userIdToDelete, setUserIdToDelete] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
+  const { data: users = [], isLoading: loading } = useQuery<UserData[]>({
+    queryKey: ['users', filterRole],
+    queryFn: async () => {
       const roleToFetch = currentUser?.role === 'TEACHER' ? 'STUDENT' : filterRole;
       const { data } = await api.get(`/users${roleToFetch ? `?role=${roleToFetch}` : ''}`);
-      setUsers(data.users);
-    } catch (error) {
-      console.error('Failed to fetch users', error);
-      toast.error('Failed to load users list.');
-    } finally {
-      setLoading(false);
+      return data.users;
     }
-  };
+  });
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterRole]);
-
-  const toggleStatus = async (id: string, currentStatus: boolean) => {
-    try {
-      await api.patch(`/users/${id}/status`, { isActive: !currentStatus });
-      toast.success(`User status updated to ${!currentStatus ? 'Active' : 'Inactive'}`);
-      fetchUsers();
-    } catch (error) {
+  const toggleStatusMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string, isActive: boolean }) => {
+      return api.patch(`/users/${id}/status`, { isActive });
+    },
+    onSuccess: (_, variables) => {
+      toast.success(`User status updated to ${variables.isActive ? 'Active' : 'Inactive'}`);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error: unknown) => {
       console.error('Failed to update status', error);
       toast.error('Failed to update user status.');
     }
+  });
+
+  const toggleStatus = (id: string, currentStatus: boolean) => {
+    toggleStatusMutation.mutate({ id, isActive: !currentStatus });
   };
 
   const confirmDeleteUser = (id: string) => {
@@ -67,21 +62,25 @@ const UserManagement: React.FC = () => {
     setIsConfirmOpen(true);
   };
 
-  const handleDeleteUserExecute = async () => {
-    if (!userIdToDelete) return;
-    setDeleting(true);
-    try {
-      await api.delete(`/users/${userIdToDelete}`);
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return api.delete(`/users/${id}`);
+    },
+    onSuccess: () => {
       toast.success('User profile deleted successfully.');
       setIsConfirmOpen(false);
       setUserIdToDelete(null);
-      fetchUsers();
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error: unknown) => {
       console.error('Failed to delete user', error);
       toast.error('Failed to delete user profile.');
-    } finally {
-      setDeleting(false);
     }
+  });
+
+  const handleDeleteUserExecute = () => {
+    if (!userIdToDelete) return;
+    deleteUserMutation.mutate(userIdToDelete);
   };
 
   const handleEditClick = (userToEdit: UserData) => {
@@ -218,7 +217,7 @@ const UserManagement: React.FC = () => {
         onSuccess={() => {
           setIsModalOpen(false);
           toast.success('New user profile created.');
-          fetchUsers();
+          queryClient.invalidateQueries({ queryKey: ['users'] });
         }}
       />
 
@@ -232,7 +231,7 @@ const UserManagement: React.FC = () => {
           setIsEditModalOpen(false);
           setSelectedUserForEdit(null);
           toast.success('User profile updated successfully.');
-          fetchUsers();
+          queryClient.invalidateQueries({ queryKey: ['users'] });
         }}
         userToEdit={selectedUserForEdit}
       />
@@ -244,7 +243,7 @@ const UserManagement: React.FC = () => {
           message="Are you sure you want to delete this user profile? All course links, refresh tokens, and registrations will be deleted."
           onConfirm={handleDeleteUserExecute}
           onCancel={() => setIsConfirmOpen(false)}
-          loading={deleting}
+          loading={deleteUserMutation.isPending}
           danger
         />
       </Modal>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../services/api';
 import { X } from 'lucide-react';
 
@@ -19,54 +20,54 @@ interface StudentData {
 }
 
 const EnrollStudentModal: React.FC<EnrollStudentModalProps> = ({ isOpen, onClose, onSuccess, courseId, enrolledStudentIds = [] }) => {
-  const [students, setStudents] = useState<StudentData[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const { data: students = [] } = useQuery<StudentData[]>({
+    queryKey: ['availableStudents'],
+    queryFn: async () => {
+      const { data } = await api.get('/users?role=STUDENT&limit=100');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return data.users.filter((u: any) => u.student);
+    },
+    enabled: isOpen
+  });
 
   useEffect(() => {
     if (isOpen) {
-      const fetchStudents = async () => {
-        try {
-          const { data } = await api.get('/users?role=STUDENT&limit=100');
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setStudents(data.users.filter((u: any) => u.student)); // Only keep those with a student profile
-        } catch (error) {
-          console.error('Failed to fetch students', error);
-        }
-      };
-      fetchStudents();
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedStudentId('');
-
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError('');
     }
   }, [isOpen]);
 
+  const enrollStudentMutation = useMutation({
+    mutationFn: async () => {
+      return api.post('/enrollments', {
+        studentId: selectedStudentId,
+        courseId,
+      });
+    },
+    onSuccess: () => {
+      onSuccess();
+    },
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || 'Failed to enroll student');
+    }
+  });
+
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudentId) {
       setError('Please select a student');
       return;
     }
-
-    setLoading(true);
     setError('');
-
-    try {
-      await api.post('/enrollments', {
-        studentId: selectedStudentId,
-        courseId,
-      });
-      onSuccess();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to enroll student');
-    } finally {
-      setLoading(false);
-    }
+    enrollStudentMutation.mutate();
   };
 
   return (
@@ -108,12 +109,12 @@ const EnrollStudentModal: React.FC<EnrollStudentModalProps> = ({ isOpen, onClose
                 </select>
               </div>
 
-              <div className="pt-4 border-t border-border flex justify-end gap-3 mt-6">
+              <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
                 <button type="button" onClick={onClose} className="px-4 py-2 border border-border-strong rounded-md text-secondary bg-surface hover:bg-slate-50 dark:hover:bg-slate-700 font-medium text-sm transition-colors">
                   Cancel
                 </button>
-                <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium text-sm transition-colors">
-                  {loading ? 'Enrolling...' : 'Enroll Student'}
+                <button type="submit" disabled={enrollStudentMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium text-sm transition-colors disabled:opacity-50">
+                  {enrollStudentMutation.isPending ? 'Enrolling...' : 'Enroll Student'}
                 </button>
               </div>
             </form>

@@ -195,7 +195,7 @@ const CourseDetails: React.FC = () => {
       setEditLectureId(null);
       setLectureForm({ title: '', description: '', startTime: '', endTime: '' });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Failed to save lecture', error);
     }
   });
@@ -212,7 +212,7 @@ const CourseDetails: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['course', id, 'lectures'] });
       alert('Lecture thumbnail uploaded successfully!');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Failed to upload lecture thumbnail', error);
       alert('Failed to upload lecture thumbnail. Please try again.');
     }
@@ -233,7 +233,7 @@ const CourseDetails: React.FC = () => {
       setMaterialDescription('');
       setSelectedFile(null);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       const error = err as { response?: { data?: { message?: string } }, message?: string };
       const msg = error?.response?.data?.message || error?.message || 'Upload failed. Please try again.';
       console.error('Failed to upload study material:', err);
@@ -251,7 +251,7 @@ const CourseDetails: React.FC = () => {
       setShowDeleteMaterialModal(false);
       setSelectedMaterialForDelete(null);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       const error = err as { response?: { data?: { message?: string } }, message?: string };
       console.error('Failed to delete study material', error);
       toast.error(error?.response?.data?.message || 'Failed to delete material.');
@@ -268,7 +268,7 @@ const CourseDetails: React.FC = () => {
       setShowDeleteRecordingModal(false);
       setSelectedLectureForDeleteRecording(null);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       const error = err as { response?: { data?: { message?: string } }, message?: string };
       console.error('Failed to delete lecture recording', error);
       toast.error(error?.response?.data?.message || 'Failed to delete recording.');
@@ -285,7 +285,7 @@ const CourseDetails: React.FC = () => {
       setShowDeleteLectureModal(false);
       setSelectedLectureForDelete(null);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       const error = err as { response?: { data?: { message?: string } }, message?: string };
       console.error('Failed to delete lecture', error);
       toast.error(error?.response?.data?.message || 'Failed to delete lecture.');
@@ -300,7 +300,7 @@ const CourseDetails: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['course', id, 'students'] });
       toast.success('Student unenrolled successfully');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Failed to unenroll student', error);
       toast.error('Failed to unenroll student');
     }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import api from '../services/api';
 import { X } from 'lucide-react';
 
@@ -22,7 +23,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
     enrollmentNumber: '',
     academicYear: '',
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -42,19 +42,13 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
     }
   }, [isOpen, userToEdit]);
 
-  if (!isOpen) return null;
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      await api.put(`/users/${userToEdit.id}`, {
+  const editUserMutation = useMutation({
+    mutationFn: async () => {
+      return api.put(`/users/${userToEdit.id}`, {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -65,13 +59,22 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
         enrollmentNumber: formData.enrollmentNumber,
         academicYear: formData.academicYear,
       });
+    },
+    onSuccess: () => {
       onSuccess();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update user');
-    } finally {
-      setLoading(false);
+    },
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || 'Failed to update user');
     }
+  });
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    editUserMutation.mutate();
   };
 
   return (
@@ -135,12 +138,12 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
                 </div>
               )}
 
-              <div className="pt-4 border-t border-border flex justify-end gap-3 mt-6">
+              <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
                 <button type="button" onClick={onClose} className="px-4 py-2 border border-border-strong rounded-md text-secondary bg-surface hover:bg-slate-50 dark:hover:bg-slate-700 font-medium text-sm transition-colors">
                   Cancel
                 </button>
-                <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium text-sm transition-colors">
-                  {loading ? 'Saving...' : 'Save Changes'}
+                <button type="submit" disabled={editUserMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium text-sm transition-colors disabled:opacity-50">
+                  {editUserMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

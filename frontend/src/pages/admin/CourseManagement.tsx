@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import CreateCourseModal from '../../components/CreateCourseModal';
 import { BookOpen, MoreVertical, Search, ShieldAlert, Loader2 } from 'lucide-react';
@@ -25,83 +26,78 @@ interface CourseData {
 }
 
 const CourseManagement: React.FC = () => {
-  const [courses, setCourses] = useState<CourseData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [uploadingCourseId, setUploadingCourseId] = useState<string | null>(null);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   // Custom Delete Modal State
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [courseIdToDelete, setCourseIdToDelete] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const fetchCourses = async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.get(`/courses${searchTerm ? `?search=${searchTerm}` : ''}`);
-      setCourses(data.courses);
-    } catch (error) {
-      console.error('Failed to fetch courses', error);
-      toast.error('Failed to load courses.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchCourses();
+      setDebouncedSearchTerm(searchTerm);
     }, 500);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
+
+  const { data: courses = [], isLoading: loading } = useQuery<CourseData[]>({
+    queryKey: ['courses', debouncedSearchTerm],
+    queryFn: async () => {
+      const { data } = await api.get(`/courses${debouncedSearchTerm ? `?search=${debouncedSearchTerm}` : ''}`);
+      return data.courses;
+    }
+  });
 
   const confirmDelete = (id: string) => {
     setCourseIdToDelete(id);
     setIsConfirmOpen(true);
   };
 
-  const handleDeleteExecute = async () => {
-    if (!courseIdToDelete) return;
-    setDeleting(true);
-    try {
-      await api.delete(`/courses/${courseIdToDelete}`);
+  const deleteCourseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return api.delete(`/courses/${id}`);
+    },
+    onSuccess: () => {
       toast.success('Course deleted successfully.');
       setIsConfirmOpen(false);
       setCourseIdToDelete(null);
-      fetchCourses();
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+    onError: (error: unknown) => {
       console.error('Failed to delete course', error);
       toast.error('Failed to delete the course.');
-    } finally {
-      setDeleting(false);
     }
+  });
+
+  const handleDeleteExecute = () => {
+    if (!courseIdToDelete) return;
+    deleteCourseMutation.mutate(courseIdToDelete);
   };
 
-  const handleThumbnailUpload = async (courseId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadThumbnailMutation = useMutation({
+    mutationFn: async ({ courseId, file }: { courseId: string; file: File }) => {
+      const formData = new FormData();
+      formData.append('thumbnail', file);
+      return api.put(`/courses/${courseId}/thumbnail`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    },
+    onSuccess: () => {
+      toast.success('Course thumbnail uploaded successfully!');
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+    onError: (error: unknown) => {
+      console.error('Failed to upload thumbnail', error);
+      toast.error('Failed to upload thumbnail. Please check connection.');
+    }
+  });
+
+  const handleThumbnailUpload = (courseId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const formData = new FormData();
-    formData.append('thumbnail', file);
-
-    const toastId = toast.loading('Uploading course thumbnail...');
-    try {
-      setUploadingCourseId(courseId);
-      await api.put(`/courses/${courseId}/thumbnail`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      toast.success('Course thumbnail uploaded successfully!', { id: toastId });
-      fetchCourses();
-    } catch (error) {
-      console.error('Failed to upload thumbnail', error);
-      toast.error('Failed to upload thumbnail. Please check connection.', { id: toastId });
-    } finally {
-      setUploadingCourseId(null);
-    }
+    uploadThumbnailMutation.mutate({ courseId, file });
   };
 
   return (
@@ -208,7 +204,7 @@ const CourseManagement: React.FC = () => {
                       {new Date(course.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold space-x-2">
-                      {uploadingCourseId === course.id ? (
+                      {uploadThumbnailMutation.isPending ? (
                         <span className="inline-flex items-center gap-1.5 text-muted mr-3 text-xs">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           Uploading...
@@ -221,7 +217,7 @@ const CourseManagement: React.FC = () => {
                             accept="image/*" 
                             className="hidden" 
                             onChange={(e) => handleThumbnailUpload(course.id, e)}
-                            disabled={uploadingCourseId !== null}
+                            disabled={uploadThumbnailMutation.isPending}
                           />
                         </label>
                       )}
@@ -250,7 +246,7 @@ const CourseManagement: React.FC = () => {
         onSuccess={() => {
           setIsModalOpen(false);
           toast.success('Course created successfully.');
-          fetchCourses();
+          queryClient.invalidateQueries({ queryKey: ['courses'] });
         }}
       />
 
@@ -261,7 +257,7 @@ const CourseManagement: React.FC = () => {
           message="Are you sure you want to delete this course module? All student enrollments, lectures, assignments, and study materials associated with it will be permanently deleted."
           onConfirm={handleDeleteExecute}
           onCancel={() => setIsConfirmOpen(false)}
-          loading={deleting}
+          loading={deleteCourseMutation.isPending}
           danger
         />
       </Modal>

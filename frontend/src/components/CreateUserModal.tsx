@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import api from '../services/api';
 import { X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,23 +23,16 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
     enrollmentNumber: '', // Student
     academicYear: '', // Student
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  if (!isOpen) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
+  const createUserMutation = useMutation({
+    mutationFn: async () => {
       if (role === 'TEACHER') {
-        await api.post('/users/teacher', {
+        return api.post('/users/teacher', {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -47,7 +41,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
           specialization: formData.specialization,
         });
       } else {
-        await api.post('/users/student', {
+        return api.post('/users/student', {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -56,13 +50,22 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
           academicYear: formData.academicYear,
         });
       }
+    },
+    onSuccess: () => {
       onSuccess();
-    } catch (err) {
+    },
+    onError: (err: unknown) => {
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'Failed to create user');
-    } finally {
-      setLoading(false);
     }
+  });
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    createUserMutation.mutate();
   };
 
   return (
@@ -145,12 +148,12 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
                 </div>
               )}
 
-              <div className="pt-4 border-t border-border flex justify-end gap-3 mt-6">
-                <button type="button" onClick={onClose} className="px-4 py-2 border border-border-strong rounded-md text-secondary bg-surface hover:bg-slate-50 dark:hover:bg-slate-700 font-medium text-sm transition-colors">
+              <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
+                <button type="button" onClick={onClose} className="px-4 py-2 border border-border-strong rounded-md text-secondary bg-surface hover:bg-slate-50 dark:bg-slate-700 font-medium text-sm transition-colors">
                   Cancel
                 </button>
-                <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium text-sm transition-colors">
-                  {loading ? 'Creating...' : 'Create User'}
+                <button type="submit" disabled={createUserMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium text-sm transition-colors disabled:opacity-50">
+                  {createUserMutation.isPending ? 'Creating...' : 'Create User'}
                 </button>
               </div>
             </form>

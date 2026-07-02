@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../services/api';
 import { X } from 'lucide-react';
 
@@ -21,24 +22,34 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
     description: '',
     teacherId: '', 
   });
-  const [teachers, setTeachers] = useState<TeacherData[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (isOpen) {
-      // Fetch teachers to populate the dropdown
-      const fetchTeachers = async () => {
-        try {
-          const { data } = await api.get('/users?role=TEACHER&limit=100');
-          setTeachers(data.users.filter((u: { teacher: unknown }) => u.teacher)); // Only keep users that have the teacher profile
-        } catch (error) {
-          console.error('Failed to fetch teachers', error);
-        }
-      };
-      fetchTeachers();
+  const { data: teachers = [] } = useQuery<TeacherData[]>({
+    queryKey: ['teachers'],
+    queryFn: async () => {
+      const { data } = await api.get('/users?role=TEACHER&limit=100');
+      return data.users.filter((u: { teacher: unknown }) => u.teacher);
+    },
+    enabled: isOpen
+  });
+
+  const createCourseMutation = useMutation({
+    mutationFn: async () => {
+      return api.post('/courses', {
+        title: formData.title,
+        description: formData.description,
+        teacherId: formData.teacherId || null,
+      });
+    },
+    onSuccess: () => {
+      onSuccess();
+    },
+    onError: (err: unknown) => {
+      const error = err as Error | { response?: { data?: { message?: string } } };
+      const msg = ('response' in error ? error.response?.data?.message : (error as Error).message) || 'Failed to create course';
+      setError(msg);
     }
-  }, [isOpen]);
+  });
 
   if (!isOpen) return null;
 
@@ -46,25 +57,10 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
-
-    try {
-      await api.post('/courses', {
-        title: formData.title,
-        description: formData.description,
-        teacherId: formData.teacherId || null,
-      });
-      onSuccess();
-    } catch (err: unknown) {
-      const error = err as Error | { response?: { data?: { message?: string } } };
-      const msg = ('response' in error ? error.response?.data?.message : (error as Error).message) || 'Failed to create course';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
+    createCourseMutation.mutate();
   };
 
   return (
@@ -128,12 +124,16 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
                 </select>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
-                <button type="button" onClick={onClose} className="px-4 py-2 border border-border-strong rounded-md text-secondary bg-surface hover:bg-slate-50 dark:bg-slate-700 font-medium text-sm transition-colors">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50">
                   Cancel
                 </button>
-                <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium text-sm transition-colors">
-                  {loading ? 'Creating...' : 'Create Course'}
+                <button 
+                  type="submit" 
+                  disabled={createCourseMutation.isPending}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  {createCourseMutation.isPending ? 'Creating...' : 'Create Course'}
                 </button>
               </div>
             </form>

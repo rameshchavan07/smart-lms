@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import EnrollStudentModal from '../../components/EnrollStudentModal';
 import { UserPlus, MoreVertical, ShieldAlert, BookOpen } from 'lucide-react';
@@ -24,73 +25,58 @@ interface EnrollmentData {
 }
 
 const EnrollmentManagement: React.FC = () => {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const queryClient = useQueryClient();
   const [selectedCourseId, setSelectedCourseId] = useState('');
-  const [enrollments, setEnrollments] = useState<EnrollmentData[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Custom Delete Modal State
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [studentIdToUnenroll, setStudentIdToUnenroll] = useState<string | null>(null);
-  const [unenrolling, setUnenrolling] = useState(false);
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const { data } = await api.get('/courses');
-        setCourses(data.courses);
-        if (data.courses.length > 0) {
-          setSelectedCourseId(data.courses[0].id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch courses', error);
-        toast.error('Failed to load courses.');
+  const { data: courses = [] } = useQuery<Course[]>({
+    queryKey: ['courses-list'],
+    queryFn: async () => {
+      const { data } = await api.get('/courses');
+      if (data.courses.length > 0 && !selectedCourseId) {
+        setSelectedCourseId(data.courses[0].id);
       }
-    };
-    fetchCourses();
-  }, []);
-
-  const fetchEnrollments = async (courseId: string) => {
-    setLoading(true);
-    try {
-      const { data } = await api.get(`/enrollments/course/${courseId}/students`);
-      setEnrollments(data.enrollments);
-    } catch (error) {
-      console.error('Failed to fetch enrollments', error);
-      toast.error('Failed to fetch student enrollments.');
-    } finally {
-      setLoading(false);
+      return data.courses;
     }
-  };
+  });
 
-  useEffect(() => {
-    if (selectedCourseId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchEnrollments(selectedCourseId);
-    }
-  }, [selectedCourseId]);
+  const { data: enrollments = [], isLoading: loading } = useQuery<EnrollmentData[]>({
+    queryKey: ['enrollments', selectedCourseId],
+    queryFn: async () => {
+      const { data } = await api.get(`/enrollments/course/${selectedCourseId}/students`);
+      return data.enrollments;
+    },
+    enabled: !!selectedCourseId,
+  });
 
   const confirmUnenroll = (studentId: string) => {
     setStudentIdToUnenroll(studentId);
     setIsConfirmOpen(true);
   };
 
-  const handleUnenrollExecute = async () => {
-    if (!studentIdToUnenroll) return;
-    setUnenrolling(true);
-    try {
-      await api.delete(`/enrollments/${selectedCourseId}/students/${studentIdToUnenroll}`);
+  const unenrollMutation = useMutation({
+    mutationFn: async () => {
+      return api.delete(`/enrollments/${selectedCourseId}/students/${studentIdToUnenroll}`);
+    },
+    onSuccess: () => {
       toast.success('Student unenrolled successfully.');
       setIsConfirmOpen(false);
       setStudentIdToUnenroll(null);
-      fetchEnrollments(selectedCourseId);
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['enrollments', selectedCourseId] });
+    },
+    onError: (error: unknown) => {
       console.error('Failed to unenroll', error);
       toast.error('Failed to remove student from course.');
-    } finally {
-      setUnenrolling(false);
     }
+  });
+
+  const handleUnenrollExecute = () => {
+    if (!studentIdToUnenroll) return;
+    unenrollMutation.mutate();
   };
 
   return (
@@ -206,7 +192,7 @@ const EnrollmentManagement: React.FC = () => {
         onSuccess={() => {
           setIsModalOpen(false);
           toast.success('Student enrolled successfully.');
-          fetchEnrollments(selectedCourseId);
+          queryClient.invalidateQueries({ queryKey: ['enrollments', selectedCourseId] });
         }}
       />
 
@@ -217,7 +203,7 @@ const EnrollmentManagement: React.FC = () => {
           message="Are you sure you want to remove this student from the selected course? They will lose access to all lecture logs, recordings, and assignments in this course module."
           onConfirm={handleUnenrollExecute}
           onCancel={() => setIsConfirmOpen(false)}
-          loading={unenrolling}
+          loading={unenrollMutation.isPending}
           danger
         />
       </Modal>

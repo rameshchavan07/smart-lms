@@ -15,12 +15,13 @@ const TeacherEnrollments: React.FC = () => {
     }
   });
 
-  const courses = ['All Courses', ...Array.from(new Set(enrollments.map((e: any) => e.course?.title).filter(Boolean)))];
+  const courses = ['All Courses', ...Array.from(new Set(enrollments.map((e: unknown) => (e as { course?: { title?: string } }).course?.title).filter(Boolean)))];
 
-  const filteredEnrollments = enrollments.filter((e: any) => {
-    const studentName = `${e.student?.user?.firstName} ${e.student?.user?.lastName}`.toLowerCase();
-    const email = e.student?.user?.email?.toLowerCase() || '';
-    const courseName = e.course?.title || '';
+  const filteredEnrollments = enrollments.filter((e: unknown) => {
+    const enrollment = e as { student?: { user?: { firstName?: string, lastName?: string, email?: string } }, course?: { title?: string } };
+    const studentName = `${enrollment.student?.user?.firstName} ${enrollment.student?.user?.lastName}`.toLowerCase();
+    const email = enrollment.student?.user?.email?.toLowerCase() || '';
+    const courseName = enrollment.course?.title || '';
     
     const matchesSearch = studentName.includes(searchTerm.toLowerCase()) || email.includes(searchTerm.toLowerCase());
     const matchesCourse = filterCourse === 'All Courses' || courseName === filterCourse;
