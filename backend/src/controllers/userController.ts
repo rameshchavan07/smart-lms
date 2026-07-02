@@ -236,6 +236,16 @@ export const deleteUser = async (req: AuthRequest, res: Response): Promise<void>
       prisma.auditLog.deleteMany({ where: { userId: id as string } }),
       prisma.notification.deleteMany({ where: { userId: id as string } }),
       prisma.googleDriveFile.deleteMany({ where: { uploadedBy: id as string } }),
+      prisma.discussionReply.deleteMany({ where: { userId: id as string } }),
+      prisma.discussion.deleteMany({ where: { userId: id as string } }),
+      prisma.message.deleteMany({ 
+        where: { 
+          OR: [
+            { senderId: id as string },
+            { receiverId: id as string }
+          ]
+        } 
+      }),
       ...(user.student ? [
         prisma.attendance.deleteMany({ where: { studentId: user.student.id } }),
         prisma.assignmentSubmission.deleteMany({ where: { studentId: user.student.id } }),
