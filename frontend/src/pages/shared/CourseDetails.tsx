@@ -4,12 +4,14 @@ import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import EnrollStudentModal from '../../components/EnrollStudentModal';
 import { EmptyState, Button } from '../../components';
+import ConfirmDeleteModal from '../../components/ConfirmDeleteModal';
 import CustomDateTimePicker from '../../components/CustomDateTimePicker';
 import { getDirectDriveUrl } from '../../utils/drive';
 import AttendanceReportModal from '../../components/AttendanceReportModal';
 import UploadRecordingModal from '../../components/UploadRecordingModal';
 import { AssignmentsTab } from './AssignmentsTab';
 import { DiscussionsTab } from './DiscussionsTab';
+import toast from 'react-hot-toast';
 import { 
   Video, 
   Calendar, 
@@ -121,6 +123,16 @@ const CourseDetails: React.FC = () => {
   // Upload Recording Modal state
   const [showUploadRecordingModal, setShowUploadRecordingModal] = useState(false);
   const [selectedLectureForRecording, setSelectedLectureForRecording] = useState<{ id: string, title: string } | null>(null);
+
+  // Delete Recording confirm modal state
+  const [showDeleteRecordingModal, setShowDeleteRecordingModal] = useState(false);
+  const [selectedLectureForDeleteRecording, setSelectedLectureForDeleteRecording] = useState<{ id: string, title: string } | null>(null);
+  const [deletingRecording, setDeletingRecording] = useState(false);
+
+  // Delete Material confirm modal state
+  const [showDeleteMaterialModal, setShowDeleteMaterialModal] = useState(false);
+  const [selectedMaterialForDelete, setSelectedMaterialForDelete] = useState<{ id: string, title: string } | null>(null);
+  const [deletingMaterial, setDeletingMaterial] = useState(false);
 
   // Materials state
   const [materials, setMaterials] = useState<MaterialData[]>([]);
@@ -286,13 +298,37 @@ const CourseDetails: React.FC = () => {
     }
   };
 
-  const handleDeleteMaterial = async (materialId: string) => {
-    if (!window.confirm('Are you sure you want to delete this study material?')) return;
+  const handleDeleteMaterial = async () => {
+    if (!selectedMaterialForDelete) return;
+    setDeletingMaterial(true);
     try {
-      await api.delete(`/study-materials/${materialId}`);
+      await api.delete(`/study-materials/${selectedMaterialForDelete.id}`);
+      toast.success(`"${selectedMaterialForDelete.title}" deleted successfully.`);
+      setShowDeleteMaterialModal(false);
+      setSelectedMaterialForDelete(null);
       fetchMaterials();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete study material', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete material.');
+    } finally {
+      setDeletingMaterial(false);
+    }
+  };
+
+  const handleDeleteLectureRecording = async () => {
+    if (!selectedLectureForDeleteRecording) return;
+    setDeletingRecording(true);
+    try {
+      await api.delete(`/lectures/${selectedLectureForDeleteRecording.id}/recording`);
+      toast.success(`Recording for "${selectedLectureForDeleteRecording.title}" deleted successfully.`);
+      setShowDeleteRecordingModal(false);
+      setSelectedLectureForDeleteRecording(null);
+      fetchLectures();
+    } catch (error: any) {
+      console.error('Failed to delete lecture recording', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete recording.');
+    } finally {
+      setDeletingRecording(false);
     }
   };
 
@@ -588,7 +624,20 @@ const CourseDetails: React.FC = () => {
                           className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition font-semibold text-sm border border-border text-secondary hover:bg-bg-subtle shadow-sm"
                         >
                           <UploadCloud className="w-4 h-4" />
-                          Upload Recording
+                          {lecture.recordingUrl ? 'Replace Recording' : 'Upload Recording'}
+                        </button>
+                      )}
+                      {isEnded && lecture.recordingUrl && user?.role === 'TEACHER' && (
+                        <button
+                          onClick={() => {
+                            setSelectedLectureForDeleteRecording({ id: lecture.id, title: lecture.title });
+                            setShowDeleteRecordingModal(true);
+                          }}
+                          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition font-semibold text-sm border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30 shadow-sm"
+                          title="Delete recording"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete Recording
                         </button>
                       )}
                       <button 
@@ -762,9 +811,12 @@ const CourseDetails: React.FC = () => {
                     </a>
                     {user?.role === 'TEACHER' && (
                       <button 
-                        onClick={() => handleDeleteMaterial(material.id)}
-                        className="p-2 text-muted hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                        title="Delete"
+                        onClick={() => {
+                          setSelectedMaterialForDelete({ id: material.id, title: material.title });
+                          setShowDeleteMaterialModal(true);
+                        }}
+                        className="p-2 text-muted hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition"
+                        title="Delete material"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -956,11 +1008,43 @@ const CourseDetails: React.FC = () => {
           isOpen={showUploadRecordingModal}
           onClose={() => setShowUploadRecordingModal(false)}
           onSuccess={() => {
-            alert('Recording uploaded successfully!');
+            toast.success('Recording uploaded successfully!');
             fetchLectures();
           }}
         />
       )}
+
+      {/* Delete Recording Confirm Modal */}
+      <ConfirmDeleteModal
+        isOpen={showDeleteRecordingModal}
+        onClose={() => {
+          if (!deletingRecording) {
+            setShowDeleteRecordingModal(false);
+            setSelectedLectureForDeleteRecording(null);
+          }
+        }}
+        onConfirm={handleDeleteLectureRecording}
+        loading={deletingRecording}
+        title="Delete this lecture recording?"
+        description={`The video for "${selectedLectureForDeleteRecording?.title ?? ''}" will be permanently removed from Google Drive and the lecture. Students will no longer be able to watch it.`}
+        confirmLabel="Delete Recording"
+      />
+
+      {/* Delete Material Confirm Modal */}
+      <ConfirmDeleteModal
+        isOpen={showDeleteMaterialModal}
+        onClose={() => {
+          if (!deletingMaterial) {
+            setShowDeleteMaterialModal(false);
+            setSelectedMaterialForDelete(null);
+          }
+        }}
+        onConfirm={handleDeleteMaterial}
+        loading={deletingMaterial}
+        title="Delete this study material?"
+        description={`"${selectedMaterialForDelete?.title ?? ''}" will be permanently removed from Google Drive and the course.`}
+        confirmLabel="Delete Material"
+      />
     </div>
   );
 };
