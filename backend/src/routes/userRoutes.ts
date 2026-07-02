@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getUsers, createTeacher, createStudent, updateUserStatus, updateUser, deleteUser, updateProfile, uploadAvatar } from '../controllers/userController';
+import { getUsers, createTeacher, createStudent, createAdmin, updateUserStatus, updateUser, deleteUser, updateProfile, uploadAvatar } from '../controllers/userController';
 import { protect, authorize } from '../middleware/auth';
 import { upload } from '../middleware/upload';
 
@@ -9,6 +9,7 @@ const router = Router();
 router.use(protect);
 
 router.get('/', authorize('ADMIN', 'TEACHER'), getUsers);
+router.post('/admin', authorize('ADMIN'), createAdmin);
 router.post('/teacher', authorize('ADMIN'), createTeacher);
 router.post('/student', authorize('ADMIN', 'TEACHER'), createStudent);
 router.put('/profile', updateProfile);

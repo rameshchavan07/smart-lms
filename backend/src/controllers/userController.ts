@@ -100,6 +100,40 @@ export const createTeacher = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
+// Create an Admin
+export const createAdmin = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { firstName, lastName, email, password, phoneNumber, address } = req.body;
+
+    const userExists = await prisma.user.findUnique({ where: { email } });
+    if (userExists) {
+      res.status(400).json({ message: 'User already exists' });
+      return;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const user = await prisma.user.create({
+      data: {
+        firstName,
+        lastName,
+        email,
+        passwordHash,
+        phoneNumber,
+        address,
+        role: 'ADMIN',
+      }
+    });
+
+    await logActivity(req.user!.id, `Created Admin profile: ${firstName} ${lastName}`, 'User', user.id);
+
+    res.status(201).json({ message: 'Admin created successfully', user });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Create a Student
 export const createStudent = async (req: AuthRequest, res: Response): Promise<void> => {
   try {

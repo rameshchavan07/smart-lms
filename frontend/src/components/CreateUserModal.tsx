@@ -12,7 +12,7 @@ interface CreateUserModalProps {
 
 const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const { user } = useAuth();
-  const [role, setRole] = useState<'TEACHER' | 'STUDENT'>(user?.role === 'TEACHER' ? 'STUDENT' : 'TEACHER');
+  const [role, setRole] = useState<'TEACHER' | 'STUDENT' | 'ADMIN'>(user?.role === 'TEACHER' ? 'STUDENT' : 'TEACHER');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -33,7 +33,16 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
 
   const createUserMutation = useMutation({
     mutationFn: async () => {
-      if (role === 'TEACHER') {
+      if (role === 'ADMIN') {
+        return api.post('/users/admin', {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          phoneNumber: formData.phoneNumber,
+          address: formData.address,
+        });
+      } else if (role === 'TEACHER') {
         return api.post('/users/teacher', {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -98,11 +107,12 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
                   <label className="block text-sm font-medium text-secondary mb-1">User Role</label>
                   <select
                     value={role}
-                    onChange={(e) => setRole(e.target.value as 'TEACHER' | 'STUDENT')}
+                    onChange={(e) => setRole(e.target.value as 'TEACHER' | 'STUDENT' | 'ADMIN')}
                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-border-strong bg-surface text-primary focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
                   >
                     <option value="TEACHER">Teacher</option>
                     <option value="STUDENT">Student</option>
+                    <option value="ADMIN">Admin</option>
                   </select>
                 </div>
               )}
