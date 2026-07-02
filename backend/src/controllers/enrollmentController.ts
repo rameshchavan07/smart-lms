@@ -123,7 +123,7 @@ export const getCourseStudents = async (req: AuthRequest, res: Response): Promis
       include: {
         student: {
           include: {
-            user: { select: { firstName: true, lastName: true, email: true } }
+            user: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, address: true } }
           }
         }
       },

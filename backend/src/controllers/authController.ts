@@ -62,7 +62,7 @@ const buildAuthResponse = async (user: User) => {
 // ─── REGISTER ────────────────────────────────────────────────────────────────
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, phoneNumber, address } = req.body;
 
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
@@ -78,6 +78,8 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
         firstName,
         lastName,
         email,
+        phoneNumber,
+        address,
         passwordHash,
         role: 'STUDENT',
         isEmailVerified: false,

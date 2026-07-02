@@ -12,6 +12,8 @@ model User {
   firstName         String            @db.VarChar(100)
   lastName          String            @db.VarChar(100)
   email             String            @unique @db.VarChar(255)
+  phoneNumber       String?           @db.VarChar(20)
+  address           String?           @db.Text
   passwordHash      String?
   role              UserRole
   profileImage      String?

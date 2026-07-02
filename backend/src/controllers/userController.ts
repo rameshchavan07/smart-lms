@@ -103,7 +103,7 @@ export const createTeacher = async (req: AuthRequest, res: Response): Promise<vo
 // Create a Student
 export const createStudent = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, enrollmentNumber, academicYear } = req.body;
+    const { firstName, lastName, email, password, enrollmentNumber, academicYear, phoneNumber, address } = req.body;
 
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
@@ -119,6 +119,8 @@ export const createStudent = async (req: AuthRequest, res: Response): Promise<vo
         firstName,
         lastName,
         email,
+        phoneNumber,
+        address,
         passwordHash,
         role: 'STUDENT',
         student: {
@@ -163,7 +165,7 @@ export const updateUserStatus = async (req: AuthRequest, res: Response): Promise
 export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, email, role, ...profileData } = req.body;
+    const { firstName, lastName, email, role, phoneNumber, address, ...profileData } = req.body;
 
     const user = await prisma.user.findUnique({
       where: { id: id as string },
@@ -182,6 +184,8 @@ export const updateUser = async (req: AuthRequest, res: Response): Promise<void>
           firstName,
           lastName,
           email,
+          phoneNumber,
+          address,
           role
         }
       });

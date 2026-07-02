@@ -18,6 +18,8 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
     lastName: '',
     email: '',
     password: '',
+    phoneNumber: '',
+    address: '',
     employeeCode: '', // Teacher
     specialization: '', // Teacher
     enrollmentNumber: '', // Student
@@ -37,6 +39,8 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
           lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
+          phoneNumber: formData.phoneNumber,
+          address: formData.address,
           employeeCode: formData.employeeCode,
           specialization: formData.specialization,
         });
@@ -46,6 +50,8 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
           lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
+          phoneNumber: formData.phoneNumber,
+          address: formData.address,
           enrollmentNumber: formData.enrollmentNumber,
           academicYear: formData.academicYear,
         });
@@ -115,6 +121,17 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">Email</label>
                 <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Phone Number</label>
+                  <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Address</label>
+                  <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500" />
+                </div>
               </div>
               
               <div>

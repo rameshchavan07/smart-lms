@@ -16,6 +16,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
     firstName: '',
     lastName: '',
     email: '',
+    phoneNumber: '',
+    address: '',
     role: 'STUDENT',
     employeeCode: '',
     specialization: '',
@@ -32,6 +34,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
         firstName: userToEdit.firstName || '',
         lastName: userToEdit.lastName || '',
         email: userToEdit.email || '',
+        phoneNumber: userToEdit.phoneNumber || '',
+        address: userToEdit.address || '',
         role: userToEdit.role || 'STUDENT',
         employeeCode: userToEdit.teacher?.employeeCode || '',
         specialization: userToEdit.teacher?.specialization || '',
@@ -52,6 +56,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        address: formData.address,
         role: formData.role,
         employeeCode: formData.employeeCode,
         specialization: formData.specialization,
@@ -110,6 +116,17 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">Email</label>
                 <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Phone Number</label>
+                  <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Address</label>
+                  <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full border-border-strong bg-surface text-primary rounded-md border p-2 focus:ring-blue-500 focus:border-blue-500" />
+                </div>
               </div>
 
               {formData.role === 'TEACHER' && (

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import EnrollStudentModal from '../../components/EnrollStudentModal';
-import { UserPlus, MoreVertical, ShieldAlert, BookOpen } from 'lucide-react';
+import { UserPlus, MoreVertical, ShieldAlert, BookOpen, Download } from 'lucide-react';
 import { Button, EmptyState, Modal, ConfirmDialog } from '../../components';
 import toast from 'react-hot-toast';
 
@@ -19,6 +19,8 @@ interface EnrollmentData {
       firstName: string;
       lastName: string;
       email: string;
+      phoneNumber?: string;
+      address?: string;
     }
   };
   enrolledAt: string;
@@ -79,18 +81,63 @@ const EnrollmentManagement: React.FC = () => {
     unenrollMutation.mutate();
   };
 
+  const handleExportCSV = () => {
+    if (!enrollments.length) return;
+    
+    const course = courses.find(c => c.id === selectedCourseId);
+    const courseName = course ? course.title : 'Course';
+    
+    const headers = ['Student ID', 'First Name', 'Last Name', 'Email', 'Phone Number', 'Address', 'Course Name', 'Enrollment Date'];
+    
+    const rows = enrollments.map(record => [
+      record.student.enrollmentNumber,
+      record.student.user.firstName,
+      record.student.user.lastName,
+      record.student.user.email,
+      record.student.user.phoneNumber || 'N/A',
+      record.student.user.address || 'N/A',
+      courseName,
+      new Date(record.enrolledAt).toLocaleDateString()
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${courseName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_students.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-extrabold text-primary">Student Enrollments</h1>
-        <Button 
-          onClick={() => setIsModalOpen(true)}
-          disabled={!selectedCourseId}
-          className="flex items-center gap-2"
-        >
-          <UserPlus className="w-4 h-4" />
-          Enroll Student
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            onClick={handleExportCSV}
+            disabled={!enrollments.length}
+            variant="secondary"
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </Button>
+          <Button 
+            onClick={() => setIsModalOpen(true)}
+            disabled={!selectedCourseId}
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" />
+            Enroll Student
+          </Button>
+        </div>
       </div>
 
       <div className="bg-surface rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">
