@@ -187,6 +187,70 @@ export const updateLecture = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
+// Delete a lecture (Teacher only)
+export const deleteLecture = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+
+    const lecture = await prisma.lecture.findUnique({
+      where: { id },
+      include: { course: true }
+    });
+
+    if (!lecture) {
+      res.status(404).json({ message: 'Lecture not found' });
+      return;
+    }
+
+    if (lecture.createdBy !== req.user!.id && req.user!.role !== 'ADMIN') {
+      res.status(403).json({ message: 'You can only delete your own lectures' });
+      return;
+    }
+
+    // Delete associated recording from Google Drive if it exists
+    if (lecture.recordingUrl) {
+      let driveFileId: string | null = null;
+      if (lecture.recordingUrl.includes('/api/media/drive/')) {
+        driveFileId = lecture.recordingUrl.split('/api/media/drive/')[1];
+      } else if (lecture.recordingUrl.includes('drive.google.com')) {
+        const match = lecture.recordingUrl.match(/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (match) driveFileId = match[1];
+      }
+
+      if (driveFileId) {
+        try {
+          await deleteFileFromDrive(driveFileId);
+        } catch (e) {
+          console.warn('Failed to delete recording from Google Drive:', e);
+        }
+        
+        const driveRecord = await prisma.googleDriveFile.findFirst({
+          where: { driveFileId },
+        });
+        if (driveRecord) {
+          await prisma.googleDriveFile.delete({ where: { id: driveRecord.id } });
+        }
+      }
+    }
+
+    // Delete associated attendance records to satisfy foreign key constraints
+    await prisma.attendance.deleteMany({
+      where: { lectureId: id }
+    });
+
+    await prisma.lecture.delete({
+      where: { id }
+    });
+
+    // @ts-ignore
+    await logActivity(req.user!.id, `Deleted lecture: ${lecture.title} from course: ${lecture.course?.title || lecture.courseId}`, 'Lecture', id);
+
+    res.json({ message: 'Lecture deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const uploadLectureThumbnail = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -370,7 +434,7 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
 // Delete lecture recording (Teacher only)
 export const deleteLectureRecording = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const lecture = await prisma.lecture.findUnique({
       where: { id },

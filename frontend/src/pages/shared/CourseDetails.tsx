@@ -124,6 +124,11 @@ const CourseDetails: React.FC = () => {
   const [showUploadRecordingModal, setShowUploadRecordingModal] = useState(false);
   const [selectedLectureForRecording, setSelectedLectureForRecording] = useState<{ id: string, title: string } | null>(null);
 
+  // Delete Lecture confirm modal state
+  const [showDeleteLectureModal, setShowDeleteLectureModal] = useState(false);
+  const [selectedLectureForDelete, setSelectedLectureForDelete] = useState<{ id: string, title: string } | null>(null);
+  const [deletingLecture, setDeletingLecture] = useState(false);
+
   // Delete Recording confirm modal state
   const [showDeleteRecordingModal, setShowDeleteRecordingModal] = useState(false);
   const [selectedLectureForDeleteRecording, setSelectedLectureForDeleteRecording] = useState<{ id: string, title: string } | null>(null);
@@ -307,7 +312,8 @@ const CourseDetails: React.FC = () => {
       setShowDeleteMaterialModal(false);
       setSelectedMaterialForDelete(null);
       fetchMaterials();
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }, message?: string };
       console.error('Failed to delete study material', error);
       toast.error(error?.response?.data?.message || 'Failed to delete material.');
     } finally {
@@ -324,11 +330,30 @@ const CourseDetails: React.FC = () => {
       setShowDeleteRecordingModal(false);
       setSelectedLectureForDeleteRecording(null);
       fetchLectures();
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }, message?: string };
       console.error('Failed to delete lecture recording', error);
       toast.error(error?.response?.data?.message || 'Failed to delete recording.');
     } finally {
       setDeletingRecording(false);
+    }
+  };
+
+  const handleDeleteLecture = async () => {
+    if (!selectedLectureForDelete) return;
+    setDeletingLecture(true);
+    try {
+      await api.delete(`/lectures/${selectedLectureForDelete.id}`);
+      toast.success(`Lecture "${selectedLectureForDelete.title}" deleted successfully.`);
+      setShowDeleteLectureModal(false);
+      setSelectedLectureForDelete(null);
+      fetchLectures();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }, message?: string };
+      console.error('Failed to delete lecture', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete lecture.');
+    } finally {
+      setDeletingLecture(false);
     }
   };
 
@@ -591,12 +616,23 @@ const CourseDetails: React.FC = () => {
                           {new Date(lecture.startTime).toLocaleString()} - {new Date(lecture.endTime).toLocaleTimeString()}
                           
                           {user?.role === 'TEACHER' && (
-                            <button 
-                              onClick={() => handleEditClick(lecture)}
-                              className="ml-2 text-indigo-500 hover:text-indigo-700 underline px-1 rounded-sm"
-                            >
-                              Edit
-                            </button>
+                            <>
+                              <button 
+                                onClick={() => handleEditClick(lecture)}
+                                className="ml-2 text-indigo-500 hover:text-indigo-700 underline px-1 rounded-sm"
+                              >
+                                Edit
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  setSelectedLectureForDelete({ id: lecture.id, title: lecture.title });
+                                  setShowDeleteLectureModal(true);
+                                }}
+                                className="ml-2 text-rose-500 hover:text-rose-700 underline px-1 rounded-sm"
+                              >
+                                Delete
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -1013,6 +1049,22 @@ const CourseDetails: React.FC = () => {
           }}
         />
       )}
+
+      {/* Delete Lecture Confirm Modal */}
+      <ConfirmDeleteModal
+        isOpen={showDeleteLectureModal}
+        onClose={() => {
+          if (!deletingLecture) {
+            setShowDeleteLectureModal(false);
+            setSelectedLectureForDelete(null);
+          }
+        }}
+        onConfirm={handleDeleteLecture}
+        loading={deletingLecture}
+        title="Delete this lecture?"
+        description={`"${selectedLectureForDelete?.title ?? ''}" will be permanently removed along with its recording and any materials.`}
+        confirmLabel="Delete Lecture"
+      />
 
       {/* Delete Recording Confirm Modal */}
       <ConfirmDeleteModal

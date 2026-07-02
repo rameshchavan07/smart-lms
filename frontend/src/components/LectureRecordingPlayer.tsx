@@ -140,7 +140,6 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
       {/* React Player */}
       <div className="pt-[56.25%] relative">
         <div className="absolute inset-0">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           <video
             ref={videoRef}
             src={playableUrl}
