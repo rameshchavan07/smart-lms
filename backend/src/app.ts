@@ -9,6 +9,7 @@ import session from 'express-session';
 import { configurePassport } from './services/passportService';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import { doubleCsrfProtection, generateCsrfToken, invalidCsrfTokenError } from './middleware/csrf';
 
 const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:5173'];
 
@@ -37,6 +38,7 @@ const apiLimiter = rateLimit({
   max: 200, // Limit each IP to 200 requests per `window`
   standardHeaders: true,
   legacyHeaders: false,
+  message: { message: 'Too many requests from this IP, please try again later.' }
 });
 app.use('/api', apiLimiter);
 
@@ -44,7 +46,7 @@ app.use('/api', apiLimiter);
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: 'Too many login attempts from this IP, please try again after 15 minutes'
+  message: { message: 'Too many login attempts from this IP, please try again after 15 minutes' }
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
@@ -128,6 +130,15 @@ app.get('/', (req: Request, res: Response) => {
   res.redirect('/api-docs');
 });
 
+// CSRF Token Route
+app.get('/api/csrf-token', (req: Request, res: Response) => {
+  const csrfToken = generateCsrfToken(req, res);
+  res.json({ csrfToken });
+});
+
+// Apply CSRF Protection
+app.use('/api', doubleCsrfProtection);
+
 // API Routes
 app.use('/api', routes);
 
@@ -143,6 +154,11 @@ app.use('/api', (req: Request, res: Response) => {
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err === invalidCsrfTokenError) {
+    res.status(403).json({ message: 'Invalid CSRF token' });
+    return;
+  }
+  
   console.error(err.stack);
 
   let statusCode = 500;
