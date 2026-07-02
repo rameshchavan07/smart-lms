@@ -82,7 +82,7 @@ export const createTeacher = async (req: AuthRequest, res: Response): Promise<vo
         role: 'TEACHER',
         teacher: {
           create: {
-            employeeCode,
+            employeeCode: employeeCode || `EMP-${Date.now()}`,
             specialization,
             qualification,
             joiningDate: new Date()
@@ -159,8 +159,8 @@ export const createStudent = async (req: AuthRequest, res: Response): Promise<vo
         role: 'STUDENT',
         student: {
           create: {
-            enrollmentNumber,
-            academicYear,
+            enrollmentNumber: enrollmentNumber || `ENR-${Date.now()}`,
+            academicYear: academicYear || new Date().getFullYear().toString(),
             admissionDate: new Date()
           }
         }

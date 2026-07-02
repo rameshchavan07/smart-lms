@@ -72,6 +72,9 @@ const getGoogleErrorMessage = (error: any): string => {
     if (code === 401) return `Authentication failed (401): Re-run node getGoogleToken.js`;
     return `Google API [${code}]: ${message}`;
   }
+  if (error?.response?.data?.error === 'invalid_grant') {
+    return 'Google Drive token expired or revoked. Please run: node getGoogleToken.js';
+  }
   if (error?.code === 'ENOENT') return `Temp file not found: ${error.path}`;
   return error?.message || 'Unknown error';
 };
@@ -197,6 +200,7 @@ export const uploadFileToDrive = async (
     fileId = file.data.id;
     console.log('[GoogleDrive] ✅ Uploaded, File ID:', fileId);
   } catch (error: any) {
+    console.error('[GoogleDrive] Full upload error:', JSON.stringify(error?.response?.data || error?.message || error, null, 2));
     const msg = getGoogleErrorMessage(error);
     console.error('[GoogleDrive] ❌ Upload failed:', msg);
     throw new Error(msg);

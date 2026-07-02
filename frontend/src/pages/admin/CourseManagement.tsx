@@ -89,8 +89,10 @@ const CourseManagement: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
     onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      const errorMessage = err.response?.data?.message || 'Failed to upload thumbnail. Please check connection.';
       console.error('Failed to upload thumbnail', error);
-      toast.error('Failed to upload thumbnail. Please check connection.');
+      toast.error(errorMessage);
     }
   });
 

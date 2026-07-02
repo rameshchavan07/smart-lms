@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -123,9 +123,10 @@ const CourseDetails: React.FC = () => {
       });
       alert('Lecture thumbnail uploaded successfully!');
       fetchLectures();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to upload lecture thumbnail', error);
-      alert('Failed to upload lecture thumbnail. Please try again.');
+      const errorMessage = error.response?.data?.message || 'Failed to upload lecture thumbnail. Please try again.';
+      alert(errorMessage);
     } finally {
       setLecturesLoading(false);
     }
