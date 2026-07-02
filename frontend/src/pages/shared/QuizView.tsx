@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Loader2, CheckCircle2, FileQuestion } from 'lucide-react';
-import { Button } from '../../components';
+import { ArrowLeft, CheckCircle2, FileQuestion } from 'lucide-react';
+import { Button, Skeleton } from '../../components';
 import toast from 'react-hot-toast';
 
 interface QuizOption {
@@ -123,8 +123,17 @@ const QuizView: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      <div className="max-w-4xl mx-auto space-y-6 pb-20 mt-6">
+        <Skeleton className="h-10 w-64 mb-6" />
+        <div className="card space-y-4">
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+        <div className="card space-y-4">
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
       </div>
     );
   }

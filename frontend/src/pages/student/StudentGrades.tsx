@@ -1,7 +1,8 @@
 import React from 'react';
-import { Award, Target, Loader2 } from 'lucide-react';
+import { Award, Target } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { Skeleton } from '../../components/Skeleton';
 
 interface Assignment {
   id: string;
@@ -75,7 +76,17 @@ const StudentGrades: React.FC = () => {
         <h2 className="text-[16px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Recent Grades</h2>
         <div className="space-y-3">
           {loadingAssignments ? (
-            <div className="py-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-brand-500" /></div>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-black/5 dark:bg-surface/5">
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-40 mb-1" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <Skeleton className="h-5 w-12" />
+                </div>
+              ))}
+            </div>
           ) : gradedAssignments.length === 0 ? (
             <div className="py-8 text-center text-[13px] text-gray-500">No graded assignments yet.</div>
           ) : (

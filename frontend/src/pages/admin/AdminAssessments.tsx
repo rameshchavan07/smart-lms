@@ -1,7 +1,8 @@
 import React from 'react';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { TableRowSkeleton } from '../../components/Skeleton';
 
 const AdminAssessments: React.FC = () => {
   const { data: assessments = [], isLoading } = useQuery({
@@ -49,11 +50,11 @@ const AdminAssessments: React.FC = () => {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-brand-500" />
-                  </td>
-                </tr>
+                <>
+                  <TableRowSkeleton cols={5} />
+                  <TableRowSkeleton cols={5} />
+                  <TableRowSkeleton cols={5} />
+                </>
               ) : assessments.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-[13px] text-gray-500">No assessments found.</td>

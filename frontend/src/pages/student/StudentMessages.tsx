@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Search, Loader2, Users, Plus, X, CheckCheck, Paperclip, Smile, FileText, Download, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { Skeleton } from '../../components/Skeleton';
 import { useAuth } from '../../contexts/AuthContext';
 import { io, Socket } from 'socket.io-client';
 import toast from 'react-hot-toast';
@@ -240,7 +241,17 @@ const StudentMessages: React.FC = () => {
           </div>
           <div className="flex-1 overflow-y-auto">
             {loadingContacts ? (
-              <div className="p-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-brand-500" /></div>
+              <div className="flex flex-col">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex gap-3 p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+                    <Skeleton className="w-10 h-10 rounded-full flex-shrink-0" />
+                    <div className="flex-1 flex flex-col justify-center">
+                      <Skeleton className="h-3 w-32 mb-1.5" />
+                      <Skeleton className="h-2 w-20" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <>
                 {/* Groups */}
@@ -326,7 +337,13 @@ const StudentMessages: React.FC = () => {
 
               <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-bg">
                 {loadingMessages ? (
-                   <div className="p-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-[#00a884]" /></div>
+                  <div className="flex flex-col gap-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className={`flex w-full ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+                        <Skeleton className="h-10 w-48 rounded-2xl" />
+                      </div>
+                    ))}
+                  </div>
                 ) : messages.length === 0 ? (
                   <div className="h-full flex items-center justify-center">
                     <div className="bg-surface-raised px-4 py-2 rounded-lg shadow-sm text-[12.5px] text-gray-600 dark:text-gray-400">

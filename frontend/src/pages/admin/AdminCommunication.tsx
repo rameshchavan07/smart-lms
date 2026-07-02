@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Megaphone, Loader2 } from 'lucide-react';
+import { Megaphone } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { Skeleton } from '../../components/Skeleton';
 
 const AdminCommunication: React.FC = () => {
   // Removed activeTab state
@@ -53,7 +54,18 @@ const AdminCommunication: React.FC = () => {
           <div className="flex-1 overflow-y-auto">
             <div className="flex flex-col">
               {loadingAnnouncements ? (
-                <div className="p-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-brand-500" /></div>
+                <div className="flex flex-col">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+                      <div className="flex items-start justify-between mb-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                      <Skeleton className="h-3 w-full mb-1" />
+                      <Skeleton className="h-3 w-4/5" />
+                    </div>
+                  ))}
+                </div>
               ) : announcements.length === 0 ? (
                 <div className="p-8 text-center text-[12px] text-gray-500">No announcements posted.</div>
               ) : announcements.map((a: { id: string; title: string; createdAt: string; content?: string }) => (

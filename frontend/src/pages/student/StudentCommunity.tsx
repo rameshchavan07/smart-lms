@@ -1,7 +1,8 @@
 import React from 'react';
-import { MessageSquare, Loader2, Pin } from 'lucide-react';
+import { MessageSquare, Pin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { Skeleton } from '../../components/Skeleton';
 
 interface DiscussionData {
   id: string;
@@ -35,7 +36,22 @@ const StudentCommunity: React.FC = () => {
 
       <div className="card p-0 overflow-hidden">
         {isLoading ? (
-          <div className="py-12 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-brand-500" /></div>
+          <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-4 flex gap-4">
+                <Skeleton className="w-10 h-10 rounded-full flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                  <Skeleton className="h-3 w-full mb-1" />
+                  <Skeleton className="h-3 w-4/5 mb-3" />
+                  <Skeleton className="h-4 w-20 rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : discussions.length === 0 ? (
           <div className="py-12 text-center text-[13px] text-gray-500">No active discussions in your courses.</div>
         ) : (

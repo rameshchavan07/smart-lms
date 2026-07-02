@@ -1,8 +1,9 @@
 import React from 'react';
-import { Users, BookOpen, GraduationCap, Loader2 } from 'lucide-react';
+import { Users, BookOpen, GraduationCap } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar, Tooltip } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { StatCardSkeleton, Skeleton } from '../../components/Skeleton';
 
 const AdminReports: React.FC = () => {
   const { data: reports, isLoading } = useQuery({
@@ -15,8 +16,29 @@ const AdminReports: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--brand-500)' }} />
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <Skeleton className="h-7 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+        </div>
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="card h-[400px]">
+            <Skeleton className="h-6 w-48 mb-6" />
+            <Skeleton className="h-full w-full rounded-lg" />
+          </div>
+          <div className="card h-[400px]">
+            <Skeleton className="h-6 w-48 mb-6" />
+            <Skeleton className="h-full w-full rounded-lg" />
+          </div>
+        </div>
       </div>
     );
   }

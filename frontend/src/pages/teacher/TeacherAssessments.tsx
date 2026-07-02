@@ -1,8 +1,9 @@
 import React from 'react';
-import { Plus, FileText, CheckCircle, Clock, Loader2 } from 'lucide-react';
+import { Plus, FileText, CheckCircle, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { TableRowSkeleton } from '../../components/Skeleton';
 
 const TeacherAssessments: React.FC = () => {
   const { data: assessments = [], isLoading } = useQuery({
@@ -77,11 +78,11 @@ const TeacherAssessments: React.FC = () => {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: 'var(--brand-500)' }} />
-                  </td>
-                </tr>
+                <>
+                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={6} />
+                </>
               ) : assessments.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>

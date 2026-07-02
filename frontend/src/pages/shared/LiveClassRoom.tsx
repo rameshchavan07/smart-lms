@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { JitsiMeeting } from '@jitsi/react-sdk';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Loader2, PlayCircle } from 'lucide-react';
-import { LectureRecordingPlayer, LectureRecorderUI } from '../../components';
+import { ArrowLeft, PlayCircle } from 'lucide-react';
+import { LectureRecordingPlayer, LectureRecorderUI, Skeleton } from '../../components';
 
 const LiveClassRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,9 +39,9 @@ const LiveClassRoom: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-bg-subtle">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-        <p className="text-secondary font-medium">Preparing virtual classroom...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-bg-subtle p-6">
+        <Skeleton className="w-full max-w-4xl h-[70vh] rounded-2xl" />
+        <Skeleton className="w-64 h-6 mt-6" />
       </div>
     );
   }

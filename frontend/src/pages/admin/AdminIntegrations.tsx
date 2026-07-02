@@ -1,7 +1,8 @@
 import React from 'react';
-import { Globe, Plug, Loader2, Check, X } from 'lucide-react';
+import { Globe, Plug, Check, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { Skeleton } from '../../components/Skeleton';
 
 const AdminIntegrations: React.FC = () => {
   const queryClient = useQueryClient();
@@ -55,8 +56,18 @@ const AdminIntegrations: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-[300px]">
-          <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="card flex flex-col h-[200px]">
+              <div className="flex items-start justify-between mb-4">
+                <Skeleton className="w-12 h-12 rounded-xl" />
+                <Skeleton className="w-9 h-5 rounded-full" />
+              </div>
+              <Skeleton className="h-5 w-32 mb-2" />
+              <Skeleton className="h-4 w-full mb-1" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

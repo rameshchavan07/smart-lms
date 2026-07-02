@@ -1,8 +1,9 @@
 import React from 'react';
-import { ClipboardList, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
+import { ClipboardList, Calendar, CheckCircle2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
+import { TableRowSkeleton } from '../../components/Skeleton';
 
 interface StudentAssignmentData {
   id: string;
@@ -64,11 +65,11 @@ const StudentAssignments: React.FC = () => {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-brand-500" />
-                  </td>
-                </tr>
+                <>
+                  <TableRowSkeleton cols={5} />
+                  <TableRowSkeleton cols={5} />
+                  <TableRowSkeleton cols={5} />
+                </>
               ) : assignments.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-[13px] text-gray-500">No assignments found.</td>
