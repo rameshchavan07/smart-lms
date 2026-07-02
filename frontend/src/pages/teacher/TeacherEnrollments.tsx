@@ -15,9 +15,9 @@ const TeacherEnrollments: React.FC = () => {
     }
   });
 
-  const courses = ['All Courses', ...Array.from(new Set(enrollments.map((e: { course?: { title?: string } }) => e.course?.title)))];
+  const courses = ['All Courses', ...Array.from(new Set(enrollments.map((e: any) => e.course?.title).filter(Boolean)))];
 
-  const filteredEnrollments = enrollments.filter((e: { student?: { user?: { firstName?: string, lastName?: string, email?: string } }, course?: { title?: string } }) => {
+  const filteredEnrollments = enrollments.filter((e: any) => {
     const studentName = `${e.student?.user?.firstName} ${e.student?.user?.lastName}`.toLowerCase();
     const email = e.student?.user?.email?.toLowerCase() || '';
     const courseName = e.course?.title || '';
@@ -60,7 +60,7 @@ const TeacherEnrollments: React.FC = () => {
             value={filterCourse}
             onChange={(e) => setFilterCourse(e.target.value)}
           >
-            {courses.map((c: string) => c && <option key={c} value={c}>{c}</option>)}
+            {(courses as string[]).map((c: string) => c && <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>

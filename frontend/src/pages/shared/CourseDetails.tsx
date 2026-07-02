@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import EnrollStudentModal from '../../components/EnrollStudentModal';
@@ -83,6 +84,7 @@ const CourseDetails: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const formatFileSize = (bytes: number | null) => {
     if (bytes === null || bytes === undefined) return '';
@@ -104,9 +106,44 @@ const CourseDetails: React.FC = () => {
     isValidTab(tabParam) ? tabParam : 'lectures'
   );
   
-  // Lectures state
-  const [lectures, setLectures] = useState<LectureData[]>([]);
-  const [lecturesLoading, setLecturesLoading] = useState(true);
+  // React Query Data Fetching
+  const { data: lectures = [], isLoading: lecturesLoading } = useQuery({
+    queryKey: ['course', id, 'lectures'],
+    queryFn: async () => {
+      const { data } = await api.get(`/lectures/course/${id}`);
+      return data.lectures as LectureData[];
+    },
+    enabled: !!id,
+  });
+
+  const { data: materials = [], isLoading: materialsLoading } = useQuery({
+    queryKey: ['course', id, 'materials'],
+    queryFn: async () => {
+      const { data } = await api.get(`/study-materials/course/${id}`);
+      return data.materials as MaterialData[];
+    },
+    enabled: !!id,
+  });
+
+  const { data: enrolledStudents = [], isLoading: studentsLoading } = useQuery({
+    queryKey: ['course', id, 'students'],
+    queryFn: async () => {
+      const { data } = await api.get(`/enrollments/course/${id}/students`);
+      return data.enrollments as StudentEnrollmentData[];
+    },
+    enabled: !!id && (user?.role === 'TEACHER' || user?.role === 'ADMIN'),
+  });
+
+  const { data: quizzes = [], isLoading: quizzesLoading } = useQuery({
+    queryKey: ['course', id, 'quizzes'],
+    queryFn: async () => {
+      const { data } = await api.get(`/quizzes/course/${id}`);
+      return data.quizzes as QuizData[];
+    },
+    enabled: !!id,
+  });
+
+  // UI State
   const [showCreateLecture, setShowCreateLecture] = useState(false);
   const [lectureForm, setLectureForm] = useState({
     title: '',
@@ -116,145 +153,169 @@ const CourseDetails: React.FC = () => {
   });
   const [editLectureId, setEditLectureId] = useState<string | null>(null);
   
-  // Attendance Modal state
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [selectedLectureForAttendance, setSelectedLectureForAttendance] = useState<{ id: string, title: string } | null>(null);
 
-  // Upload Recording Modal state
   const [showUploadRecordingModal, setShowUploadRecordingModal] = useState(false);
   const [selectedLectureForRecording, setSelectedLectureForRecording] = useState<{ id: string, title: string } | null>(null);
 
-  // Delete Lecture confirm modal state
   const [showDeleteLectureModal, setShowDeleteLectureModal] = useState(false);
   const [selectedLectureForDelete, setSelectedLectureForDelete] = useState<{ id: string, title: string } | null>(null);
-  const [deletingLecture, setDeletingLecture] = useState(false);
 
-  // Delete Recording confirm modal state
+
   const [showDeleteRecordingModal, setShowDeleteRecordingModal] = useState(false);
   const [selectedLectureForDeleteRecording, setSelectedLectureForDeleteRecording] = useState<{ id: string, title: string } | null>(null);
-  const [deletingRecording, setDeletingRecording] = useState(false);
 
-  // Delete Material confirm modal state
+
   const [showDeleteMaterialModal, setShowDeleteMaterialModal] = useState(false);
   const [selectedMaterialForDelete, setSelectedMaterialForDelete] = useState<{ id: string, title: string } | null>(null);
-  const [deletingMaterial, setDeletingMaterial] = useState(false);
 
-  // Materials state
-  const [materials, setMaterials] = useState<MaterialData[]>([]);
-  const [materialsLoading, setMaterialsLoading] = useState(true);
+
   const [showUploadMaterial, setShowUploadMaterial] = useState(false);
   const [materialTitle, setMaterialTitle] = useState('');
   const [materialDescription, setMaterialDescription] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
-  // Enrolled Students state
-  const [enrolledStudents, setEnrolledStudents] = useState<StudentEnrollmentData[]>([]);
-  const [studentsLoading, setStudentsLoading] = useState(true);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
 
-  // Quizzes state
-  const [quizzes, setQuizzes] = useState<QuizData[]>([]);
-  const [quizzesLoading, setQuizzesLoading] = useState(true);
-
-  const fetchLectures = useCallback(async () => {
-    try {
-      const { data } = await api.get(`/lectures/course/${id}`);
-      setLectures(data.lectures);
-    } catch (error) {
-      console.error('Failed to fetch lectures', error);
-    } finally {
-      setLecturesLoading(false);
-    }
-  }, [id]);
-
-  const handleLectureThumbnailUpload = async (lectureId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('thumbnail', file);
-
-    try {
-      setLecturesLoading(true);
-      await api.put(`/lectures/${lectureId}/thumbnail`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      alert('Lecture thumbnail uploaded successfully!');
-      fetchLectures();
-    } catch (error) {
-      console.error('Failed to upload lecture thumbnail', error);
-      alert('Failed to upload lecture thumbnail. Please try again.');
-    } finally {
-      setLecturesLoading(false);
-    }
-  };
-
-  const fetchMaterials = useCallback(async () => {
-    try {
-      const { data } = await api.get(`/study-materials/course/${id}`);
-      setMaterials(data.materials);
-    } catch (error) {
-      console.error('Failed to fetch study materials', error);
-    } finally {
-      setMaterialsLoading(false);
-    }
-  }, [id]);
-
-  const fetchEnrolledStudents = useCallback(async () => {
-    try {
-      const { data } = await api.get(`/enrollments/course/${id}/students`);
-      setEnrolledStudents(data.enrollments);
-    } catch (error) {
-      console.error('Failed to fetch enrolled students', error);
-    } finally {
-      setStudentsLoading(false);
-    }
-  }, [id]);
-
-  const fetchQuizzes = useCallback(async () => {
-    try {
-      const { data } = await api.get(`/quizzes/course/${id}`);
-      setQuizzes(data.quizzes);
-    } catch (error) {
-      console.error('Failed to fetch quizzes', error);
-    } finally {
-      setQuizzesLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    if (!id) return;
-    const init = async () => {
-      await Promise.all([
-        fetchLectures(),
-        fetchMaterials(),
-        fetchQuizzes(),
-        (user?.role === 'TEACHER' || user?.role === 'ADMIN') ? fetchEnrolledStudents() : Promise.resolve()
-      ]);
-    };
-    init();
-  }, [id, user?.role, fetchLectures, fetchMaterials, fetchQuizzes, fetchEnrolledStudents]);
-
-  const handleCreateLecture = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
+  // Mutations
+  const createLectureMutation = useMutation({
+    mutationFn: async (lectureData: typeof lectureForm) => {
       if (editLectureId) {
-        await api.put(`/lectures/${editLectureId}`, lectureForm);
+        return api.put(`/lectures/${editLectureId}`, lectureData);
       } else {
-        await api.post(`/lectures/course/${id}`, lectureForm);
+        return api.post(`/lectures/course/${id}`, lectureData);
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course', id, 'lectures'] });
       setShowCreateLecture(false);
       setEditLectureId(null);
       setLectureForm({ title: '', description: '', startTime: '', endTime: '' });
-      fetchLectures();
-    } catch (error) {
+    },
+    onError: (error: any) => {
       console.error('Failed to save lecture', error);
     }
+  });
+
+  const uploadThumbnailMutation = useMutation({
+    mutationFn: async ({ lectureId, file }: { lectureId: string, file: File }) => {
+      const formData = new FormData();
+      formData.append('thumbnail', file);
+      return api.put(`/lectures/${lectureId}/thumbnail`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course', id, 'lectures'] });
+      alert('Lecture thumbnail uploaded successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Failed to upload lecture thumbnail', error);
+      alert('Failed to upload lecture thumbnail. Please try again.');
+    }
+  });
+
+  const uploadMaterialMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      return api.post(`/study-materials/course/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course', id, 'materials'] });
+      setUploadSuccess(`"${selectedFile?.name}" uploaded successfully to Google Drive!`);
+      setShowUploadMaterial(false);
+      setMaterialTitle('');
+      setMaterialDescription('');
+      setSelectedFile(null);
+    },
+    onError: (err: any) => {
+      const error = err as { response?: { data?: { message?: string } }, message?: string };
+      const msg = error?.response?.data?.message || error?.message || 'Upload failed. Please try again.';
+      console.error('Failed to upload study material:', err);
+      setUploadError(msg);
+    }
+  });
+
+  const deleteMaterialMutation = useMutation({
+    mutationFn: async (materialId: string) => {
+      return api.delete(`/study-materials/${materialId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course', id, 'materials'] });
+      toast.success(`"${selectedMaterialForDelete?.title}" deleted successfully.`);
+      setShowDeleteMaterialModal(false);
+      setSelectedMaterialForDelete(null);
+    },
+    onError: (err: any) => {
+      const error = err as { response?: { data?: { message?: string } }, message?: string };
+      console.error('Failed to delete study material', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete material.');
+    }
+  });
+
+  const deleteRecordingMutation = useMutation({
+    mutationFn: async (lectureId: string) => {
+      return api.delete(`/lectures/${lectureId}/recording`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course', id, 'lectures'] });
+      toast.success(`Recording for "${selectedLectureForDeleteRecording?.title}" deleted successfully.`);
+      setShowDeleteRecordingModal(false);
+      setSelectedLectureForDeleteRecording(null);
+    },
+    onError: (err: any) => {
+      const error = err as { response?: { data?: { message?: string } }, message?: string };
+      console.error('Failed to delete lecture recording', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete recording.');
+    }
+  });
+
+  const deleteLectureMutation = useMutation({
+    mutationFn: async (lectureId: string) => {
+      return api.delete(`/lectures/${lectureId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course', id, 'lectures'] });
+      toast.success(`Lecture "${selectedLectureForDelete?.title}" deleted successfully.`);
+      setShowDeleteLectureModal(false);
+      setSelectedLectureForDelete(null);
+    },
+    onError: (err: any) => {
+      const error = err as { response?: { data?: { message?: string } }, message?: string };
+      console.error('Failed to delete lecture', error);
+      toast.error(error?.response?.data?.message || 'Failed to delete lecture.');
+    }
+  });
+
+  const unenrollStudentMutation = useMutation({
+    mutationFn: async (studentId: string) => {
+      return api.delete(`/enrollments/${id}/students/${studentId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course', id, 'students'] });
+      toast.success('Student unenrolled successfully');
+    },
+    onError: (error: any) => {
+      console.error('Failed to unenroll student', error);
+      toast.error('Failed to unenroll student');
+    }
+  });
+
+  // Handlers
+  const handleLectureThumbnailUpload = (lectureId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadThumbnailMutation.mutate({ lectureId, file });
+  };
+
+  const handleCreateLecture = (e: React.FormEvent) => {
+    e.preventDefault();
+    createLectureMutation.mutate(lectureForm);
   };
 
   const handleEditClick = (lecture: LectureData) => {
@@ -268,11 +329,10 @@ const CourseDetails: React.FC = () => {
     setShowCreateLecture(true);
   };
 
-  const handleUploadMaterial = async (e: React.FormEvent) => {
+  const handleUploadMaterial = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) return;
 
-    setUploading(true);
     setUploadError(null);
     setUploadSuccess(null);
     const formData = new FormData();
@@ -280,91 +340,27 @@ const CourseDetails: React.FC = () => {
     formData.append('description', materialDescription);
     formData.append('file', selectedFile);
 
-    try {
-      await api.post(`/study-materials/course/${id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 120000, // 2 min timeout for large files
-      });
-      setUploadSuccess(`"${selectedFile.name}" uploaded successfully to Google Drive!`);
-      setShowUploadMaterial(false);
-      setMaterialTitle('');
-      setMaterialDescription('');
-      setSelectedFile(null);
-      fetchMaterials();
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } }, message?: string };
-      const msg = error?.response?.data?.message || error?.message || 'Upload failed. Please try again.';
-      console.error('Failed to upload study material:', err);
-      setUploadError(msg);
-    } finally {
-      setUploading(false);
-    }
+    uploadMaterialMutation.mutate(formData);
   };
 
-  const handleDeleteMaterial = async () => {
+  const handleDeleteMaterial = () => {
     if (!selectedMaterialForDelete) return;
-    setDeletingMaterial(true);
-    try {
-      await api.delete(`/study-materials/${selectedMaterialForDelete.id}`);
-      toast.success(`"${selectedMaterialForDelete.title}" deleted successfully.`);
-      setShowDeleteMaterialModal(false);
-      setSelectedMaterialForDelete(null);
-      fetchMaterials();
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } }, message?: string };
-      console.error('Failed to delete study material', error);
-      toast.error(error?.response?.data?.message || 'Failed to delete material.');
-    } finally {
-      setDeletingMaterial(false);
-    }
+    deleteMaterialMutation.mutate(selectedMaterialForDelete.id);
   };
 
-  const handleDeleteLectureRecording = async () => {
+  const handleDeleteLectureRecording = () => {
     if (!selectedLectureForDeleteRecording) return;
-    setDeletingRecording(true);
-    try {
-      await api.delete(`/lectures/${selectedLectureForDeleteRecording.id}/recording`);
-      toast.success(`Recording for "${selectedLectureForDeleteRecording.title}" deleted successfully.`);
-      setShowDeleteRecordingModal(false);
-      setSelectedLectureForDeleteRecording(null);
-      fetchLectures();
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } }, message?: string };
-      console.error('Failed to delete lecture recording', error);
-      toast.error(error?.response?.data?.message || 'Failed to delete recording.');
-    } finally {
-      setDeletingRecording(false);
-    }
+    deleteRecordingMutation.mutate(selectedLectureForDeleteRecording.id);
   };
 
-  const handleDeleteLecture = async () => {
+  const handleDeleteLecture = () => {
     if (!selectedLectureForDelete) return;
-    setDeletingLecture(true);
-    try {
-      await api.delete(`/lectures/${selectedLectureForDelete.id}`);
-      toast.success(`Lecture "${selectedLectureForDelete.title}" deleted successfully.`);
-      setShowDeleteLectureModal(false);
-      setSelectedLectureForDelete(null);
-      fetchLectures();
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } }, message?: string };
-      console.error('Failed to delete lecture', error);
-      toast.error(error?.response?.data?.message || 'Failed to delete lecture.');
-    } finally {
-      setDeletingLecture(false);
-    }
+    deleteLectureMutation.mutate(selectedLectureForDelete.id);
   };
 
-  const handleUnenrollStudent = async (studentId: string) => {
+  const handleUnenrollStudent = (studentId: string) => {
     if (!window.confirm('Are you sure you want to remove this student from the course?')) return;
-    try {
-      await api.delete(`/enrollments/${id}/students/${studentId}`);
-      fetchEnrolledStudents();
-    } catch (error) {
-      console.error('Failed to unenroll student', error);
-    }
+    unenrollStudentMutation.mutate(studentId);
   };
 
   const getFileIcon = (fileType: string) => {
@@ -790,14 +786,14 @@ const CourseDetails: React.FC = () => {
                   variant="ghost"
                   type="button" 
                   onClick={() => setShowUploadMaterial(false)} 
-                  disabled={uploading}
+                  disabled={uploadMaterialMutation.isPending}
                 >
                   Cancel
                 </Button>
                 <Button 
                   variant="primary"
                   type="submit" 
-                  loading={uploading}
+                  loading={uploadMaterialMutation.isPending}
                 >
                   Upload
                 </Button>
@@ -1020,7 +1016,7 @@ const CourseDetails: React.FC = () => {
         isOpen={showEnrollModal} 
         onClose={() => setShowEnrollModal(false)} 
         onSuccess={() => {
-          fetchEnrolledStudents();
+          queryClient.invalidateQueries({ queryKey: ['course', id, 'students'] });
           setShowEnrollModal(false);
         }}
         courseId={id || ''}
@@ -1045,7 +1041,7 @@ const CourseDetails: React.FC = () => {
           onClose={() => setShowUploadRecordingModal(false)}
           onSuccess={() => {
             toast.success('Recording uploaded successfully!');
-            fetchLectures();
+            queryClient.invalidateQueries({ queryKey: ['course', id, 'lectures'] });
           }}
         />
       )}
@@ -1054,13 +1050,13 @@ const CourseDetails: React.FC = () => {
       <ConfirmDeleteModal
         isOpen={showDeleteLectureModal}
         onClose={() => {
-          if (!deletingLecture) {
+          if (!deleteLectureMutation.isPending) {
             setShowDeleteLectureModal(false);
             setSelectedLectureForDelete(null);
           }
         }}
         onConfirm={handleDeleteLecture}
-        loading={deletingLecture}
+        loading={deleteLectureMutation.isPending}
         title="Delete this lecture?"
         description={`"${selectedLectureForDelete?.title ?? ''}" will be permanently removed along with its recording and any materials.`}
         confirmLabel="Delete Lecture"
@@ -1070,13 +1066,13 @@ const CourseDetails: React.FC = () => {
       <ConfirmDeleteModal
         isOpen={showDeleteRecordingModal}
         onClose={() => {
-          if (!deletingRecording) {
+          if (!deleteRecordingMutation.isPending) {
             setShowDeleteRecordingModal(false);
             setSelectedLectureForDeleteRecording(null);
           }
         }}
         onConfirm={handleDeleteLectureRecording}
-        loading={deletingRecording}
+        loading={deleteRecordingMutation.isPending}
         title="Delete this lecture recording?"
         description={`The video for "${selectedLectureForDeleteRecording?.title ?? ''}" will be permanently removed from Google Drive and the lecture. Students will no longer be able to watch it.`}
         confirmLabel="Delete Recording"
@@ -1086,13 +1082,13 @@ const CourseDetails: React.FC = () => {
       <ConfirmDeleteModal
         isOpen={showDeleteMaterialModal}
         onClose={() => {
-          if (!deletingMaterial) {
+          if (!deleteMaterialMutation.isPending) {
             setShowDeleteMaterialModal(false);
             setSelectedMaterialForDelete(null);
           }
         }}
         onConfirm={handleDeleteMaterial}
-        loading={deletingMaterial}
+        loading={deleteMaterialMutation.isPending}
         title="Delete this study material?"
         description={`"${selectedMaterialForDelete?.title ?? ''}" will be permanently removed from Google Drive and the course.`}
         confirmLabel="Delete Material"

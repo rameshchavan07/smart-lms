@@ -269,3 +269,61 @@ export const createGroupChat = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Failed to create group chat' });
   }
 };
+
+export const deleteMessage = async (req: AuthRequest, res: Response) => {
+  try {
+    const messageId = req.params.id as string;
+    const userId = req.user!.id;
+    const role = req.user!.role;
+
+    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    if (message.senderId !== userId && role !== 'ADMIN' && role !== 'TEACHER') {
+      return res.status(403).json({ message: 'You can only delete your own messages' });
+    }
+
+    await prisma.message.delete({ where: { id: messageId } });
+
+    const io = getIO();
+    if (message.groupId) {
+      io.to(`group_${message.groupId}`).emit('delete_message', { messageId, groupId: message.groupId });
+    } else if (message.receiverId) {
+      io.to(message.receiverId).emit('delete_message', { messageId });
+      io.to(message.senderId).emit('delete_message', { messageId });
+    }
+
+    res.json({ message: 'Message deleted successfully', messageId });
+  } catch (error) {
+    console.error('Delete message error:', error);
+    res.status(500).json({ message: 'Failed to delete message' });
+  }
+};
+
+export const deleteGroup = async (req: AuthRequest, res: Response) => {
+  try {
+    const groupId = req.params.id as string;
+    const role = req.user!.role;
+
+    if (role !== 'ADMIN' && role !== 'TEACHER') {
+      return res.status(403).json({ message: 'Only Teachers and Admins can delete groups' });
+    }
+
+    const group = await prisma.chatGroup.findUnique({ where: { id: groupId } });
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    await prisma.chatGroup.delete({ where: { id: groupId } });
+
+    const io = getIO();
+    io.to(`group_${groupId}`).emit('delete_group', { groupId });
+
+    res.json({ message: 'Group deleted successfully', groupId });
+  } catch (error) {
+    console.error('Delete group error:', error);
+    res.status(500).json({ message: 'Failed to delete group' });
+  }
+};

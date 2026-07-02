@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Search, Loader2, Users, Plus, X, CheckCheck, Paperclip, Smile, FileText, Download } from 'lucide-react';
+import { Send, Search, Loader2, Users, Plus, X, CheckCheck, Paperclip, Smile, FileText, Download, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -98,6 +98,20 @@ const StudentMessages: React.FC = () => {
       // also invalidate to refresh contact list (latest message preview) if needed
     });
 
+    newSocket.on('delete_message', ({ messageId }) => {
+      queryClient.setQueryData(['communications', 'messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
+        if (!old) return old;
+        return old.filter((m: ChatMessage) => m.id !== messageId);
+      });
+    });
+
+    newSocket.on('delete_group', ({ groupId }) => {
+      queryClient.invalidateQueries({ queryKey: ['communications', 'contacts'] });
+      if (selectedChat?.id === groupId) {
+        setSelectedChat(null);
+      }
+    });
+
     return () => {
       newSocket.disconnect();
     };
@@ -169,6 +183,36 @@ const StudentMessages: React.FC = () => {
     },
     onError: () => {
       toast.error('Failed to create group');
+    }
+  });
+
+  const deleteMessage = useMutation({
+    mutationFn: async (messageId: string) => {
+      return api.delete(`/communications/messages/${messageId}`);
+    },
+    onSuccess: (_, messageId) => {
+      queryClient.setQueryData(['communications', 'messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
+        if (!old) return old;
+        return old.filter(m => m.id !== messageId);
+      });
+      toast.success('Message deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete message');
+    }
+  });
+
+  const deleteGroup = useMutation({
+    mutationFn: async (groupId: string) => {
+      return api.delete(`/communications/groups/${groupId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['communications', 'contacts'] });
+      setSelectedChat(null);
+      toast.success('Group deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete group');
     }
   });
 
@@ -257,7 +301,7 @@ const StudentMessages: React.FC = () => {
                     {selectedChat.profileImage ? <img src={selectedChat.profileImage.startsWith('http') ? selectedChat.profileImage : `http://localhost:5000${selectedChat.profileImage}`} className="w-full h-full object-cover" /> : selectedChat.firstName?.[0] || 'U'}
                   </div>
                 )}
-                <div>
+                <div className="flex-1">
                   <p className="text-[16px] font-medium" style={{ color: 'var(--text-primary)' }}>
                     {selectedChat.name ? selectedChat.name : `${selectedChat.firstName} ${selectedChat.lastName}`}
                   </p>
@@ -265,6 +309,19 @@ const StudentMessages: React.FC = () => {
                     {selectedChat.name ? `${selectedChat.members?.length || 0} members` : selectedChat.role === 'TEACHER' ? 'Teacher' : 'Student'}
                   </p>
                 </div>
+                {selectedChat.name && (user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
+                  <button 
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to delete this group?')) {
+                        deleteGroup.mutate(selectedChat.id);
+                      }
+                    }}
+                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                    title="Delete Group"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
               </div>
 
               <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-bg">
@@ -338,7 +395,16 @@ const StudentMessages: React.FC = () => {
                                 <span className="text-[10px] text-gray-500 dark:text-gray-400">
                                   {new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                 </span>
-                                {isSentByMe && <CheckCheck size={13} className="text-white/80" />}
+                                {(isSentByMe || user?.role === 'ADMIN' || user?.role === 'TEACHER') && (
+                                  <button 
+                                    onClick={() => deleteMessage.mutate(m.id)} 
+                                    className={`ml-1 transition-colors ${isSentByMe ? 'text-white/60 hover:text-white' : 'text-red-500/60 hover:text-red-500'}`} 
+                                    title="Delete message"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                                {isSentByMe && <CheckCheck size={13} className="text-white/80 ml-0.5" />}
                               </div>
                             </div>
                           </div>
