@@ -4,18 +4,20 @@ import { getIO } from '../utils/socket';
 import { AuthRequest } from '../middleware/auth';
 
 import prisma from '../config/db';
-import { createNotification } from '../services/notificationService';
+import { sendNotification } from '../services/notifications.service';
 
 const createAssignmentSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
   description: z.string().optional(),
   dueDate: z.coerce.date(),
   totalMarks: z.number().positive(),
+  rubric: z.any().optional(),
 });
 
 const gradeSubmissionSchema = z.object({
   marks: z.number().min(0),
   feedback: z.string().optional(),
+  rubricEvaluation: z.any().optional(),
 });
 
 export const getAssignmentsByCourse = async (req: AuthRequest, res: Response) => {
@@ -42,7 +44,7 @@ export const createAssignment = async (req: AuthRequest, res: Response) => {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.issues[0].message });
     }
-    const { title, description, dueDate, totalMarks } = parsed.data;
+    const { title, description, dueDate, totalMarks, rubric } = parsed.data;
 
     const assignment = await prisma.assignment.create({
       data: {
@@ -51,6 +53,7 @@ export const createAssignment = async (req: AuthRequest, res: Response) => {
         description,
         dueDate: new Date(dueDate),
         totalMarks,
+        rubric: rubric || null,
       },
     });
 
@@ -69,7 +72,7 @@ export const createAssignment = async (req: AuthRequest, res: Response) => {
 
     await Promise.all(
       enrollments.map(e =>
-        createNotification(
+        sendNotification(
           e.student.userId,
           'New Assignment Posted',
           `A new assignment "${title}" has been posted in course "${course?.title || ''}".`
@@ -116,11 +119,11 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
     const parsed = gradeSubmissionSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: parsed.error.issues[0].message });
 
-    const { marks, feedback } = parsed.data;
+    const { marks, feedback, rubricEvaluation } = parsed.data;
 
     const submission = await prisma.assignmentSubmission.update({
       where: { id: id as string },
-      data: { marks, feedback },
+      data: { marks, feedback, rubricEvaluation: rubricEvaluation || null },
       include: {
         student: { select: { userId: true } },
         assignment: { select: { courseId: true, title: true } },
@@ -138,7 +141,7 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    await createNotification(
+    await sendNotification(
       submission.student.userId,
       'Assignment Graded',
       `Your submission for "${submission.assignment.title}" has been graded: ${marks} marks.`

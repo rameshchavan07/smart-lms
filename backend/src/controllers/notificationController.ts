@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import prisma from '../config/db';
+import { getVapidPublicKey as getPublicKey, saveSubscription } from '../services/notifications.service';
 
 export const getMyNotifications = async (req: AuthRequest, res: Response) => {
   try {
@@ -78,5 +79,21 @@ export const deleteNotification = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Delete notification error:', error);
     res.status(500).json({ message: 'Failed to delete notification' });
+  }
+};
+
+export const getVapidPublicKey = (req: AuthRequest, res: Response) => {
+  res.send(getPublicKey());
+};
+
+export const subscribeToPush = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const subscription = req.body;
+    await saveSubscription(userId, subscription);
+    res.status(201).json({ message: 'Subscription saved successfully.' });
+  } catch (error) {
+    console.error('Error saving subscription:', error);
+    res.status(500).json({ message: 'Failed to save subscription' });
   }
 };

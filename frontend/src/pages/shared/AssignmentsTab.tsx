@@ -4,6 +4,8 @@ import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { EmptyState, Button, Card } from '../../components';
 import { FileText, Plus, CheckCircle2, Download } from 'lucide-react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import toast from 'react-hot-toast';
 
 interface Assignment {
@@ -182,7 +184,15 @@ const StudentSubmission = ({ assignmentId }: { assignmentId: string }) => {
           <CheckCircle2 size={16} /> Submitted
         </div>
         {submission.marks !== null ? (
-          <div className="text-[14px] font-bold">Grade: {submission.marks}</div>
+          <div>
+            <div className="text-[14px] font-bold">Grade: {submission.marks}</div>
+            {submission.feedback && (
+              <div 
+                className="mt-2 text-[13px] text-gray-700 bg-gray-50 p-2 rounded border border-gray-200 text-left prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: submission.feedback }}
+              />
+            )}
+          </div>
         ) : (
           <div className="text-[12px] text-gray-500">Pending grade</div>
         )}
@@ -247,16 +257,29 @@ const AssignmentSubmissions = ({ assignmentId, onBack }: { assignmentId: string,
               </div>
               <div className="text-right">
                 {sub.marks !== null ? (
-                  <div>
+                  <div className="text-right flex flex-col items-end">
                     <span className="font-bold text-[14px]">Score: {sub.marks}</span>
-                    {sub.feedback && <p className="text-[11px] text-gray-500 mt-1 max-w-[200px] truncate">{sub.feedback}</p>}
+                    {sub.feedback && (
+                      <div 
+                        className="text-[11px] text-gray-700 mt-2 p-2 bg-gray-50 border border-gray-200 rounded text-left prose prose-sm max-w-xs"
+                        dangerouslySetInnerHTML={{ __html: sub.feedback }}
+                      />
+                    )}
                   </div>
                 ) : (
                   grading === sub.id ? (
-                    <div className="flex items-center gap-2">
-                      <input type="number" placeholder="Marks" className="input h-8 w-20 text-[12px]" value={marks} onChange={(e) => setMarks(e.target.value)} />
-                      <input type="text" placeholder="Feedback (Optional)" className="input h-8 w-32 text-[12px]" value={feedback} onChange={(e) => setFeedback(e.target.value)} />
-                      <Button variant="primary" onClick={() => gradeMutation.mutate(sub.id)} className="py-1 px-3 text-[12px]">Save</Button>
+                    <div className="flex flex-col gap-2 w-full max-w-md ml-auto">
+                      <div className="flex items-center gap-2 justify-end">
+                        <label className="text-[12px] font-semibold">Marks:</label>
+                        <input type="number" placeholder="0" className="input h-8 w-20 text-[12px]" value={marks} onChange={(e) => setMarks(e.target.value)} />
+                      </div>
+                      <div className="text-left bg-white">
+                        <ReactQuill theme="snow" value={feedback} onChange={setFeedback} placeholder="Rich text feedback (optional)..." />
+                      </div>
+                      <div className="flex justify-end gap-2 mt-1">
+                        <Button variant="secondary" onClick={() => setGrading(null)} className="py-1 px-3 text-[12px]">Cancel</Button>
+                        <Button variant="primary" onClick={() => gradeMutation.mutate(sub.id)} className="py-1 px-3 text-[12px]" disabled={gradeMutation.isPending}>Save Grade</Button>
+                      </div>
                     </div>
                   ) : (
                     <Button variant="secondary" onClick={() => { setGrading(sub.id); setMarks(''); setFeedback(''); }} className="btn-sm">Grade</Button>

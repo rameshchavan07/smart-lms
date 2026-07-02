@@ -23,6 +23,7 @@ model User {
   auditLogs         AuditLog[]
   driveFiles        GoogleDriveFile[]
   notifications     Notification[]
+  pushSubscriptions PushSubscription[]
   refreshTokens     RefreshToken[]
   student           Student?
   teacher           Teacher?
@@ -145,6 +146,7 @@ model Assignment {
   description String?
   dueDate     DateTime
   totalMarks  Int
+  rubric      Json?
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
   course      Course                 @relation(fields: [courseId], references: [id])
@@ -158,9 +160,10 @@ model AssignmentSubmission {
   assignmentId String
   studentId    String
   fileUrl      String
-  marks        Int?
-  feedback     String?
-  submittedAt  DateTime   @default(now())
+  marks            Int?
+  feedback         String?
+  rubricEvaluation Json?
+  submittedAt      DateTime   @default(now())
   assignment   Assignment @relation(fields: [assignmentId], references: [id])
   student      Student    @relation(fields: [studentId], references: [id])
 
@@ -435,4 +438,16 @@ model Integration {
   config      Json?    // Store any additional config
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

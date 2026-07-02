@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { subscribeToPushNotifications } from '../utils/pushNotifications';
 
 interface User {
   id: string;
@@ -45,6 +46,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data } = await api.get('/auth/me');
       setUser(data);
+      if (data) {
+        subscribeToPushNotifications();
+      }
     } catch (error) {
       console.error('Auth verification failed', error);
       setUser(null);
@@ -86,6 +90,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       profile: userData.profile,
     });
     
+    subscribeToPushNotifications();
+
     if (userData.role === 'ADMIN') {
       navigate('/admin/users');
     } else if (userData.role === 'TEACHER') {
