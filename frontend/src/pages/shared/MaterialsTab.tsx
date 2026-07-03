@@ -91,8 +91,9 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ courseId }) => {
       setSelectedFile(null);
       queryClient.invalidateQueries({ queryKey: ['materials', courseId] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || error.message || 'Upload failed. Please try again.');
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } }, message?: string };
+      toast.error(err.response?.data?.message || err.message || 'Upload failed. Please try again.');
     }
   });
 
@@ -104,8 +105,9 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ courseId }) => {
       toast.success('Material deleted successfully!');
       queryClient.invalidateQueries({ queryKey: ['materials', courseId] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to delete material.');
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Failed to delete material.');
     }
   });
 

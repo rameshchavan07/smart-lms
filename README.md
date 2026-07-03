@@ -25,10 +25,13 @@ Built using a high-performance **Monorepo** structure, it combines a secure, str
 
 ## ✨ Key Features
 
-- **Role-Based Portals:** Dedicated dashboards for Admins, Teachers, and Students.
-- **Live Classrooms:** Integrated Jitsi Meet for seamless, low-latency virtual lectures.
-- **Cloud Storage Integration:** Automated Google Drive folder creation and secure, direct link proxying for study materials and lecture recordings.
-- **Enterprise-Grade Security:** JWT-based authentication using strictly HTTPOnly cookies to prevent XSS attacks.
+- **Role-Based Portals:** Dedicated dashboards for Admins, Teachers, and Students, complete with Multi-Institute data isolation.
+- **Live Classrooms & Recording Studio:** Integrated Jitsi Meet for seamless, low-latency virtual lectures and a built-in recording studio.
+- **Interactive Quiz Builder & Assessments:** Dynamic quiz creation tools for teachers with automated grading and student analytics.
+- **Real-Time Communication:** Integrated WebSockets (Socket.io) powering Chat Groups, Discussion Boards, and instant messaging.
+- **Cloud Storage Integration:** Automated Google Drive folder creation and secure, direct link proxying for study materials.
+- **Enterprise-Grade Security:** JWT-based auth via strict HTTPOnly cookies, Double CSRF Token validation, and strict API rate limiting.
+- **Notifications & Certificates:** Web-push notifications, email alerts (Resend), and dynamic PDF certificate generation (PDFKit) upon course completion.
 - **Responsive UI/UX:** Built with Tailwind CSS v4 featuring dark mode, animated skeleton loaders, and modern design tokens.
 - **Comprehensive Testing:** End-to-end and unit testing powered by Vitest and React Testing Library.
 
@@ -55,16 +58,20 @@ Built using a high-performance **Monorepo** structure, it combines a secure, str
 
 ```mermaid
 graph TD
-    A[Admin Portal] -->|Manages| B(Users, Courses & Enrollments)
-    C[Teacher Portal] -->|Schedules| D(Jitsi Live Classes)
+    A[Admin Portal] -->|Manages| B(Users, Courses, Quizzes & Institutes)
+    C[Teacher Portal] -->|Schedules & Records| D(Jitsi Live Classes)
     C -->|Uploads| E(Drive Study Materials)
-    F[Student Portal] -->|Accesses| D
+    F[Student Portal] -->|Attends| D
     F -->|Downloads| E
+    F -->|Takes| G(Assessments & Quizzes)
+    C -->|Grades| G
+    H[WebSocket Server] -->|Real-time| F
+    H -->|Real-time| C
 ```
 
 Smart LMS follows a decoupled client-server architecture. 
-- The **Frontend** communicates with the backend via a RESTful API.
-- The **Backend** handles business logic, auth, and communicates with a PostgreSQL database via Prisma ORM.
+- The **Frontend** communicates with the backend via a secure RESTful API and WebSocket connections for real-time features.
+- The **Backend** handles complex business logic (including notifications, PDF generation, and assessment grading) and communicates with a PostgreSQL database via Prisma ORM v6.
 - **Google Drive API** acts as the decentralized CDN for large files. The backend orchestrates upload permissions, caching, and returns direct Google Drive `webViewLink`s, completely offloading bandwidth from the Node server.
 
 ---
@@ -238,6 +245,19 @@ Smart LMS relies on a highly secure **JWT + HTTPOnly Cookie** architecture:
 4. The React app (`AuthContext.tsx`) verifies the session state via `/api/auth/me`.
 5. For all API requests, Axios (`withCredentials: true`) automatically attaches the cookies.
 6. Backend Express middleware (`cookie-parser`) verifies the JWT from the cookie on protected routes.
+
+---
+
+## 🎭 Role-Based Access Control (RBAC)
+
+The system strictly enforces permissions at both the UI routing level (React Router) and the API level (Express Middleware).
+
+- **Super Admin:** Global oversight. Can create and manage Institutes, Admin users, and system-wide settings.
+- **Admin:** Institute-level management. They create Courses, enroll Students, manage Teacher accounts, and oversee analytics for their specific institute.
+- **Teacher:** Course-level management. They can schedule live Jitsi classes, upload study materials to Google Drive, build interactive quizzes, grade assignments, and moderate course discussions.
+- **Student:** Consumer-level access. They can attend live classes, download materials, take quizzes, submit assignments, and communicate with peers and teachers.
+
+The frontend uses a `ProtectedRoute` component to prevent unauthorized access to specific dashboard layouts (`AdminLayout`, `TeacherLayout`, `StudentLayout`), ensuring users only see UI elements meant for their role.
 
 ---
 

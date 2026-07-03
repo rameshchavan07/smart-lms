@@ -47,8 +47,9 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ courseId }) => {
       toast.success('Student unenrolled successfully.');
       queryClient.invalidateQueries({ queryKey: ['enrolledStudents', courseId] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to unenroll student.');
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Failed to unenroll student.');
     }
   });
 
