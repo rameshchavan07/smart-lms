@@ -1,1 +1,0 @@
-These are starter files. Populate them with the detailed content from the chat or ask ChatGPT to generate each complete file.

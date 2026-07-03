@@ -7,6 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Institute {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(255)
+  address     String?  @db.Text
+  phone       String?  @db.VarChar(20)
+  email       String?  @db.VarChar(255)
+  website     String?  @db.VarChar(255)
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  users       User[]
+  courses     Course[]
+}
+
 model User {
   id                String            @id @default(uuid())
   firstName         String            @db.VarChar(100)
@@ -22,6 +37,8 @@ model User {
   isEmailVerified   Boolean           @default(false)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
+  instituteId       String?
+  institute         Institute?        @relation(fields: [instituteId], references: [id])
   auditLogs         AuditLog[]
   driveFiles        GoogleDriveFile[]
   notifications     Notification[]
@@ -83,6 +100,8 @@ model Course {
   status         CourseStatus    @default(DRAFT)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  instituteId    String?
+  institute      Institute?      @relation(fields: [instituteId], references: [id])
   assignments    Assignment[]
   teacher        Teacher?        @relation(fields: [teacherId], references: [id])
   enrollments    Enrollment[]
@@ -325,6 +344,7 @@ enum OtpType {
 }
 
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
   TEACHER
   STUDENT

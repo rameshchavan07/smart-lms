@@ -8,7 +8,7 @@ interface User {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'ADMIN' | 'TEACHER' | 'STUDENT';
+  role: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'SUPER_ADMIN';
   profileImage?: string;
   profile?: { bio?: string };
 }
@@ -16,7 +16,7 @@ interface User {
 export interface LoginData {
   token?: string;
   refreshToken?: string;
-  role: 'ADMIN' | 'TEACHER' | 'STUDENT';
+  role: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'SUPER_ADMIN';
   id?: string;
   firstName?: string;
   lastName?: string;
@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     subscribeToPushNotifications();
 
-    if (userData.role === 'ADMIN') {
+    if (userData.role === 'ADMIN' || userData.role === 'SUPER_ADMIN') {
       navigate('/admin/users');
     } else if (userData.role === 'TEACHER') {
       navigate('/teacher/courses');

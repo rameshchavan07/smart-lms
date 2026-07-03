@@ -16,6 +16,7 @@ import notificationRoutes from './notificationRoutes';
 import attendanceRoutes from './attendanceRoutes';
 import progressRoutes from './progressRoutes';
 import certificateRoutes from './certificateRoutes';
+import instituteRoutes from './instituteRoutes';
 
 const router = Router();
 
@@ -37,5 +38,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/attendance', attendanceRoutes);
 router.use('/progress', progressRoutes);
 router.use('/certificates', certificateRoutes);
+router.use('/institutes', instituteRoutes);
 
 export default router;

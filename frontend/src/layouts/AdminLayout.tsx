@@ -8,7 +8,7 @@ import { NotificationBell } from '../components/NotificationBell';import {
   LayoutDashboard, BookOpen, Users, ClipboardList, 
   BarChart3, MessageSquare, Settings, HelpCircle, 
   LogOut, Menu, X, Search, Moon, Sun, Mail,
-  ChevronRight, GraduationCap, Plus, Globe
+  ChevronRight, GraduationCap, Plus, Globe, Building
 } from 'lucide-react';
 
 interface NavItem {
@@ -20,6 +20,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard',     href: '/admin',               icon: LayoutDashboard },
+  { label: 'Institutes',    href: '/admin/institutes',    icon: Building },
   { label: 'Courses',       href: '/admin/courses',       icon: BookOpen },
   { label: 'Users',         href: '/admin/users',         icon: Users },
   { label: 'Enrollments',   href: '/admin/enrollments',   icon: GraduationCap },
@@ -82,6 +83,7 @@ const AdminLayout: React.FC = () => {
         <nav className="flex-1 overflow-y-auto hide-scrollbar py-3">
           {!isCollapsed && <p className="text-white/25 text-[10px] font-semibold uppercase tracking-widest px-5 mb-2">Management</p>}
           {navItems.map((item) => {
+            if (item.label === 'Institutes' && user?.role !== 'SUPER_ADMIN') return null;
             const active = isActive(item.href);
             return (
               <Link

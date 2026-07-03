@@ -8,7 +8,7 @@ import { logActivity } from '../utils/auditLogger';
 import prisma from '../config/db';
 
 // Get all courses with pagination and optional search
-export const getCourses = async (req: Request, res: Response): Promise<void> => {
+export const getCourses = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -22,6 +22,10 @@ export const getCourses = async (req: Request, res: Response): Promise<void> => 
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
       ];
+    }
+
+    if (req.user && req.user.role !== 'SUPER_ADMIN') {
+      whereClause.instituteId = req.user.instituteId;
     }
 
     const courses = await prisma.course.findMany({
@@ -63,6 +67,7 @@ export const createCourse = async (req: AuthRequest, res: Response): Promise<voi
         title,
         description,
         teacherId: teacherId || null,
+        instituteId: req.user?.instituteId || null,
       },
       include: {
         teacher: {

@@ -30,7 +30,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
       } else {
         req.user = await prisma.user.findUnique({
           where: { id: decoded.id },
-          select: { id: true, email: true, role: true, firstName: true, lastName: true, isActive: true, profileImage: true },
+          select: { id: true, email: true, role: true, firstName: true, lastName: true, isActive: true, profileImage: true, instituteId: true },
         });
         
         if (req.user) {
@@ -55,7 +55,11 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
 
 export const authorize = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    const allowedRoles = roles.includes('ADMIN') && !roles.includes('SUPER_ADMIN') 
+      ? [...roles, 'SUPER_ADMIN'] 
+      : roles;
+      
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
       res.status(403).json({ message: 'User role not authorized to access this route' });
       return;
     }

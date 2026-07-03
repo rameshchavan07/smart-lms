@@ -12,6 +12,7 @@ import {
   sendWelcomeEmail,
 } from '../services/emailService';
 import { OtpType, User } from '@prisma/client';
+import { registerUserLogic, verifyEmailLogic, resendOtpLogic } from '../services/authService';
 
 // ─── Helper: Set Auth Cookies ───────────────────────────────────────────────
 export const setAuthCookies = (res: Response, token: string, refreshToken: string) => {
@@ -62,63 +63,13 @@ const buildAuthResponse = async (user: User) => {
 // ─── REGISTER ────────────────────────────────────────────────────────────────
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, phoneNumber, address, role } = req.body;
-    
-    // Default to STUDENT if no valid role is provided
-    const userRole = (role === 'TEACHER' || role === 'ADMIN') ? role : 'STUDENT';
-
-    const userExists = await prisma.user.findUnique({ where: { email } });
-    if (userExists) {
-      res.status(400).json({ message: 'An account with this email already exists.' });
-      return;
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    const user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        address,
-        passwordHash,
-        role: userRole,
-        isEmailVerified: false,
-      },
-    });
-
-    if (userRole === 'STUDENT') {
-      await prisma.student.create({
-        data: {
-          userId: user.id,
-          enrollmentNumber: `STU-${Date.now()}`,
-        },
-      });
-    } else if (userRole === 'TEACHER') {
-      await prisma.teacher.create({
-        data: {
-          userId: user.id,
-          employeeCode: `EMP-${Date.now()}`,
-          joiningDate: new Date(),
-        },
-      });
-    }
-    // Note: Admin doesn't need an explicit linked profile model in this architecture
-
-    // Generate & send OTP
-    const otp = await createOtp(email, OtpType.EMAIL_VERIFICATION);
-    await sendEmailVerificationOtp(email, firstName, otp);
-
-    await logActivity(user.id, 'Registered account — awaiting email verification', 'User', user.id);
-
+    const { email } = await registerUserLogic(req.body);
     res.status(201).json({
       message: 'Registration successful. Please check your email for a 6-digit verification code.',
       email,
     });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -126,44 +77,19 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
 export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, otp } = req.body;
-
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      res.status(404).json({ message: 'User not found.' });
-      return;
-    }
-
-    if (user.isEmailVerified) {
-      res.status(400).json({ message: 'Email is already verified. Please log in.' });
-      return;
-    }
-
-    const result = await verifyOtp(email, otp, OtpType.EMAIL_VERIFICATION);
-    if (!result.success) {
-      res.status(400).json({ message: result.error });
-      return;
-    }
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { isEmailVerified: true },
-    });
-
-    // Send welcome email (non-blocking)
-    sendWelcomeEmail(email, user.firstName).catch(console.error);
-
-    await logActivity(user.id, 'Email verified successfully', 'User', user.id);
-
-    const authData = await buildAuthResponse(user);
-    setAuthCookies(res, authData.token, authData.refreshToken);
-    const { token, refreshToken, ...userData } = authData;
+    const { token, refreshToken, ...user } = await verifyEmailLogic(email, otp);
     
+    setAuthCookies(res, token, refreshToken);
+
     res.status(200).json({
-      message: 'Email verified successfully. Welcome!',
-      ...userData,
+      message: 'Email verified successfully.',
+      token,
+      refreshToken,
+      user,
     });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    if (error.message === 'User not found.') res.status(404).json({ message: error.message });
+    else res.status(400).json({ message: error.message });
   }
 };
 
@@ -171,25 +97,8 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
 export const resendOtp = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, type } = req.body;
-
-    const otpType = type === 'PASSWORD_RESET' ? OtpType.PASSWORD_RESET : OtpType.EMAIL_VERIFICATION;
-
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      // Generic message to prevent email enumeration
-      res.status(200).json({ message: 'If that email exists, a new OTP has been sent.' });
-      return;
-    }
-
-    const otp = await createOtp(email, otpType);
-
-    if (otpType === OtpType.EMAIL_VERIFICATION) {
-      await sendEmailVerificationOtp(email, user.firstName, otp);
-    } else {
-      await sendPasswordResetOtp(email, user.firstName, otp);
-    }
-
-    res.status(200).json({ message: 'A new OTP has been sent to your email.' });
+    await resendOtpLogic(email, type);
+    res.status(200).json({ message: 'If an account exists, a new OTP has been sent.' });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

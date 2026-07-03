@@ -103,7 +103,7 @@ export const createTeacher = async (req: AuthRequest, res: Response): Promise<vo
 // Create an Admin
 export const createAdmin = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, phoneNumber, address } = req.body;
+    const { firstName, lastName, email, password, phoneNumber, address, instituteId } = req.body;
 
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
@@ -123,6 +123,7 @@ export const createAdmin = async (req: AuthRequest, res: Response): Promise<void
         phoneNumber,
         address,
         role: 'ADMIN',
+        instituteId,
       }
     });
 
