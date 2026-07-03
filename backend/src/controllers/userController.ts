@@ -200,7 +200,7 @@ export const updateUserStatus = async (req: AuthRequest, res: Response): Promise
 export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, email, role, phoneNumber, address, ...profileData } = req.body;
+    const { firstName, lastName, email, role, phoneNumber, address, instituteId, ...profileData } = req.body;
 
     const user = await prisma.user.findUnique({
       where: { id: id as string },
@@ -221,7 +221,8 @@ export const updateUser = async (req: AuthRequest, res: Response): Promise<void>
           email,
           phoneNumber,
           address,
-          role
+          role,
+          ...(instituteId !== undefined && { instituteId: instituteId === '' ? null : instituteId })
         }
       });
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,12 +24,22 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
     specialization: '', // Teacher
     enrollmentNumber: '', // Student
     academicYear: '', // Student
+    instituteId: '', // Admin
   });
   const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const { data: institutes = [] } = useQuery({
+    queryKey: ['institutes'],
+    queryFn: async () => {
+      const { data } = await api.get('/institutes');
+      return data.institutes;
+    },
+    enabled: isOpen && user?.role === 'SUPER_ADMIN',
+  });
 
   const createUserMutation = useMutation({
     mutationFn: async () => {
@@ -41,6 +51,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
           password: formData.password,
           phoneNumber: formData.phoneNumber,
           address: formData.address,
+          instituteId: formData.instituteId || null,
         });
       } else if (role === 'TEACHER') {
         return api.post('/users/teacher', {
@@ -113,6 +124,25 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
                     <option value="TEACHER">Teacher</option>
                     <option value="STUDENT">Student</option>
                     <option value="ADMIN">Admin</option>
+                  </select>
+                </div>
+              )}
+
+              {role === 'ADMIN' && user?.role === 'SUPER_ADMIN' && (
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Institute</label>
+                  <select
+                    name="instituteId"
+                    value={formData.instituteId}
+                    onChange={handleChange}
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-border-strong bg-surface text-primary focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
+                  >
+                    <option value="">Select an Institute</option>
+                    {institutes.map((inst: { id: string; name: string }) => (
+                      <option key={inst.id} value={inst.id}>
+                        {inst.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}

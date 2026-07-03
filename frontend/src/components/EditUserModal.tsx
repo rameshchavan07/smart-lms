@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { X } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface EditUserModalProps {
 }
 
 const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSuccess, userToEdit }) => {
+  const { user: currentUser } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -24,6 +26,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
     qualification: '',
     enrollmentNumber: '',
     academicYear: '',
+    instituteId: '',
   });
   const [error, setError] = useState('');
 
@@ -42,6 +45,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
         qualification: userToEdit.teacher?.qualification || '',
         enrollmentNumber: userToEdit.student?.enrollmentNumber || '',
         academicYear: userToEdit.student?.academicYear || '',
+        instituteId: userToEdit.instituteId || '',
       });
     }
   }, [isOpen, userToEdit]);
@@ -49,6 +53,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const { data: institutes = [] } = useQuery({
+    queryKey: ['institutes'],
+    queryFn: async () => {
+      const { data } = await api.get('/institutes');
+      return data.institutes;
+    },
+    enabled: isOpen && currentUser?.role === 'SUPER_ADMIN',
+  });
 
   const editUserMutation = useMutation({
     mutationFn: async () => {
@@ -64,6 +77,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
         qualification: formData.qualification,
         enrollmentNumber: formData.enrollmentNumber,
         academicYear: formData.academicYear,
+        instituteId: formData.instituteId,
       });
     },
     onSuccess: () => {
@@ -115,6 +129,25 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
                   <option value="ADMIN">Admin</option>
                 </select>
               </div>
+
+              {formData.role === 'ADMIN' && currentUser?.role === 'SUPER_ADMIN' && (
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Institute</label>
+                  <select
+                    name="instituteId"
+                    value={formData.instituteId}
+                    onChange={handleChange}
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-border-strong bg-surface text-primary focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
+                  >
+                    <option value="">Select an Institute</option>
+                    {institutes.map((inst: { id: string; name: string }) => (
+                      <option key={inst.id} value={inst.id}>
+                        {inst.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
