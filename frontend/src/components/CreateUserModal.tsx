@@ -43,7 +43,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
 
   const createUserMutation = useMutation({
     mutationFn: async () => {
-      if (role === 'ADMIN') {
+      if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
         return api.post('/users/admin', {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -52,6 +52,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
           phoneNumber: formData.phoneNumber,
           address: formData.address,
           instituteId: formData.instituteId || null,
+          role: role,
         });
       } else if (role === 'TEACHER') {
         return api.post('/users/teacher', {
@@ -113,17 +114,18 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
             {error && <div className="mb-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md text-sm">{error}</div>}
             
             <form onSubmit={handleSubmit} className="space-y-4">
-              {user?.role === 'ADMIN' && (
+              {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
                 <div>
                   <label className="block text-sm font-medium text-secondary mb-1">User Role</label>
                   <select
                     value={role}
-                    onChange={(e) => setRole(e.target.value as 'TEACHER' | 'STUDENT' | 'ADMIN')}
+                    onChange={(e) => setRole(e.target.value as any)}
                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-border-strong bg-surface text-primary focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
                   >
                     <option value="TEACHER">Teacher</option>
                     <option value="STUDENT">Student</option>
                     <option value="ADMIN">Admin</option>
+                    {user?.role === 'SUPER_ADMIN' && <option value="SUPER_ADMIN">Super Admin</option>}
                   </select>
                 </div>
               )}

@@ -103,7 +103,7 @@ export const createTeacher = async (req: AuthRequest, res: Response): Promise<vo
 // Create an Admin
 export const createAdmin = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, phoneNumber, address, instituteId } = req.body;
+    const { firstName, lastName, email, password, phoneNumber, address, instituteId, role } = req.body;
 
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
@@ -114,6 +114,8 @@ export const createAdmin = async (req: AuthRequest, res: Response): Promise<void
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    const requestedRole = role === 'SUPER_ADMIN' && req.user?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'ADMIN';
+
     const user = await prisma.user.create({
       data: {
         firstName,
@@ -122,7 +124,7 @@ export const createAdmin = async (req: AuthRequest, res: Response): Promise<void
         passwordHash,
         phoneNumber,
         address,
-        role: 'ADMIN',
+        role: requestedRole,
         instituteId,
       }
     });

@@ -127,6 +127,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
                   <option value="TEACHER">Teacher</option>
                   <option value="STUDENT">Student</option>
                   <option value="ADMIN">Admin</option>
+                  {currentUser?.role === 'SUPER_ADMIN' && <option value="SUPER_ADMIN">Super Admin</option>}
                 </select>
               </div>
 
