@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import prisma from '../config/db';
 import { logActivity } from '../utils/auditLogger';
+import { getOrCreateFolderId } from '../services/googleDriveService';
 
 export const getInstitutes = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -90,6 +91,17 @@ export const createInstitute = async (req: AuthRequest, res: Response): Promise<
     const institute = await prisma.institute.create({
       data: { name, address, phone, email, website }
     });
+
+    // Automatically create Google Drive folder for the institute
+    try {
+      await getOrCreateFolderId([
+        { path: 'institutes', name: 'Institutes' },
+        { path: `institutes/${institute.id}`, name: institute.name }
+      ]);
+    } catch (err: any) {
+      console.error(`Failed to create Google Drive folder for institute ${name}:`, err.message);
+      // We don't fail the whole request just because Drive folder creation failed
+    }
 
     await logActivity(req.user.id, `Created Institute: ${name}`, 'Institute', institute.id);
 

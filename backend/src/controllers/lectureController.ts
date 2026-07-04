@@ -262,7 +262,11 @@ export const uploadLectureThumbnail = async (req: AuthRequest, res: Response): P
 
     const lecture = await prisma.lecture.findUnique({
       where: { id: id as string },
-      include: { course: true }
+      include: { 
+        course: {
+          include: { institute: { select: { name: true } } }
+        } 
+      }
     });
 
     if (!lecture) {
@@ -273,39 +277,57 @@ export const uploadLectureThumbnail = async (req: AuthRequest, res: Response): P
       return;
     }
 
-    // Resolve directories
-    const courseSlug = `${slugify(lecture.course.title)}_${lecture.course.id}`;
-    const lectureSlug = `${slugify(lecture.title)}_${lecture.id}`;
-    const targetDir = path.join(process.cwd(), 'uploads', 'Courses', courseSlug, 'Lectures', lectureSlug);
+    const instName = lecture.course.institute?.name || 'Global';
+    const instId = lecture.course.instituteId || 'global';
+    const courseName = lecture.course.title;
+    const cId = lecture.course.id;
 
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
+    // Resolve Google Drive target folder: Institutes/[Institute]/Courses/[Course]/Videos
+    const pathComponents = [
+      { path: 'institutes', name: 'Institutes' },
+      { path: `institutes/${instId}`, name: instName },
+      { path: `institutes/${instId}/courses`, name: 'Courses' },
+      { path: `institutes/${instId}/courses/${cId}`, name: courseName },
+      { path: `institutes/${instId}/courses/${cId}/Videos`, name: 'Videos' }
+    ];
 
-    // Save as thumbnail.{ext}
-    const ext = path.extname(req.file.originalname) || '.jpg';
-    const newFilename = `thumbnail${ext}`;
-    const newFilePath = path.join(targetDir, newFilename);
+    const targetFolderId = await getOrCreateFolderId(pathComponents);
 
-    // If there is an existing local thumbnail, delete it
-    if (lecture.thumbnailUrl && lecture.thumbnailUrl.includes('/uploads/Courses/')) {
-      const oldRelativePath = lecture.thumbnailUrl.split('/uploads/')[1];
-      const oldLocalFilePath = path.join(process.cwd(), 'uploads', oldRelativePath);
-      if (fs.existsSync(oldLocalFilePath)) {
+    // If there is an existing Google Drive thumbnail, delete it
+    if (lecture.thumbnailUrl) {
+      let oldFileId = null;
+      if (lecture.thumbnailUrl.includes('drive.google.com/thumbnail?id=')) {
+        const match = lecture.thumbnailUrl.match(/id=([a-zA-Z0-9_-]+)/);
+        if (match) oldFileId = match[1];
+      }
+
+      if (oldFileId) {
         try {
-          fs.unlinkSync(oldLocalFilePath);
+          await deleteFileFromDrive(oldFileId);
         } catch (e) {
-          console.warn('Failed to delete old thumbnail:', e);
+          console.warn('Failed to delete old thumbnail from Google Drive:', e);
         }
       }
     }
 
-    // Move file
-    fs.copyFileSync(req.file.path, newFilePath);
-    fs.unlinkSync(req.file.path);
+    // Upload to Google Drive
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const newFilename = `thumbnail-${lecture.id}-${Date.now()}${ext}`;
+    
+    const result = await uploadFileToDrive(
+      req.file.path,
+      newFilename,
+      req.file.mimetype || 'image/jpeg',
+      targetFolderId
+    );
 
-    // Build public URL path
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/Courses/${courseSlug}/Lectures/${lectureSlug}/${newFilename}`;
+    // Cleanup temp file after successful upload
+    if (req.file && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
+
+    // Use Google Drive thumbnail link
+    const fileUrl = `https://drive.google.com/thumbnail?id=${result.fileId}&sz=w800`;
 
     // Update database
     const updatedLecture = await prisma.lecture.update({
@@ -335,7 +357,11 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
 
     const lecture = await prisma.lecture.findUnique({
       where: { id: id as string },
-      include: { course: true }
+      include: { 
+        course: {
+          include: { institute: { select: { name: true } } }
+        } 
+      }
     });
 
     if (!lecture) {
@@ -346,11 +372,18 @@ export const uploadLectureRecording = async (req: AuthRequest, res: Response): P
       return;
     }
 
-    // Resolve Google Drive target folder: courses/courseId/Lectures/lectureId
+    const instName = lecture.course.institute?.name || 'Global';
+    const instId = lecture.course.instituteId || 'global';
+    const courseName = lecture.course.title;
+    const cId = lecture.course.id;
+
+    // Resolve Google Drive target folder: Institutes/[Institute]/Courses/[Course]/Videos
     const pathComponents = [
-      { path: `courses/${lecture.course.id}`, name: `Course - ${lecture.course.title}` },
-      { path: `courses/${lecture.course.id}/Lectures`, name: 'Lectures' },
-      { path: `courses/${lecture.course.id}/Lectures/${lecture.id}`, name: `Lecture - ${lecture.title}` },
+      { path: 'institutes', name: 'Institutes' },
+      { path: `institutes/${instId}`, name: instName },
+      { path: `institutes/${instId}/courses`, name: 'Courses' },
+      { path: `institutes/${instId}/courses/${cId}`, name: courseName },
+      { path: `institutes/${instId}/courses/${cId}/Videos`, name: 'Videos' }
     ];
 
     const targetFolderId = await getOrCreateFolderId(pathComponents);

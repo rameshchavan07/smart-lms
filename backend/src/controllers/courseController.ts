@@ -67,14 +67,43 @@ export const createCourse = async (req: AuthRequest, res: Response): Promise<voi
         title,
         description,
         teacherId: teacherId || null,
-        instituteId: req.user?.instituteId || null,
+        instituteId: req.body.instituteId || req.user?.instituteId || null,
       },
       include: {
         teacher: {
           include: { user: { select: { firstName: true, lastName: true } } }
-        }
+        },
+        institute: { select: { name: true } }
       }
     });
+
+    // Automatically create Google Drive folder structure for the course
+    try {
+      const instName = course.institute?.name || 'Global';
+      const instId = course.instituteId || 'global';
+      const courseName = course.title;
+      const cId = course.id;
+
+      // Ensure Institute folder exists
+      await getOrCreateFolderId([
+        { path: 'institutes', name: 'Institutes' },
+        { path: `institutes/${instId}`, name: instName }
+      ]);
+
+      // Create base course folder and subfolders
+      const subFolders = ['Thumbnails', 'Videos', 'Teachers', 'Students'];
+      for (const sub of subFolders) {
+        await getOrCreateFolderId([
+          { path: 'institutes', name: 'Institutes' },
+          { path: `institutes/${instId}`, name: instName },
+          { path: `institutes/${instId}/courses`, name: 'Courses' },
+          { path: `institutes/${instId}/courses/${cId}`, name: courseName },
+          { path: `institutes/${instId}/courses/${cId}/${sub}`, name: sub }
+        ]);
+      }
+    } catch (err: any) {
+      console.error(`Failed to create Google Drive folder for course ${title}:`, err.message);
+    }
 
     await logActivity(req.user!.id, `Created course: ${title}`, 'Course', course.id);
 
@@ -191,7 +220,8 @@ export const uploadCourseThumbnail = async (req: AuthRequest, res: Response): Pr
     }
 
     const course = await prisma.course.findUnique({
-      where: { id: id as string }
+      where: { id: id as string },
+      include: { institute: { select: { name: true } } }
     });
 
     if (!course) {
@@ -202,10 +232,18 @@ export const uploadCourseThumbnail = async (req: AuthRequest, res: Response): Pr
       return;
     }
 
-    // Resolve or create Google Drive folder structure: courses/thumbnails
+    const instName = course.institute?.name || 'Global';
+    const instId = course.instituteId || 'global';
+    const courseName = course.title;
+    const cId = course.id;
+
+    // Resolve or create Google Drive folder structure: Institutes/[Institute]/Courses/[Course]/Thumbnails
     const folderId = await getOrCreateFolderId([
-      { path: 'courses', name: 'Courses' },
-      { path: 'courses/thumbnails', name: 'Course Thumbnails' }
+      { path: 'institutes', name: 'Institutes' },
+      { path: `institutes/${instId}`, name: instName },
+      { path: `institutes/${instId}/courses`, name: 'Courses' },
+      { path: `institutes/${instId}/courses/${cId}`, name: courseName },
+      { path: `institutes/${instId}/courses/${cId}/Thumbnails`, name: 'Thumbnails' }
     ]);
 
     // Upload thumbnail file to Drive

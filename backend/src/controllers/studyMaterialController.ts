@@ -32,7 +32,8 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
     }
 
     const course = await prisma.course.findFirst({
-      where: { id: courseId, teacherId: teacher.id }
+      where: { id: courseId, teacherId: teacher.id },
+      include: { institute: { select: { name: true } } }
     });
 
     if (!course) {
@@ -42,12 +43,21 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    // Resolve Google Drive target folder: courses/courseId/Teachers/teacherId
+    // Resolve Google Drive target folder: Institutes/[Institute]/Courses/[Course]/Teachers/[Teacher]/Documents
+    const instName = course.institute?.name || 'Global';
+    const instId = course.instituteId || 'global';
+    const courseName = course.title;
+    const cId = course.id;
     const teacherName = `${teacher.user.firstName} ${teacher.user.lastName}`;
+
     const pathComponents = [
-      { path: `courses/${courseId}`, name: `Course - ${course.title}` },
-      { path: `courses/${courseId}/Teachers`, name: 'Teachers' },
-      { path: `courses/${courseId}/Teachers/${teacher.id}`, name: teacherName },
+      { path: 'institutes', name: 'Institutes' },
+      { path: `institutes/${instId}`, name: instName },
+      { path: `institutes/${instId}/courses`, name: 'Courses' },
+      { path: `institutes/${instId}/courses/${cId}`, name: courseName },
+      { path: `institutes/${instId}/courses/${cId}/Teachers`, name: 'Teachers' },
+      { path: `institutes/${instId}/courses/${cId}/Teachers/${teacher.id}`, name: teacherName },
+      { path: `institutes/${instId}/courses/${cId}/Teachers/${teacher.id}/Documents`, name: 'Documents' },
     ];
 
     const targetFolderId = await getOrCreateFolderId(pathComponents);

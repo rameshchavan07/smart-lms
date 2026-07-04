@@ -42,4 +42,33 @@ api.interceptors.request.use(
   }
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    // If error is 403 Invalid CSRF token, and we haven't retried yet
+    if (
+      error.response &&
+      error.response.status === 403 &&
+      error.response.data?.message === 'Invalid CSRF token' &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+      try {
+        // Force fetch a fresh CSRF token
+        await fetchCsrfToken();
+        // Update the header of the original request
+        if (csrfToken) {
+          originalRequest.headers['x-csrf-token'] = csrfToken;
+        }
+        // Retry the request
+        return api(originalRequest);
+      } catch (retryError) {
+        return Promise.reject(retryError);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

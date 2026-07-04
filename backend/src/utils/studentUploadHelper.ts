@@ -32,6 +32,7 @@ export const getStudentAssignmentFolderId = async (
   // 2. Fetch course info
   const course = await prisma.course.findUnique({
     where: { id: courseId },
+    include: { institute: { select: { name: true } } }
   });
 
   if (!course) {
@@ -43,11 +44,19 @@ export const getStudentAssignmentFolderId = async (
   const studentFolderName = `${studentName} - ${studentCode}`;
 
   // 3. Resolve path components
+  const instName = course.institute?.name || 'Global';
+  const instId = course.instituteId || 'global';
+  const courseName = course.title;
+  const cId = course.id;
+
   const pathComponents: PathComponent[] = [
-    { path: `courses/${courseId}`, name: `Course - ${course.title}` },
-    { path: `courses/${courseId}/Students`, name: 'Students' },
-    { path: `courses/${courseId}/Students/${student.id}`, name: studentFolderName },
-    { path: `courses/${courseId}/Students/${student.id}/Assignments`, name: 'Assignments' },
+    { path: 'institutes', name: 'Institutes' },
+    { path: `institutes/${instId}`, name: instName },
+    { path: `institutes/${instId}/courses`, name: 'Courses' },
+    { path: `institutes/${instId}/courses/${cId}`, name: courseName },
+    { path: `institutes/${instId}/courses/${cId}/Students`, name: 'Students' },
+    { path: `institutes/${instId}/courses/${cId}/Students/${student.id}`, name: studentFolderName },
+    { path: `institutes/${instId}/courses/${cId}/Students/${student.id}/Assignments`, name: 'Assignments' },
   ];
 
   // 4. Resolve folder ID
