@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { X, UploadCloud } from 'lucide-react';
-import toast from 'react-hot-toast';
 import api from '../services/api';
 import { API_ENDPOINTS } from '../services/apiEndpoints';
 import Button from './Button';

@@ -8,7 +8,7 @@ import { NotificationBell } from '../components/NotificationBell';import {
   LayoutDashboard, BookOpen, Users, ClipboardList, 
   BarChart3, MessageSquare, Settings, HelpCircle, 
   LogOut, Menu, X, Search, Moon, Sun, Mail,
-  ChevronRight, GraduationCap, Plus
+  ChevronRight, GraduationCap
 } from 'lucide-react';
 
 interface NavItem {

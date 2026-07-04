@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
 import api from '../services/api';
 import { API_ENDPOINTS } from '../services/apiEndpoints';
 import { X } from 'lucide-react';
@@ -11,7 +10,7 @@ interface EditUserModalProps {
   onClose: () => void;
   onSuccess: () => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  userToEdit: any; // UserData with teacher/student info
+  userToEdit: Record<string, unknown>; // UserData with teacher/student info
 }
 
 const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSuccess, userToEdit }) => {

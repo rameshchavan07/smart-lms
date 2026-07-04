@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Check, Circle, Loader2, Maximize, Minimize, Square, Settings, RefreshCw, AlertCircle, Play, Pause, RotateCcw, UploadCloud, Download, Video, VideoOff, X, Mic, MicOff, ChevronUp, ChevronDown } from 'lucide-react';
+import { Check, Loader2, Square, Settings, UploadCloud, Download, Video, VideoOff, X, Mic, MicOff, ChevronUp, ChevronDown, Trash2, Play, Pause, RotateCcw } from 'lucide-react';
 import { useScreenRecorder, type RecordingQuality } from '../hooks/useScreenRecorder';
 import api from '../services/api';
 import { API_ENDPOINTS } from '../services/apiEndpoints';

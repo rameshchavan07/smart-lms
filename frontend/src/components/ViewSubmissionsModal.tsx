@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, ExternalLink, Loader2, Check } from 'lucide-react';
 import api from '../services/api';
 import { API_ENDPOINTS } from '../services/apiEndpoints';

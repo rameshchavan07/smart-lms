@@ -41,10 +41,10 @@ const TeacherAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
   // Select the most recent past lecture by default
   useEffect(() => {
     if (lectures.length > 0 && !selectedLecture) {
-      const pastLectures = lectures.filter((l: any) => new Date(l.endTime) < new Date());
+      const pastLectures = lectures.filter((l: { endTime: string }) => new Date(l.endTime) < new Date());
       if (pastLectures.length > 0) {
         // Sort by most recent
-        pastLectures.sort((a: any, b: any) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+        pastLectures.sort((a: { startTime: string }, b: { startTime: string }) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
         setSelectedLecture(pastLectures[0].id);
       } else {
         setSelectedLecture(lectures[0].id);
@@ -73,7 +73,7 @@ const TeacherAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
             onChange={(e) => setSelectedLecture(e.target.value)}
           >
             <option value="" disabled>Select a lecture...</option>
-            {lectures.map((lecture: any) => (
+            {lectures.map((lecture: { id: string; title: string; startTime: string; endTime: string }) => (
               <option key={lecture.id} value={lecture.id}>
                 {new Date(lecture.startTime).toLocaleDateString()} - {lecture.title}
               </option>
@@ -105,7 +105,7 @@ const TeacherAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {attendanceReport.map((record: any) => (
+                {attendanceReport.map((record: { studentId: string; firstName: string; lastName: string; status: string; joinTime?: string; leaveTime?: string; enrollmentNumber?: string }) => (
                   <tr key={record.studentId} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <td className="px-6 py-3 font-medium text-primary">
                       {record.firstName} {record.lastName}
@@ -158,7 +158,7 @@ const StudentAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
     queryFn: async () => {
       const res = await api.get(API_ENDPOINTS.ATTENDANCE.MY);
       // Filter by course in frontend for now
-      return res.data.attendance.filter((a: any) => a.lecture.courseId === courseId);
+      return res.data.attendance.filter((a: { lecture: { courseId: string } }) => a.lecture.courseId === courseId);
     }
   });
 
@@ -172,8 +172,8 @@ const StudentAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
 
   // Calculate stats
   const totalAttended = myAttendance.length;
-  const totalLate = myAttendance.filter((a: any) => a.status === 'LATE').length;
-  const totalPresent = myAttendance.filter((a: any) => a.status === 'PRESENT').length;
+  const totalLate = myAttendance.filter((a: { status: string }) => a.status === 'LATE').length;
+  const totalPresent = myAttendance.filter((a: { status: string }) => a.status === 'PRESENT').length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -222,7 +222,7 @@ const StudentAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {myAttendance.map((record: any) => (
+            {myAttendance.map((record: { id: string; lecture: { title: string; startTime: string }; status: string; joinTime?: string; leaveTime?: string }) => (
               <tr key={record.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                 <td className="px-6 py-3 font-medium text-primary">
                   {new Date(record.lecture.startTime).toLocaleDateString()}

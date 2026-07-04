@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Play, Square, Pause, RotateCcw, UploadCloud, Download,
   ArrowLeft, Settings, Video, VideoOff, Mic, MicOff,

@@ -122,28 +122,28 @@ const StudentDashboard: React.FC = () => {
     staleTime: 60_000,
   });
 
-  const { data: activityData, isLoading: loadingActivities } = useQuery({
+  const { data: activityData = [] } = useQuery({
     queryKey: ['student-activities'],
     queryFn: () => api.get(`${API_ENDPOINTS.ACTIVITY.RECENT}?limit=5`).then(r => r.data.activities as ActivityItem[]),
     staleTime: 30_000,
     retry: false,
   });
 
-  const { data: tasksData, isLoading: loadingTasks } = useQuery({
+  const { data: tasksData = [] } = useQuery({
     queryKey: ['student-tasks'],
     queryFn: () => api.get(`${API_ENDPOINTS.ASSIGNMENTS.MY_TASKS}?limit=5`).then(r => r.data.tasks as TaskItem[]),
     staleTime: 60_000,
     retry: false,
   });
 
-  const { data: announcementsData, isLoading: loadingAnnouncements } = useQuery({
+  const { data: announcementsData = [] } = useQuery({
     queryKey: ['student-announcements'],
     queryFn: () => api.get(`${API_ENDPOINTS.COMMUNICATIONS.MY_ANNOUNCEMENTS}?limit=3`).then(r => r.data.announcements as Announcement[]),
     staleTime: 120_000,
     retry: false,
   });
 
-  const { data: performanceData, isLoading: loadingPerformance } = useQuery({
+  const { data: performanceData = null } = useQuery({
     queryKey: ['student-performance'],
     queryFn: () => api.get(API_ENDPOINTS.PROGRESS.STUDENT_PERFORMANCE).then(r => r.data.data as { name: string, score: number }[]),
     staleTime: 60_000,
@@ -241,7 +241,7 @@ const StudentDashboard: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {enrollmentsList.slice(0, 4).map((e: any, idx: number) => (
+                {enrollmentsList.slice(0, 4).map((e: { course: { id: string; title: string; _count?: { lectures: number } }; progress?: number }, idx: number) => (
                   <CourseCard
                     key={e.course.id}
                     course={e.course}

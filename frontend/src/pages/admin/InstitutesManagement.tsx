@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import toast from 'react-hot-toast';
-import { Modal, Button, EmptyState, Card } from '../../components';
-import { Plus, Trash2, Shield, Building, Building2, Eye, Search, Filter, MoreVertical, Edit2, Link as LinkIcon, ShieldAlert, Loader2 } from 'lucide-react';
+import { Button, EmptyState, Card } from '../../components';
+import { Plus, Trash2, Shield, Building, Building2, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface User {
@@ -90,7 +90,7 @@ export default function InstitutesManagement() {
   });
 
   const createInstituteMutation = useMutation({
-    mutationFn: (newInstitute: any) => api.post(API_ENDPOINTS.INSTITUTES.BASE, newInstitute),
+    mutationFn: (newInstitute: Record<string, unknown>) => api.post(API_ENDPOINTS.INSTITUTES.BASE, newInstitute),
     onSuccess: () => {
       toast.success('Institute created successfully');
       setIsCreateModalOpen(false);
@@ -116,7 +116,7 @@ export default function InstitutesManagement() {
   });
 
   const assignAdminMutation = useMutation({
-    mutationFn: (adminData: any) => api.post(API_ENDPOINTS.USERS.ADMIN, adminData),
+    mutationFn: (adminData: Record<string, unknown>) => api.post(API_ENDPOINTS.USERS.ADMIN, adminData),
     onSuccess: () => {
       toast.success('Admin assigned successfully');
       setIsAssignAdminModalOpen(false);
@@ -373,7 +373,7 @@ export default function InstitutesManagement() {
                       onChange={e => setExistingUserId(e.target.value)}
                     >
                       <option value="">-- Choose a user --</option>
-                      {usersData?.map((u: any) => (
+                      {usersData?.map(u => (
                         <option key={u.id} value={u.id}>
                           {u.firstName} {u.lastName} ({u.email}) - {u.role}
                         </option>

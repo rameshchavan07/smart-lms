@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Megaphone, Users, Building, Send, Plus } from 'lucide-react';
+import { Megaphone } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Skeleton } from '../../components/Skeleton';

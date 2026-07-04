@@ -25,13 +25,13 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ isOpen, o
     queryKey: ['my-courses-for-assignment'],
     queryFn: async () => {
       const res = await api.get(`${API_ENDPOINTS.COURSES.MY_COURSES}?limit=100`);
-      return res.data.enrollments?.map((e: any) => e.course) || res.data.courses || [];
+      return res.data.enrollments?.map((e: { course: unknown }) => e.course) || res.data.courses || [];
     },
     enabled: isOpen
   });
 
   const createAssignmentMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       await api.post(API_ENDPOINTS.ASSIGNMENTS.BY_COURSE(formData.courseId), data);
     },
     onSuccess: () => {
@@ -40,8 +40,9 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ isOpen, o
       onSuccess();
       onClose();
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to create assignment');
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || 'Failed to create assignment');
     }
   });
 

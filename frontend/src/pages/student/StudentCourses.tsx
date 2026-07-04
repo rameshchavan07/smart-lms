@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { CourseCard, ErrorState, PageHeader } from '../../components';

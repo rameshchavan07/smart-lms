@@ -1,10 +1,10 @@
 import React from 'react';
-import { FileText, ClipboardList, Filter } from 'lucide-react';
+import { FileText, Plus, Search, MoreVertical, CheckCircle, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { TableRowSkeleton } from '../../components/Skeleton';
-import { Card } from '../../components';
+import { Button } from '../../components/ui/Button';
 
 const AdminAssessments: React.FC = () => {
   const { data: assessments = [], isLoading } = useQuery({

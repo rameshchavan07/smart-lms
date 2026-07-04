@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { User, Bell, Shield, Save, Upload, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 
@@ -13,7 +13,6 @@ const TeacherSettings: React.FC = () => {
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.profileImage || null);
-  const queryClient = useQueryClient();
   const updateProfile = useMutation({
     mutationFn: async () => {
       const res = await api.put(API_ENDPOINTS.USERS.PROFILE, { firstName, lastName });

@@ -28,8 +28,9 @@ const SubmitAssignmentModal: React.FC<SubmitAssignmentModalProps> = ({ isOpen, o
       onClose();
       toast.success('Assignment submitted successfully');
     },
-    onError: (err: any) => {
-      setError(err.response?.data?.message || 'Failed to submit assignment');
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error.response?.data?.message || 'Failed to submit assignment');
       toast.error('Failed to submit assignment');
     }
   });

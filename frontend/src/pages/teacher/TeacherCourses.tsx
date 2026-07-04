@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Link } from 'react-router-dom';
-import { BookOpen, Users, Video, Plus, Search, Grid, List, Layers } from 'lucide-react';
+import { BookOpen, Users, Video, Search, Grid, List, Layers } from 'lucide-react';
 import { getDirectDriveUrl } from '../../utils/drive';
 
 interface CourseData {

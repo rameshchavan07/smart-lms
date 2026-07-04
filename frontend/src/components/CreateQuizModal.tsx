@@ -12,7 +12,6 @@ interface CreateQuizModalProps {
 }
 
 const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
@@ -40,7 +39,7 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSu
     queryKey: ['my-courses-quiz'],
     queryFn: async () => {
       const res = await api.get(`${API_ENDPOINTS.COURSES.MY_COURSES}?limit=100`);
-      return res.data.enrollments.map((e: any) => e.course);
+      return res.data.enrollments.map((e: { course: unknown }) => e.course);
     },
     enabled: isOpen
   });
@@ -106,8 +105,9 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSu
       onSuccess();
       onClose();
     },
-    onError: (err: any) => {
-      setError(err.response?.data?.message || 'Failed to create quiz');
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || 'Failed to save quiz');
     }
   });
 

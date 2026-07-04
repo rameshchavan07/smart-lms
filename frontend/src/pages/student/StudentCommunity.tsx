@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, Pin, Users, ThumbsUp, Search, Plus, Filter } from 'lucide-react';
+import { MessageSquare, Pin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';

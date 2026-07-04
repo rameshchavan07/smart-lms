@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
 import api from '../services/api';
 import { API_ENDPOINTS } from '../services/apiEndpoints';
 import { X } from 'lucide-react';

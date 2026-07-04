@@ -21,9 +21,9 @@ export default function InstituteDetails() {
   if (isLoading) return <div className="p-8 text-center text-muted">Loading institute details...</div>;
   if (isError || !institute) return <div className="p-8 text-center text-red-500">Failed to load institute details.</div>;
 
-  const admins = institute.users.filter((u: any) => u.role === 'ADMIN');
-  const teachers = institute.users.filter((u: any) => u.role === 'TEACHER');
-  const students = institute.users.filter((u: any) => u.role === 'STUDENT');
+  const admins = institute.users.filter((u: { role: string }) => u.role === 'ADMIN');
+  const teachers = institute.users.filter((u: { role: string }) => u.role === 'TEACHER');
+  const students = institute.users.filter((u: { role: string }) => u.role === 'STUDENT');
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -92,7 +92,7 @@ export default function InstituteDetails() {
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'overview' | 'admins' | 'teachers' | 'students' | 'courses')}
               className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
                 activeTab === tab.id 
                   ? 'border-brand-500 text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-500/10' 
@@ -132,7 +132,7 @@ export default function InstituteDetails() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {activeTab === 'admins' && admins.map((admin: any) => (
+              {activeTab === 'admins' && admins.map(admin => (
                 <tr key={admin.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 font-medium text-primary">{admin.firstName} {admin.lastName}</td>
                   <td className="px-6 py-4 text-muted">{admin.email}</td>
@@ -143,7 +143,7 @@ export default function InstituteDetails() {
                   </td>
                 </tr>
               ))}
-              {activeTab === 'teachers' && teachers.map((teacher: any) => (
+              {activeTab === 'teachers' && teachers.map(teacher => (
                 <tr key={teacher.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 font-medium text-primary">{teacher.firstName} {teacher.lastName}</td>
                   <td className="px-6 py-4 text-muted">{teacher.email}</td>
@@ -156,7 +156,7 @@ export default function InstituteDetails() {
                   </td>
                 </tr>
               ))}
-              {activeTab === 'students' && students.map((student: any) => (
+              {activeTab === 'students' && students.map(student => (
                 <tr key={student.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 font-medium text-primary">{student.firstName} {student.lastName}</td>
                   <td className="px-6 py-4 text-muted">{student.email}</td>
@@ -168,7 +168,7 @@ export default function InstituteDetails() {
                   </td>
                 </tr>
               ))}
-              {activeTab === 'courses' && institute.courses.map((course: any) => (
+              {activeTab === 'courses' && institute.courses.map(course => (
                 <tr key={course.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 font-medium text-primary">{course.title}</td>
                   <td className="px-6 py-4">

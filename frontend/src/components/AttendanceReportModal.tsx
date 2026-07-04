@@ -17,12 +17,11 @@ interface AttendanceRecord {
 
 interface AttendanceReportModalProps {
   lectureId: string;
-  lectureTitle: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-const AttendanceReportModal: React.FC<AttendanceReportModalProps> = ({ lectureId, lectureTitle, isOpen, onClose }) => {
+const AttendanceReportModal: React.FC<AttendanceReportModalProps> = ({ lectureId, isOpen, onClose }) => {
   const { data: attendanceData = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['attendanceReport', lectureId],
     queryFn: () => api.get(API_ENDPOINTS.ATTENDANCE.BY_LECTURE(lectureId)).then(r => r.data.attendance as AttendanceRecord[]),
@@ -37,9 +36,8 @@ const AttendanceReportModal: React.FC<AttendanceReportModalProps> = ({ lectureId
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Student Attendance</h3>
-            <p className="text-sm font-medium text-secondary">Total Records: {attendanceData?.length || 0}</p>
+          <div>
+            <h2 className="text-[18px] font-bold" style={{ color: 'var(--text-primary)' }}>Attendance Report</h2>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
             <X size={20} style={{ color: 'var(--text-muted)' }} />

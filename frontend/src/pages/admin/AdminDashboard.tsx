@@ -33,27 +33,42 @@ const STATUS_CONFIG = {
 };
 
 /* ── Component ── */
+interface DashboardMetrics {
+  totalUsers?: number;
+  totalStudents?: number;
+  totalTeachers?: number;
+  totalCourses?: number;
+  totalEnrollments?: number;
+  totalAssessments?: number;
+  growth?: { users: number; courses: number; enrollments: number; assessments: number; };
+  roleBreakdown?: { students: number; teachers: number; admins: number; parents: number };
+  users?: { total: number };
+  courses?: { total: number; active: number };
+  enrollments?: { total: number; active: number };
+  assessments?: { total: number; completed: number };
+}
+
 const AdminDashboard: React.FC = () => {
   const { data: metrics, isLoading: metricsLoading, isError: metricsError, refetch } = useQuery({
     queryKey: ['adminMetrics'],
-    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.ADMIN_STATS).then(res => res.data as any),
+    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.ADMIN_STATS).then(res => res.data as DashboardMetrics),
     refetchInterval: 300000,
   });
 
   const { data: trendData } = useQuery({
     queryKey: ['adminEnrollmentTrend'],
-    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.ADMIN_ENROLLMENT_TREND).then(res => res.data as any[]),
+    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.ADMIN_ENROLLMENT_TREND).then(res => res.data as { month: string; students: number; teachers: number }[]),
     refetchInterval: 300000,
   });
 
   const { data: topCourses } = useQuery({
     queryKey: ['adminRecentCourses'],
-    queryFn: () => api.get(`${API_ENDPOINTS.COURSES.BASE}?limit=5&sort=desc`).then(res => res.data.courses as any[]),
+    queryFn: () => api.get(`${API_ENDPOINTS.COURSES.BASE}?limit=5&sort=desc`).then(res => res.data.courses as { id: string; title: string; name?: string; category: string; status: string; enrollments: number; rating: number }[]),
   });
 
   const { data: recentActivity } = useQuery({
     queryKey: ['adminRecentActivity'],
-    queryFn: () => api.get(API_ENDPOINTS.ACTIVITY.ADMIN_RECENT).then(res => res.data as any[]),
+    queryFn: () => api.get(API_ENDPOINTS.ACTIVITY.ADMIN_RECENT).then(res => res.data as { id: string; type: string; title: string; user: string; timestamp: string; color?: string; text?: string; time?: string; }[]),
   });
 
   const roleBreakdown = metrics?.roleBreakdown

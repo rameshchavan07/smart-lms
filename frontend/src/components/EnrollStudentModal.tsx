@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
 import api from '../services/api';
 import { API_ENDPOINTS } from '../services/apiEndpoints';
 import { X } from 'lucide-react';
@@ -30,7 +29,7 @@ const EnrollStudentModal: React.FC<EnrollStudentModalProps> = ({ isOpen, onClose
     queryFn: async () => {
       const { data } = await api.get(`${API_ENDPOINTS.USERS.BASE}?role=STUDENT&limit=100`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return data.users.filter((u: any) => u.student);
+      return data.users.filter((u: { student: unknown }) => u.student);
     },
     enabled: isOpen
   });

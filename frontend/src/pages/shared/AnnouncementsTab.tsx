@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Megaphone, Loader2 } from 'lucide-react';
-import { Skeleton } from '../../components/Skeleton';
 
 interface Announcement {
   id: string;
@@ -19,7 +18,7 @@ export const AnnouncementsTab: React.FC<{ courseId: string }> = ({ courseId }) =
     queryFn: async () => {
       const res = await api.get(API_ENDPOINTS.COMMUNICATIONS.ANNOUNCEMENTS);
       // Filter by courseId if needed, though backend should handle it if passed as query
-      return res.data.announcements.filter((a: any) => a.courseId === courseId || a.courseId === null);
+      return res.data.announcements.filter((a: { courseId: string | null }) => a.courseId === courseId || a.courseId === null);
     }
   });
 

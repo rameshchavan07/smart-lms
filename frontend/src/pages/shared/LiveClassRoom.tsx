@@ -127,7 +127,7 @@ const LiveClassRoom: React.FC = () => {
               email: user?.email || 'guest@openlearnx.com'
             }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onApiReady={(externalApi: any) => {
+            onApiReady={(externalApi: { addListener: (event: string, callback: () => void) => void, executeCommand: (cmd: string) => void }) => {
               externalApi.addListener('videoConferenceJoined', () => {
                 console.log('[Attendance Hook] I Joined the conference');
                 if (user?.role === 'STUDENT' && id) {
