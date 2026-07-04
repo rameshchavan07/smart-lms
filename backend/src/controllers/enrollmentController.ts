@@ -3,6 +3,8 @@ import { AuthRequest } from '../middleware/auth';
 import { logActivity } from '../utils/auditLogger';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, NotFoundError, ValidationError, ForbiddenError } from '../utils/AppError';
+import { getCache, setCache, invalidateCacheByPattern } from '../utils/cache';
+import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
 import prisma from '../config/db';
 
@@ -59,7 +61,8 @@ export const enrollStudent = catchAsync(async (req: AuthRequest, res: Response) 
   });
 
   await logActivity(req.user!.id, `Enrolled student: ${enrollment.student.user.firstName} ${enrollment.student.user.lastName} in ${enrollment.course.title}`, 'Enrollment', enrollment.id);
-
+  // Invalidate the student's enrollment cache so next read reflects new enrollment
+  await invalidateCacheByPattern(CACHE_KEYS.MY_ENROLLMENTS_PATTERN(enrollment.studentId));
   res.status(201).json({ message: 'Student enrolled successfully', enrollment });
 });
 
@@ -138,6 +141,12 @@ export const getMyEnrolledCourses = catchAsync(async (req: AuthRequest, res: Res
     throw new NotFoundError('Student record not found');
   }
 
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 100;
+  const cacheKey = CACHE_KEYS.MY_ENROLLMENTS(req.user.id, page, limit);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
+
   const enrollments = await prisma.enrollment.findMany({
     where: { studentId: student.id },
     include: {
@@ -153,7 +162,9 @@ export const getMyEnrolledCourses = catchAsync(async (req: AuthRequest, res: Res
     orderBy: { enrolledAt: 'desc' }
   });
 
-  res.json({ enrollments });
+  const payload = { enrollments };
+  await setCache(cacheKey, payload, CACHE_TTL.MY_ENROLLMENTS);
+  res.json(payload);
 });
 
 // Get all enrollments across all courses for the current teacher

@@ -4,6 +4,8 @@ import { AuthRequest } from '../middleware/auth';
 import { logActivity } from '../utils/auditLogger';
 import { catchAsync } from '../utils/catchAsync';
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/AppError';
+import { getCache, setCache, invalidateCacheByPattern } from '../utils/cache';
+import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
 import prisma from '../config/db';
 
@@ -25,6 +27,10 @@ export const getUsers = catchAsync(async (req: AuthRequest, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 10;
   const role = req.query.role as string;
   const search = req.query.search as string;
+
+  const cacheKey = CACHE_KEYS.USERS(page, limit, role, search);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
 
   const skip = (page - 1) * limit;
 
@@ -58,7 +64,7 @@ export const getUsers = catchAsync(async (req: AuthRequest, res: Response) => {
 
   const total = await prisma.user.count({ where: whereClause });
 
-  res.json({
+  const payload = {
     users,
     pagination: {
       total,
@@ -66,7 +72,10 @@ export const getUsers = catchAsync(async (req: AuthRequest, res: Response) => {
       limit,
       totalPages: Math.ceil(total / limit),
     },
-  });
+  };
+
+  await setCache(cacheKey, payload, CACHE_TTL.USERS);
+  res.json(payload);
 });
 
 // Create a Teacher
@@ -101,7 +110,7 @@ export const createTeacher = catchAsync(async (req: AuthRequest, res: Response) 
   });
 
   await logActivity(req.user!.id, `Created Teacher profile: ${firstName} ${lastName}`, 'User', user.id);
-
+  await invalidateCacheByPattern(CACHE_KEYS.USERS_PATTERN);
   res.status(201).json({ message: 'Teacher created successfully', user });
 });
 
@@ -133,7 +142,7 @@ export const createAdmin = catchAsync(async (req: AuthRequest, res: Response) =>
   });
 
   await logActivity(req.user!.id, `Created Admin profile: ${firstName} ${lastName}`, 'User', user.id);
-
+  await invalidateCacheByPattern(CACHE_KEYS.USERS_PATTERN);
   res.status(201).json({ message: 'Admin created successfully', user });
 });
 
@@ -170,7 +179,7 @@ export const createStudent = catchAsync(async (req: AuthRequest, res: Response) 
   });
 
   await logActivity(req.user!.id, `Created Student profile: ${firstName} ${lastName}`, 'User', user.id);
-
+  await invalidateCacheByPattern(CACHE_KEYS.USERS_PATTERN);
   res.status(201).json({ message: 'Student created successfully', user });
 });
 
@@ -195,7 +204,7 @@ export const updateUserStatus = catchAsync(async (req: AuthRequest, res: Respons
   });
 
   await logActivity(req.user!.id, `${isActive ? 'Activated' : 'Deactivated'} user account: ${user.email}`, 'User', user.id);
-
+  await invalidateCacheByPattern(CACHE_KEYS.USERS_PATTERN);
   res.json({ message: 'User status updated', user });
 });
 
@@ -264,7 +273,7 @@ export const updateUser = catchAsync(async (req: AuthRequest, res: Response) => 
   });
 
   await logActivity(req.user!.id, `Updated profile details for user: ${email}`, 'User', id as string);
-
+  await invalidateCacheByPattern(CACHE_KEYS.USERS_PATTERN);
   res.json({ message: 'User updated successfully' });
 });
 
@@ -313,7 +322,7 @@ export const deleteUser = catchAsync(async (req: AuthRequest, res: Response) => 
   ]);
 
   await logActivity(req.user!.id, `Deleted user profile: ${user.email}`, 'User', id as string);
-
+  await invalidateCacheByPattern(CACHE_KEYS.USERS_PATTERN);
   res.json({ message: 'User deleted successfully' });
 });
 

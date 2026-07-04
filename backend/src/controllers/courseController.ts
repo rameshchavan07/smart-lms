@@ -6,6 +6,8 @@ import { getOrCreateFolderId, uploadFileToDrive, deleteFileFromDrive } from '../
 import { logActivity } from '../utils/auditLogger';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, NotFoundError, ValidationError, ForbiddenError } from '../utils/AppError';
+import { getCache, setCache, invalidateCacheByPattern } from '../utils/cache';
+import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
 import prisma from '../config/db';
 
@@ -14,8 +16,12 @@ export const getCourses = catchAsync(async (req: AuthRequest, res: Response) => 
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
   const search = req.query.search as string;
-
   const skip = (page - 1) * limit;
+
+  const instituteId = (req.user && req.user.role !== 'SUPER_ADMIN') ? req.user.instituteId : null;
+  const cacheKey = CACHE_KEYS.COURSES(instituteId ?? null, page, limit, search);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
 
   const whereClause: any = {};
   if (search) {
@@ -44,7 +50,7 @@ export const getCourses = catchAsync(async (req: AuthRequest, res: Response) => 
 
   const total = await prisma.course.count({ where: whereClause });
 
-  res.json({
+  const payload = {
     courses,
     pagination: {
       total,
@@ -52,7 +58,10 @@ export const getCourses = catchAsync(async (req: AuthRequest, res: Response) => 
       limit,
       totalPages: Math.ceil(total / limit),
     },
-  });
+  };
+
+  await setCache(cacheKey, payload, CACHE_TTL.COURSES);
+  res.json(payload);
 });
 
 // Create a new course (Admin)
@@ -103,7 +112,8 @@ export const createCourse = catchAsync(async (req: AuthRequest, res: Response) =
   }
 
   await logActivity(req.user!.id, `Created course: ${title}`, 'Course', course.id);
-
+  // Invalidate course listings so next read is fresh
+  await invalidateCacheByPattern(CACHE_KEYS.COURSE_PATTERN);
   res.status(201).json({ message: 'Course created successfully', course });
 });
 
@@ -122,7 +132,7 @@ export const updateCourse = catchAsync(async (req: AuthRequest, res: Response) =
   });
 
   await logActivity(req.user!.id, `Updated course details: ${title}`, 'Course', course.id);
-
+  await invalidateCacheByPattern(CACHE_KEYS.COURSE_PATTERN);
   res.json({ message: 'Course updated successfully', course });
 });
 
@@ -155,7 +165,7 @@ export const deleteCourse = catchAsync(async (req: AuthRequest, res: Response) =
   ]);
 
   await logActivity(req.user!.id, `Deleted course ID: ${id}`, 'Course', id as string);
-
+  await invalidateCacheByPattern(CACHE_KEYS.COURSE_PATTERN);
   res.json({ message: 'Course deleted successfully' });
 });
 
@@ -173,6 +183,10 @@ export const getTeacherCourses = catchAsync(async (req: AuthRequest, res: Respon
     throw new NotFoundError('Teacher record not found');
   }
 
+  const cacheKey = CACHE_KEYS.TEACHER_COURSES(teacher.id);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
+
   const courses = await prisma.course.findMany({
     where: { teacherId: teacher.id },
     include: {
@@ -181,7 +195,9 @@ export const getTeacherCourses = catchAsync(async (req: AuthRequest, res: Respon
     orderBy: { createdAt: 'desc' }
   });
 
-  res.json({ courses });
+  const payload = { courses };
+  await setCache(cacheKey, payload, CACHE_TTL.TEACHER_COURSES);
+  res.json(payload);
 });
 
 // Helper to parse file ID from Google Drive URL

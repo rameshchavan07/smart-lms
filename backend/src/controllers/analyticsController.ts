@@ -3,9 +3,15 @@ import { AuthRequest } from '../middleware/auth';
 import prisma from '../config/db';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, NotFoundError } from '../utils/AppError';
+import { getCache, setCache } from '../utils/cache';
+import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
 // Admin Dashboard Analytics
 export const getAdminStats = catchAsync(async (req: AuthRequest, res: Response) => {
+    const cacheKey = CACHE_KEYS.ADMIN_STATS;
+    const cached = await getCache<object>(cacheKey);
+    if (cached) return res.json(cached);
+
     const totalUsers = await prisma.user.count();
     const totalTeachers = await prisma.user.count({ where: { role: 'TEACHER' } });
     const totalStudents = await prisma.user.count({ where: { role: 'STUDENT' } });
@@ -29,7 +35,7 @@ export const getAdminStats = catchAsync(async (req: AuthRequest, res: Response) 
       }
     });
 
-    res.json({
+    const payload = {
       metrics: {
         totalUsers,
         totalTeachers,
@@ -39,11 +45,18 @@ export const getAdminStats = catchAsync(async (req: AuthRequest, res: Response) 
       },
       recentCourses,
       recentActivities
-    });
+    };
+
+    await setCache(cacheKey, payload, CACHE_TTL.ADMIN_STATS);
+    res.json(payload);
 });
 
 // Teacher Dashboard Analytics
 export const getTeacherStats = catchAsync(async (req: AuthRequest, res: Response) => {
+    const cacheKey = CACHE_KEYS.TEACHER_STATS(req.user!.id);
+    const cached = await getCache<object>(cacheKey);
+    if (cached) return res.json(cached);
+
     const teacher = await prisma.teacher.findUnique({
       where: { userId: req.user!.id }
     });
@@ -83,17 +96,24 @@ export const getTeacherStats = catchAsync(async (req: AuthRequest, res: Response
       }
     });
 
-    res.json({
+    const payload = {
       metrics: {
         totalCourses,
         totalStudents
       },
       recentActivities
-    });
+    };
+
+    await setCache(cacheKey, payload, CACHE_TTL.TEACHER_STATS);
+    res.json(payload);
 });
 
 // Student Dashboard Analytics
 export const getStudentStats = catchAsync(async (req: AuthRequest, res: Response) => {
+    const cacheKey = CACHE_KEYS.STUDENT_STATS(req.user!.id);
+    const cached = await getCache<object>(cacheKey);
+    if (cached) return res.json(cached);
+
     const student = await prisma.student.findUnique({
       where: { userId: req.user!.id }
     });
@@ -149,16 +169,19 @@ export const getStudentStats = catchAsync(async (req: AuthRequest, res: Response
 
     const overallProgress = totalRequired > 0 ? Math.round((totalCompleted / totalRequired) * 100) : 0;
 
-    res.json({
+    const payload = {
       metrics: {
         totalEnrollments,
-        totalCompleted: totalCompleted > 0 ? 1 : 0, // Mock completed courses based on progress
+        totalCompleted: totalCompleted > 0 ? 1 : 0,
         quizAverage,
-        badgesEarned: Math.floor(totalCompleted / 5), // Mock badges
+        badgesEarned: Math.floor(totalCompleted / 5),
         overallProgress,
         progressBreakdown: { excellent: 2, good: 1, average: 0 }
       }
-    });
+    };
+
+    await setCache(cacheKey, payload, CACHE_TTL.STUDENT_STATS);
+    res.json(payload);
 });
 
 export const getTeacherReports = catchAsync(async (req: AuthRequest, res: Response) => {
