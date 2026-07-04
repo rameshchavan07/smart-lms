@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Filter, GraduationCap, Mail, Ban } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { TableRowSkeleton } from '../../components/Skeleton';
 
 const TeacherEnrollments: React.FC = () => {
@@ -9,9 +10,9 @@ const TeacherEnrollments: React.FC = () => {
   const [filterCourse, setFilterCourse] = useState('All Courses');
 
   const { data: enrollments = [], isLoading } = useQuery({
-    queryKey: ['teacherEnrollments'],
+    queryKey: ['teacher-enrollments'],
     queryFn: async () => {
-      const res = await api.get('/enrollments/teacher');
+      const res = await api.get(API_ENDPOINTS.ENROLLMENTS.TEACHER);
       return res.data.enrollments;
     }
   });

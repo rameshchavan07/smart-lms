@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Search, Loader2, Users, Plus, X, CheckCheck, Paperclip, Smile, FileText, Download, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Skeleton } from '../../components/Skeleton';
 import { useAuth } from '../../contexts/AuthContext';
 import { io, Socket } from 'socket.io-client';
@@ -47,7 +48,7 @@ const StudentMessages: React.FC = () => {
   const { data: contactsData, isLoading: loadingContacts } = useQuery({
     queryKey: ['communications', 'contacts'],
     queryFn: async () => {
-      const res = await api.get('/communications/contacts');
+      const res = await api.get(API_ENDPOINTS.COMMUNICATIONS.CONTACTS);
       return res.data.contacts;
     }
   });
@@ -61,7 +62,7 @@ const StudentMessages: React.FC = () => {
     queryKey: ['communications', 'messages', selectedChat?.id],
     queryFn: async () => {
       if (!selectedChat) return [];
-      const res = await api.get(`/communications/messages/${selectedChat.id}`);
+      const res = await api.get(API_ENDPOINTS.COMMUNICATIONS.MESSAGES_BY_ID(selectedChat.id));
       return res.data.messages;
     },
     enabled: !!selectedChat
@@ -142,7 +143,7 @@ const StudentMessages: React.FC = () => {
         formData.append('file', selectedFile);
       }
       
-      return api.post('/communications/messages', formData, {
+      return api.post(API_ENDPOINTS.COMMUNICATIONS.SEND_MESSAGE, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
     },
@@ -168,7 +169,7 @@ const StudentMessages: React.FC = () => {
 
   const createGroup = useMutation({
     mutationFn: async () => {
-      return api.post('/communications/groups', {
+      return api.post(API_ENDPOINTS.COMMUNICATIONS.CREATE_GROUP, {
         name: groupName,
         memberIds: selectedGroupMembers
       });
@@ -189,7 +190,7 @@ const StudentMessages: React.FC = () => {
 
   const deleteMessage = useMutation({
     mutationFn: async (messageId: string) => {
-      return api.delete(`/communications/messages/${messageId}`);
+      return api.delete(API_ENDPOINTS.COMMUNICATIONS.MESSAGES_BY_ID(messageId));
     },
     onSuccess: (_, messageId) => {
       queryClient.setQueryData(['communications', 'messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
@@ -205,7 +206,7 @@ const StudentMessages: React.FC = () => {
 
   const deleteGroup = useMutation({
     mutationFn: async (groupId: string) => {
-      return api.delete(`/communications/groups/${groupId}`);
+      return api.delete(API_ENDPOINTS.COMMUNICATIONS.GROUP_BY_ID(groupId));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communications', 'contacts'] });

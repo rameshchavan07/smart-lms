@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowLeft, CheckCircle2, FileQuestion } from 'lucide-react';
 import { Button, Skeleton } from '../../components';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import toast from 'react-hot-toast';
 
 interface QuizOption {
@@ -60,17 +61,17 @@ const QuizView: React.FC = () => {
   useEffect(() => {
     const fetchQuizAndData = async () => {
       try {
-        const { data } = await api.get(`/quizzes/${quizId}`);
+        if (!quizId) return;
+        const { data } = await api.get(API_ENDPOINTS.QUIZZES.BY_ID(quizId));
         setQuiz(data.quiz);
 
         if (user?.role === 'TEACHER' || user?.role === 'ADMIN') {
-          const subRes = await api.get(`/quizzes/${quizId}/submissions`);
+          const subRes = await api.get(API_ENDPOINTS.QUIZZES.SUBMISSIONS(quizId));
           setSubmissions(subRes.data.submissions);
         }
       } catch (err: unknown) {
         const error = err as { response?: { status?: number, data?: { message?: string } } };
         if (error.response?.status === 400 && error.response?.data?.message?.includes('already submitted')) {
-          // If student already submitted, maybe just show that
           toast.error('You have already submitted this quiz.');
         } else {
           toast.error('Failed to load quiz details.');
@@ -93,7 +94,7 @@ const QuizView: React.FC = () => {
   };
 
   const handleSubmitQuiz = async () => {
-    if (!quiz) return;
+    if (!quiz || !quizId) return;
     
     // Check if all questions are answered
     const unanswered = quiz.questions.filter(q => !selectedAnswers[q.id]);
@@ -110,7 +111,7 @@ const QuizView: React.FC = () => {
         selectedOptionId: selectedAnswers[qId]
       }));
 
-      const { data } = await api.post(`/quizzes/${quizId}/submit`, { answers: answersArray });
+      const { data } = await api.post(API_ENDPOINTS.QUIZZES.SUBMIT(quizId), { answers: answersArray });
       toast.success('Quiz submitted successfully!');
       setResult({ score: data.score, totalMarks: data.totalMarks });
     } catch (err: unknown) {

@@ -1,10 +1,29 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import toast from 'react-hot-toast';
-import { Button, Card } from '../../components';
-import { Plus, Trash2, Shield, Building, Building2, Eye } from 'lucide-react';
+import { Modal, Button, EmptyState, Card } from '../../components';
+import { Plus, Trash2, Shield, Building, Building2, Eye, Search, Filter, MoreVertical, Edit2, Link as LinkIcon, ShieldAlert, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+interface Institute {
+  id: string;
+  name: string;
+  address: string;
+  email: string;
+  phone: string;
+  users: User[];
+  _count: { users: number; courses: number; };
+  createdAt: string;
+}
 
 export default function InstitutesManagement() {
   const queryClient = useQueryClient();
@@ -15,18 +34,18 @@ export default function InstitutesManagement() {
   const [assignMode, setAssignMode] = useState<'new' | 'existing'>('new');
   const [existingUserId, setExistingUserId] = useState('');
 
-  const { data: usersData, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['users', 'all'],
+  const { data: usersData, isLoading: loadingUsers } = useQuery({
+    queryKey: ['allUsersForAdmin'],
     queryFn: async () => {
-      const res = await api.get('/users?limit=1000');
-      return res.data.users;
+      const res = await api.get(`${API_ENDPOINTS.USERS.BASE}?limit=1000`);
+      return res.data.users as User[];
     },
     enabled: isAssignAdminModalOpen && assignMode === 'existing'
   });
 
   const assignExistingAdminMutation = useMutation({
     mutationFn: async (userId: string) => {
-      return api.put(`/users/${userId}`, { role: 'ADMIN', instituteId: selectedInstituteId });
+      return api.put(API_ENDPOINTS.USERS.BY_ID(userId), { role: 'ADMIN', instituteId: selectedInstituteId });
     },
     onSuccess: () => {
       toast.success('Admin assigned successfully!');
@@ -62,20 +81,18 @@ export default function InstitutesManagement() {
     phoneNumber: ''
   });
 
-  const { data, isLoading } = useQuery({
+  const { data: institutes, isLoading } = useQuery({
     queryKey: ['institutes'],
     queryFn: async () => {
-      const res = await api.get('/institutes');
-      return res.data.institutes;
+      const res = await api.get(API_ENDPOINTS.INSTITUTES.BASE);
+      return res.data.institutes as Institute[];
     }
   });
 
   const createInstituteMutation = useMutation({
-    mutationFn: async (newData: Record<string, string>) => {
-      return api.post('/institutes', newData);
-    },
+    mutationFn: (newInstitute: any) => api.post(API_ENDPOINTS.INSTITUTES.BASE, newInstitute),
     onSuccess: () => {
-      toast.success('Institute created successfully!');
+      toast.success('Institute created successfully');
       setIsCreateModalOpen(false);
       setInstituteForm({ name: '', address: '', phone: '', email: '', website: '' });
       queryClient.invalidateQueries({ queryKey: ['institutes'] });
@@ -87,11 +104,9 @@ export default function InstitutesManagement() {
   });
 
   const deleteInstituteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return api.delete(`/institutes/${id}`);
-    },
+    mutationFn: (id: string) => api.delete(API_ENDPOINTS.INSTITUTES.BY_ID(id)),
     onSuccess: () => {
-      toast.success('Institute deleted successfully!');
+      toast.success('Institute deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['institutes'] });
     },
     onError: (error: unknown) => {
@@ -101,11 +116,9 @@ export default function InstitutesManagement() {
   });
 
   const assignAdminMutation = useMutation({
-    mutationFn: async (newData: Record<string, string>) => {
-      return api.post('/users/admin', newData);
-    },
+    mutationFn: (adminData: any) => api.post(API_ENDPOINTS.USERS.ADMIN, adminData),
     onSuccess: () => {
-      toast.success('Admin assigned successfully!');
+      toast.success('Admin assigned successfully');
       setIsAssignAdminModalOpen(false);
       setAdminForm({ firstName: '', lastName: '', email: '', password: '', phoneNumber: '' });
       queryClient.invalidateQueries({ queryKey: ['institutes'] });
@@ -115,6 +128,9 @@ export default function InstitutesManagement() {
       toast.error(err.response?.data?.message || 'Failed to assign admin');
     }
   });
+
+
+  if (isLoading) return <div>Loading institutes...</div>;
 
   const handleCreateInstitute = (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,8 +143,6 @@ export default function InstitutesManagement() {
     assignAdminMutation.mutate({ ...adminForm, instituteId: selectedInstituteId });
   };
 
-  if (isLoading) return <div>Loading institutes...</div>;
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -137,7 +151,9 @@ export default function InstitutesManagement() {
             <Building className="w-6 h-6 text-brand-500" />
             Institutes
           </h1>
-          <p className="text-muted text-sm mt-1">Manage partner institutes and assign their administrators.</p>
+          <p className="mt-1 text-sm text-secondary">
+            Manage platform institutes and their administrative access. {institutes?.length || 0} total active.
+          </p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)} className="btn-primary gap-2">
           <Plus className="w-4 h-4" /> Add Institute
@@ -157,14 +173,18 @@ export default function InstitutesManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {data?.length === 0 ? (
+            {institutes?.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-muted">
-                  No institutes found. Add one to get started.
+                <td colSpan={6} className="px-6 py-8">
+                  <EmptyState 
+                    icon={<Building size={48} />}
+                    title="No institutes found" 
+                    description="Get started by adding your first institute" 
+                  />
                 </td>
               </tr>
             ) : (
-              data?.map((inst: { id: string; name: string; address: string; email: string; phone: string; users: { id: string; firstName: string; lastName: string; email: string; }[]; _count: { users: number; courses: number; }; createdAt: string; }) => (
+              institutes?.map((inst: Institute) => (
                 <tr key={inst.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -186,7 +206,7 @@ export default function InstitutesManagement() {
                   <td className="px-6 py-4">
                     {inst.users && inst.users.length > 0 ? (
                       <div className="flex -space-x-2">
-                        {inst.users.map((u: { id: string; firstName: string; lastName: string; email: string; }) => (
+                        {inst.users.map((u) => (
                           <div key={u.id} className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-xs font-bold border-2 border-white dark:border-gray-800" title={`${u.firstName} ${u.lastName} (${u.email})`}>
                             {u.firstName[0]}{u.lastName[0]}
                           </div>
@@ -343,8 +363,8 @@ export default function InstitutesManagement() {
               <form onSubmit={handleAssignExistingAdmin} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1 text-muted">Select User *</label>
-                  {isLoadingUsers ? (
-                    <div className="p-2 text-sm text-muted">Loading users...</div>
+                  {loadingUsers ? (
+                    <div className="flex justify-center p-4"><Loader2 className="w-5 h-5 animate-spin text-brand-500" /></div>
                   ) : (
                     <select 
                       required 

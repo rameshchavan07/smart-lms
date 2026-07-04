@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { JitsiMeeting } from '@jitsi/react-sdk';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import { ArrowLeft, PlayCircle } from 'lucide-react';
 import { LectureRecordingPlayer, LectureRecorderUI, Skeleton } from '../../components';
@@ -21,7 +22,8 @@ const LiveClassRoom: React.FC = () => {
   useEffect(() => {
     const fetchLectureDetails = async () => {
       try {
-        const { data } = await api.get(`/lectures/${id}`);
+        if (!id) return;
+        const { data } = await api.get(API_ENDPOINTS.LECTURES.BY_ID(id));
         setMeetingUrl(data.lecture.meetingUrl || `open-learn-x-${data.lecture.id}`);
         setJwtToken(data.jitsiToken || null);
         setCourseName(data.lecture.course.title);
@@ -128,14 +130,14 @@ const LiveClassRoom: React.FC = () => {
             onApiReady={(externalApi: any) => {
               externalApi.addListener('videoConferenceJoined', () => {
                 console.log('[Attendance Hook] I Joined the conference');
-                if (user?.role === 'STUDENT') {
-                  api.post(`/attendance/lecture/${id}/mark`, { action: 'join' }).catch(err => console.error(err));
+                if (user?.role === 'STUDENT' && id) {
+                  api.post(API_ENDPOINTS.ATTENDANCE.MARK(id), { action: 'join' }).catch(err => console.error(err));
                 }
               });
               externalApi.addListener('videoConferenceLeft', () => {
                 console.log('[Attendance Hook] I Left the conference');
-                if (user?.role === 'STUDENT') {
-                  api.post(`/attendance/lecture/${id}/mark`, { action: 'leave' }).catch(err => console.error(err));
+                if (user?.role === 'STUDENT' && id) {
+                  api.post(API_ENDPOINTS.ATTENDANCE.MARK(id), { action: 'leave' }).catch(err => console.error(err));
                 }
                 navigate(-1);
               });

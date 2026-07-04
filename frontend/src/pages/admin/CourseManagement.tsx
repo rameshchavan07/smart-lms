@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import CreateCourseModal from '../../components/CreateCourseModal';
 import { BookOpen, MoreVertical, Search, ShieldAlert, Loader2 } from 'lucide-react';
 import { getDirectDriveUrl } from '../../utils/drive';
@@ -42,28 +43,30 @@ const CourseManagement: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const { data: courses = [], isLoading: loading } = useQuery<CourseData[]>({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['courses', debouncedSearchTerm],
     queryFn: async () => {
-      const { data } = await api.get(`/courses${debouncedSearchTerm ? `?search=${debouncedSearchTerm}` : ''}`);
+      const { data } = await api.get(`${API_ENDPOINTS.COURSES.BASE}${debouncedSearchTerm ? `?search=${debouncedSearchTerm}` : ''}`);
       return data.courses;
     }
   });
+
+  const courses: CourseData[] = data || [];
 
   const confirmDelete = (id: string) => {
     setCourseIdToDelete(id);
     setIsConfirmOpen(true);
   };
 
-  const deleteCourseMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return api.delete(`/courses/${id}`);
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => {
+      return api.delete(API_ENDPOINTS.COURSES.BY_ID(id));
     },
     onSuccess: () => {
       toast.success('Course deleted successfully.');
       setIsConfirmOpen(false);
       setCourseIdToDelete(null);
-      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
     },
     onError: (error: unknown) => {
       console.error('Failed to delete course', error);
@@ -73,20 +76,20 @@ const CourseManagement: React.FC = () => {
 
   const handleDeleteExecute = () => {
     if (!courseIdToDelete) return;
-    deleteCourseMutation.mutate(courseIdToDelete);
+    deleteMutation.mutate(courseIdToDelete);
   };
 
   const uploadThumbnailMutation = useMutation({
-    mutationFn: async ({ courseId, file }: { courseId: string; file: File }) => {
+    mutationFn: ({ courseId, file }: { courseId: string, file: File }) => {
       const formData = new FormData();
       formData.append('thumbnail', file);
-      return api.put(`/courses/${courseId}/thumbnail`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      return api.put(API_ENDPOINTS.COURSES.THUMBNAIL(courseId), formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
     },
     onSuccess: () => {
       toast.success('Course thumbnail uploaded successfully!');
-      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
     },
     onError: (error: unknown) => {
       const err = error as { response?: { data?: { message?: string } } };
@@ -131,7 +134,7 @@ const CourseManagement: React.FC = () => {
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="p-6 space-y-4">
             <div className="skeleton h-10 w-full rounded-xl" />
             <div className="skeleton h-10 w-full rounded-xl" />
@@ -259,7 +262,7 @@ const CourseManagement: React.FC = () => {
           message="Are you sure you want to delete this course module? All student enrollments, lectures, assignments, and study materials associated with it will be permanently deleted."
           onConfirm={handleDeleteExecute}
           onCancel={() => setIsConfirmOpen(false)}
-          loading={deleteCourseMutation.isPending}
+          loading={deleteMutation.isPending}
           danger
         />
       </Modal>

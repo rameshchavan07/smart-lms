@@ -2,6 +2,7 @@ import React from 'react';
 import { Award, Target } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Skeleton } from '../../components/Skeleton';
 
 interface Assignment {
@@ -14,18 +15,18 @@ interface Assignment {
 }
 
 const StudentGrades: React.FC = () => {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['studentStats'],
+  const { data: stats, isLoading: loadingMetrics } = useQuery({
+    queryKey: ['student-metrics'],
     queryFn: async () => {
-      const res = await api.get('/analytics/student');
+      const res = await api.get(API_ENDPOINTS.ANALYTICS.STUDENT_BASE);
       return res.data.metrics;
     }
   });
 
   const { data: assignments = [], isLoading: loadingAssignments } = useQuery({
-    queryKey: ['studentAssignments'],
+    queryKey: ['student-assignments'],
     queryFn: async () => {
-      const res = await api.get('/assignments/student');
+      const res = await api.get(API_ENDPOINTS.ASSIGNMENTS.STUDENT);
       return res.data.assignments;
     }
   });
@@ -49,7 +50,7 @@ const StudentGrades: React.FC = () => {
           </div>
           <div>
             <p className="text-[20px] font-black leading-none" style={{ color: 'var(--text-primary)' }}>
-              {isLoading ? '-' : `${stats?.quizAverage || 0}%`}
+              {loadingMetrics ? '-' : `${stats?.quizAverage || 0}%`}
             </p>
             <p className="text-[12px] font-medium mt-1" style={{ color: 'var(--text-muted)' }}>Average Quiz Score</p>
           </div>
@@ -62,7 +63,7 @@ const StudentGrades: React.FC = () => {
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
               <p className="text-[12px] font-medium" style={{ color: 'var(--text-muted)' }}>Overall Progress</p>
-              <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{isLoading ? '-' : `${stats?.overallProgress || 0}%`}</span>
+              <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{loadingMetrics ? '-' : `${stats?.overallProgress || 0}%`}</span>
             </div>
             <div className="w-full h-1.5 rounded-full bg-black/10 dark:bg-surface/10 overflow-hidden">
               <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${stats?.overallProgress || 0}%` }} />

@@ -4,6 +4,8 @@ import { useSocket } from '../contexts/SocketContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
+import { formatDistanceToNow } from 'date-fns';
 
 interface NotificationData {
   id: string;
@@ -23,21 +25,22 @@ export const NotificationBell: React.FC = () => {
   // Fetch notifications
   const { data: notifications = [], isLoading } = useQuery<NotificationData[]>({
     queryKey: ['notifications'],
-    queryFn: () => api.get('/notifications').then(res => res.data.notifications),
+    queryFn: () => api.get(API_ENDPOINTS.NOTIFICATIONS.MY).then(res => res.data.notifications),
+    refetchInterval: 60000,
   });
 
   const unreadCount = notifications.filter((n: NotificationData) => !n.isRead).length;
 
   // Mutations
   const markReadMutation = useMutation({
-    mutationFn: (id: string) => api.put(`/notifications/${id}/read`),
+    mutationFn: (id: string) => api.put(API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 
   const markAllReadMutation = useMutation({
-    mutationFn: () => api.put('/notifications/read-all'),
+    mutationFn: () => api.put(API_ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('All notifications marked as read');
@@ -45,7 +48,7 @@ export const NotificationBell: React.FC = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/notifications/${id}`),
+    mutationFn: (id: string) => api.delete(API_ENDPOINTS.NOTIFICATIONS.DELETE(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Notification deleted');

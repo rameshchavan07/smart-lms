@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import {
   BookOpen, TrendingUp, Star, Award,
   CheckCircle2, PlayCircle, FileText, ChevronRight,
@@ -109,49 +110,47 @@ const FALLBACK_ACTIVITY: ActivityItem[] = [
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
 
-  const { data: metricsData, isLoading: metricsLoading, isError: metricsError, refetch: refetchMetrics } = useQuery({
-    queryKey: ['student-analytics'],
-    queryFn: () => api.get('/analytics/student').then(r => r.data.metrics as StudentMetrics),
+  const { data: metrics, isLoading: metricsLoading, isError: metricsError, refetch: refetchMetrics } = useQuery({
+    queryKey: ['student-metrics'],
+    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.STUDENT_BASE).then(r => r.data.metrics as StudentMetrics),
     staleTime: 60_000,
   });
 
-  const { data: enrollmentsData, isLoading: enrollmentsLoading } = useQuery({
-    queryKey: ['student-recent-enrollments'],
-    queryFn: () => api.get('/enrollments/my-courses?limit=4').then(r => r.data.enrollments as EnrollmentWithProgress[]),
+  const { data: enrollments, isLoading: enrollmentsLoading } = useQuery({
+    queryKey: ['student-courses'],
+    queryFn: () => api.get(`${API_ENDPOINTS.ENROLLMENTS.MY_COURSES}?limit=4`).then(r => r.data.enrollments as EnrollmentWithProgress[]),
     staleTime: 60_000,
   });
 
-  const { data: activityData } = useQuery({
-    queryKey: ['student-activity'],
-    queryFn: () => api.get('/activity/recent?limit=5').then(r => r.data.activities as ActivityItem[]),
+  const { data: activityData, isLoading: loadingActivities } = useQuery({
+    queryKey: ['student-activities'],
+    queryFn: () => api.get(`${API_ENDPOINTS.ACTIVITY.RECENT}?limit=5`).then(r => r.data.activities as ActivityItem[]),
     staleTime: 30_000,
-    // Use fallback silently if endpoint doesn't exist yet
     retry: false,
   });
 
-  const { data: tasksData } = useQuery({
+  const { data: tasksData, isLoading: loadingTasks } = useQuery({
     queryKey: ['student-tasks'],
-    queryFn: () => api.get('/assignments/my-tasks?limit=5').then(r => r.data.tasks as TaskItem[]),
+    queryFn: () => api.get(`${API_ENDPOINTS.ASSIGNMENTS.MY_TASKS}?limit=5`).then(r => r.data.tasks as TaskItem[]),
     staleTime: 60_000,
     retry: false,
   });
 
-  const { data: announcementsData } = useQuery({
+  const { data: announcementsData, isLoading: loadingAnnouncements } = useQuery({
     queryKey: ['student-announcements'],
-    queryFn: () => api.get('/announcements/my?limit=3').then(r => r.data.announcements as Announcement[]),
+    queryFn: () => api.get(`${API_ENDPOINTS.COMMUNICATIONS.MY_ANNOUNCEMENTS}?limit=3`).then(r => r.data.announcements as Announcement[]),
     staleTime: 120_000,
     retry: false,
   });
 
-  const { data: performanceData } = useQuery({
+  const { data: performanceData, isLoading: loadingPerformance } = useQuery({
     queryKey: ['student-performance'],
-    queryFn: () => api.get('/analytics/student/performance').then(r => r.data.data as { name: string, score: number }[]),
+    queryFn: () => api.get(API_ENDPOINTS.PROGRESS.STUDENT_PERFORMANCE).then(r => r.data.data as { name: string, score: number }[]),
     staleTime: 60_000,
     retry: false,
   });
 
-  const metrics = metricsData;
-  const enrollments = enrollmentsData ?? [];
+  const enrollmentsList = enrollments ?? [];
   const activity = activityData ?? FALLBACK_ACTIVITY;
   const tasks = tasksData ?? [];
   const announcements = announcementsData ?? [];
@@ -222,7 +221,7 @@ const StudentDashboard: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[...Array(4)].map((_, i) => <CourseCardSkeleton key={i} />)}
               </div>
-            ) : enrollments.length === 0 ? (
+            ) : enrollmentsList.length === 0 ? (
               <div className="flex flex-col items-center py-12 text-center">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: 'rgba(67,97,240,0.1)' }}>
                   <BookOpen size={22} color="#4361f0" />
@@ -231,9 +230,18 @@ const StudentDashboard: React.FC = () => {
                 <p className="text-[13px] mb-4" style={{ color: 'var(--text-muted)' }}>Your enrolled courses will appear here</p>
                 <Link to="/student/courses" className="btn btn-primary btn-sm">Browse Courses</Link>
               </div>
+            ) : enrollmentsList.length === 0 ? (
+              <div className="flex flex-col items-center py-12 text-center">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: 'rgba(67,97,240,0.1)' }}>
+                  <BookOpen size={22} color="#4361f0" />
+                </div>
+                <h3 className="text-[15px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>No courses yet</h3>
+                <p className="text-[13px] mb-4" style={{ color: 'var(--text-muted)' }}>Your enrolled courses will appear here</p>
+                <Link to="/student/courses" className="btn btn-primary btn-sm">Browse Courses</Link>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {enrollments.slice(0, 4).map((e, idx) => (
+                {enrollmentsList.slice(0, 4).map((e: any, idx: number) => (
                   <CourseCard
                     key={e.course.id}
                     course={e.course}

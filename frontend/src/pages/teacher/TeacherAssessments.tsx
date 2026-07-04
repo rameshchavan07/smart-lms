@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, FileText, CheckCircle, Clock } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { TableRowSkeleton } from '../../components/Skeleton';
 import CreateAssignmentModal from '../../components/CreateAssignmentModal';
 import CreateQuizModal from '../../components/CreateQuizModal';
@@ -14,7 +15,7 @@ const TeacherAssessments: React.FC = () => {
   const { data: assessments = [], isLoading } = useQuery({
     queryKey: ['teacherAssessments'],
     queryFn: async () => {
-      const res = await api.get('/assignments/teacher/all');
+      const res = await api.get(API_ENDPOINTS.ASSIGNMENTS.TEACHER_ALL);
       return res.data.assessments;
     }
   });

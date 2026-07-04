@@ -8,6 +8,7 @@ import {
   Loader2 
 } from 'lucide-react';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import EnrollStudentModal from '../../components/EnrollStudentModal';
 
 interface StudentEnrollmentData {
@@ -34,14 +35,14 @@ export const StudentsTab: React.FC<StudentsTabProps> = ({ courseId }) => {
   const { data: enrolledStudents = [], isLoading: studentsLoading } = useQuery({
     queryKey: ['enrolledStudents', courseId],
     queryFn: async () => {
-      const { data } = await api.get(`/enrollments/course/${courseId}/students`);
+      const { data } = await api.get(API_ENDPOINTS.ENROLLMENTS.COURSE_STUDENTS(courseId));
       return data.enrollments as StudentEnrollmentData[];
     }
   });
 
   const unenrollStudentMutation = useMutation({
     mutationFn: async (studentId: string) => {
-      return api.delete(`/enrollments/${courseId}/students/${studentId}`);
+      return api.delete(API_ENDPOINTS.ENROLLMENTS.STUDENT_ENROLLMENT(courseId, studentId));
     },
     onSuccess: () => {
       toast.success('Student unenrolled successfully.');

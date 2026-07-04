@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import { MessageCircle, Pin, Send, Plus, User } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -28,9 +29,9 @@ export const DiscussionsTab: React.FC<{ courseId: string }> = ({ courseId }) => 
   const [showCreate, setShowCreate] = useState(false);
   const [activeThread, setActiveThread] = useState<string | null>(null);
 
-  const { data: discussions, isLoading } = useQuery({
+  const { data: discussions = [], isLoading } = useQuery({
     queryKey: ['discussions', courseId],
-    queryFn: () => api.get(`/discussions/course/${courseId}`).then(res => res.data.discussions as Discussion[])
+    queryFn: () => api.get(API_ENDPOINTS.DISCUSSIONS.BY_COURSE(courseId!)).then(res => res.data.discussions as Discussion[])
   });
 
   if (isLoading) return <div className="p-8 text-center text-gray-500">Loading discussions...</div>;
@@ -94,8 +95,8 @@ const CreateDiscussion = ({ courseId, onCreated }: { courseId: string, onCreated
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
 
-  const mutation = useMutation({
-    mutationFn: () => api.post(`/discussions/course/${courseId}`, { title, content }),
+  const createThread = useMutation({
+    mutationFn: () => api.post(API_ENDPOINTS.DISCUSSIONS.BY_COURSE(courseId!), { title, content }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['discussions', courseId] });
       toast.success('Discussion posted');
@@ -105,7 +106,7 @@ const CreateDiscussion = ({ courseId, onCreated }: { courseId: string, onCreated
   });
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="card p-5 space-y-4 border-2 border-brand-500">
+    <form onSubmit={(e) => { e.preventDefault(); createThread.mutate(); }} className="card p-5 space-y-4 border-2 border-brand-500">
       <div>
         <input required type="text" placeholder="Discussion Title..." className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
       </div>
@@ -113,7 +114,7 @@ const CreateDiscussion = ({ courseId, onCreated }: { courseId: string, onCreated
         <textarea required placeholder="What's on your mind?..." className="input min-h-[100px]" value={content} onChange={(e) => setContent(e.target.value)} />
       </div>
       <div className="flex justify-end">
-        <button type="submit" className="btn btn-primary" disabled={mutation.isPending}>Post Discussion</button>
+        <button type="submit" className="btn btn-primary" disabled={createThread.isPending}>Post Discussion</button>
       </div>
     </form>
   );
@@ -125,23 +126,23 @@ const DiscussionThread = ({ threadId, onBack }: { threadId: string, onBack: () =
   const [replyContent, setReplyContent] = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['discussion-thread', threadId],
-    queryFn: () => api.get(`/discussions/${threadId}`).then(r => r.data.discussion as Discussion & { replies: Reply[] }),
-    refetchInterval: 5000 // Poll slightly or rely on socket, polling is easier fallback
+    queryKey: ['discussionThread', threadId],
+    queryFn: () => api.get(API_ENDPOINTS.DISCUSSIONS.BY_ID(threadId)).then(r => r.data.discussion as Discussion & { replies: Reply[] }),
+    enabled: !!threadId
   });
 
   const replyMutation = useMutation({
-    mutationFn: () => api.post(`/discussions/${threadId}/reply`, { content: replyContent }),
+    mutationFn: () => api.post(API_ENDPOINTS.DISCUSSIONS.REPLY(threadId), { content: replyContent }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['discussion-thread', threadId] });
+      queryClient.invalidateQueries({ queryKey: ['discussionThread', threadId] });
       setReplyContent('');
     }
   });
 
   const pinMutation = useMutation({
-    mutationFn: () => api.put(`/discussions/${threadId}/pin`, { isPinned: !data?.isPinned }),
+    mutationFn: () => api.put(API_ENDPOINTS.DISCUSSIONS.PIN(threadId), { isPinned: !data?.isPinned }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['discussion-thread', threadId] });
+      queryClient.invalidateQueries({ queryKey: ['discussionThread', threadId] });
       queryClient.invalidateQueries({ queryKey: ['discussions'] });
       toast.success('Pin status updated');
     }

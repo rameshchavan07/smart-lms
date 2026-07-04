@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import CreateUserModal from '../../components/CreateUserModal';
 import EditUserModal from '../../components/EditUserModal';
 import { UserPlus, MoreVertical, ShieldAlert } from 'lucide-react';
@@ -42,7 +43,7 @@ const UserManagement: React.FC = () => {
     queryKey: ['users', filterRole],
     queryFn: async () => {
       const roleToFetch = currentUser?.role === 'TEACHER' ? 'STUDENT' : filterRole;
-      const { data } = await api.get(`/users${roleToFetch ? `?role=${roleToFetch}` : ''}`);
+      const { data } = await api.get(`${API_ENDPOINTS.USERS.BASE}${roleToFetch ? `?role=${roleToFetch}` : ''}`);
       return data.users;
     }
   });
@@ -61,7 +62,7 @@ const UserManagement: React.FC = () => {
 
   const toggleStatusMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: string, isActive: boolean }) => {
-      return api.patch(`/users/${id}/status`, { isActive });
+      return api.patch(API_ENDPOINTS.USERS.STATUS(id), { isActive });
     },
     onSuccess: (_, variables) => {
       toast.success(`User status updated to ${variables.isActive ? 'Active' : 'Inactive'}`);
@@ -84,7 +85,7 @@ const UserManagement: React.FC = () => {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (id: string) => {
-      return api.delete(`/users/${id}`);
+      return api.delete(API_ENDPOINTS.USERS.BY_ID(id));
     },
     onSuccess: () => {
       toast.success('User profile deleted successfully.');

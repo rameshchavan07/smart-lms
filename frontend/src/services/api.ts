@@ -10,9 +10,11 @@ const api = axios.create({
 
 let csrfToken: string | null = null;
 
+import { API_ENDPOINTS } from './apiEndpoints';
+
 const fetchCsrfToken = async () => {
   try {
-    const response = await axios.get(`${api.defaults.baseURL}/csrf-token`, {
+    const response = await axios.get(`${api.defaults.baseURL}${API_ENDPOINTS.AUTH.CSRF_TOKEN}`, {
       withCredentials: true,
     });
     csrfToken = response.data.csrfToken;

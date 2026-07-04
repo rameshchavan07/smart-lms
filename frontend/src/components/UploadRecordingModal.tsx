@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, UploadCloud } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../services/api';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
 import Button from './Button';
 
 interface UploadRecordingModalProps {
@@ -35,11 +37,11 @@ const UploadRecordingModal: React.FC<UploadRecordingModalProps> = ({
     formData.append('recording', selectedFile);
 
     try {
-      await api.put(`/lectures/${lectureId}/recording`, formData, {
+      await api.put(API_ENDPOINTS.LECTURES.RECORDING(lectureId), formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 300000, // 5 min timeout for large video files
+        timeout: 120000, // 5 min timeout for large video files
       });
       onSuccess();
       onClose();

@@ -1,15 +1,17 @@
 import React from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, ClipboardList, Filter } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { TableRowSkeleton } from '../../components/Skeleton';
+import { Card } from '../../components';
 
 const AdminAssessments: React.FC = () => {
   const { data: assessments = [], isLoading } = useQuery({
-    queryKey: ['adminAssessments'],
+    queryKey: ['admin-assessments'],
     queryFn: async () => {
-      const res = await api.get('/assignments/admin/all');
-      return res.data.assessments;
+      const res = await api.get(API_ENDPOINTS.ASSIGNMENTS.ADMIN_ALL);
+      return res.data.assignments;
     }
   });
 

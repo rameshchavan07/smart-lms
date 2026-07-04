@@ -2,35 +2,33 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import prisma from '../config/db';
 import PDFDocument from 'pdfkit';
+import { catchAsync } from '../utils/catchAsync';
+import { AppError, NotFoundError, ValidationError, ForbiddenError } from '../utils/AppError';
 
-export const generateCertificate = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const courseId = req.params.courseId as string;
-    
-    if (!req.user || req.user.role !== 'STUDENT') {
-      res.status(403).json({ message: 'Only students can generate certificates' });
-      return;
-    }
+export const generateCertificate = catchAsync(async (req: AuthRequest, res: Response) => {
+  const courseId = req.params.courseId as string;
+  
+  if (!req.user || req.user.role !== 'STUDENT') {
+    throw new ForbiddenError('Only students can generate certificates');
+  }
 
-    const student = await prisma.student.findUnique({
-      where: { userId: req.user.id },
-      include: { user: true }
-    });
+  const student = await prisma.student.findUnique({
+    where: { userId: req.user.id },
+    include: { user: true }
+  });
 
-    if (!student) {
-      res.status(404).json({ message: 'Student profile not found' });
-      return;
-    }
+  if (!student) {
+    throw new NotFoundError('Student profile not found');
+  }
 
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
-      include: { teacher: { include: { user: true } } }
-    });
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: { teacher: { include: { user: true } } }
+  });
 
-    if (!course) {
-      res.status(404).json({ message: 'Course not found' });
-      return;
-    }
+  if (!course) {
+    throw new NotFoundError('Course not found');
+  }
 
     // Check if certificate already exists
     let certificate = await prisma.certificate.findUnique({
@@ -56,10 +54,9 @@ export const generateCertificate = async (req: AuthRequest, res: Response): Prom
       const completedItems = attendedLectures + submittedAssignments + submittedQuizzes;
       const progressPercentage = totalItems === 0 ? 0 : Math.min(100, Math.round((completedItems / totalItems) * 100));
 
-      if (progressPercentage < 100 && totalItems > 0) {
-        res.status(400).json({ message: 'Course is not fully completed yet' });
-        return;
-      }
+    if (progressPercentage < 100 && totalItems > 0) {
+      throw new ValidationError('Course is not fully completed yet');
+    }
 
       certificate = await prisma.certificate.create({
         data: {
@@ -100,42 +97,29 @@ export const generateCertificate = async (req: AuthRequest, res: Response): Prom
     
     doc.fontSize(10).fillColor('#94a3b8').text(`Certificate ID: ${certificate.id}`, 0, doc.page.height - 50, { align: 'center' });
 
-    doc.end();
-  } catch (error) {
-    console.error('Certificate generation error:', error);
-    if (!res.headersSent) {
-      res.status(500).json({ message: 'Failed to generate certificate' });
-    }
+  doc.end();
+});
+
+export const getMyCertificates = catchAsync(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'STUDENT') {
+    throw new ForbiddenError('Only students can view their certificates');
   }
-};
 
-export const getMyCertificates = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    if (!req.user || req.user.role !== 'STUDENT') {
-      res.status(403).json({ message: 'Only students can view their certificates' });
-      return;
-    }
+  const student = await prisma.student.findUnique({
+    where: { userId: req.user.id }
+  });
 
-    const student = await prisma.student.findUnique({
-      where: { userId: req.user.id }
-    });
-
-    if (!student) {
-      res.status(404).json({ message: 'Student profile not found' });
-      return;
-    }
-
-    const certificates = await prisma.certificate.findMany({
-      where: { studentId: student.id },
-      include: {
-        course: true
-      },
-      orderBy: { issueDate: 'desc' }
-    });
-
-    res.status(200).json({ certificates });
-  } catch (error) {
-    console.error('Get certificates error:', error);
-    res.status(500).json({ message: 'Failed to get certificates' });
+  if (!student) {
+    throw new NotFoundError('Student profile not found');
   }
-};
+
+  const certificates = await prisma.certificate.findMany({
+    where: { studentId: student.id },
+    include: {
+      course: true
+    },
+    orderBy: { issueDate: 'desc' }
+  });
+
+  res.status(200).json({ certificates });
+});

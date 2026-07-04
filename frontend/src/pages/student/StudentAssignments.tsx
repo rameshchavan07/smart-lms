@@ -1,8 +1,9 @@
 import React from 'react';
 import { ClipboardList, Calendar, CheckCircle2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
-import { Link } from 'react-router-dom';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { TableRowSkeleton } from '../../components/Skeleton';
 
 interface StudentAssignmentData {
@@ -19,9 +20,9 @@ interface StudentAssignmentData {
 
 const StudentAssignments: React.FC = () => {
   const { data: assignments = [], isLoading } = useQuery({
-    queryKey: ['studentAssignments'],
+    queryKey: ['student-assignments'],
     queryFn: async () => {
-      const res = await api.get('/assignments/student');
+      const res = await api.get(API_ENDPOINTS.ASSIGNMENTS.STUDENT);
       return res.data.assignments;
     }
   });

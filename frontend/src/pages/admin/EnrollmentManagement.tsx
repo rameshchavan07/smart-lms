@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import EnrollStudentModal from '../../components/EnrollStudentModal';
 import { UserPlus, MoreVertical, ShieldAlert, BookOpen, Download } from 'lucide-react';
 import { Button, EmptyState, Modal, ConfirmDialog } from '../../components';
@@ -35,10 +36,10 @@ const EnrollmentManagement: React.FC = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [studentIdToUnenroll, setStudentIdToUnenroll] = useState<string | null>(null);
 
-  const { data: courses = [] } = useQuery<Course[]>({
-    queryKey: ['courses-list'],
+  const { data: courses = [], isLoading: loadingCourses } = useQuery<Course[]>({
+    queryKey: ['admin-courses'],
     queryFn: async () => {
-      const { data } = await api.get('/courses');
+      const { data } = await api.get(API_ENDPOINTS.COURSES.BASE);
       if (data.courses.length > 0 && !selectedCourseId) {
         setSelectedCourseId(data.courses[0].id);
       }
@@ -46,14 +47,16 @@ const EnrollmentManagement: React.FC = () => {
     }
   });
 
-  const { data: enrollments = [], isLoading: loading } = useQuery<EnrollmentData[]>({
-    queryKey: ['enrollments', selectedCourseId],
+  const { data: enrollments = [], isLoading: loadingStudents } = useQuery<EnrollmentData[]>({
+    queryKey: ['admin-course-students', selectedCourseId],
     queryFn: async () => {
-      const { data } = await api.get(`/enrollments/course/${selectedCourseId}/students`);
+      const { data } = await api.get(API_ENDPOINTS.ENROLLMENTS.COURSE_STUDENTS(selectedCourseId));
       return data.enrollments;
     },
     enabled: !!selectedCourseId,
   });
+
+  const loading = loadingCourses || loadingStudents;
 
   const confirmUnenroll = (studentId: string) => {
     setStudentIdToUnenroll(studentId);
@@ -62,13 +65,14 @@ const EnrollmentManagement: React.FC = () => {
 
   const unenrollMutation = useMutation({
     mutationFn: async () => {
-      return api.delete(`/enrollments/${selectedCourseId}/students/${studentIdToUnenroll}`);
+      if (!selectedCourseId || !studentIdToUnenroll) throw new Error('Missing IDs');
+      return api.delete(API_ENDPOINTS.ENROLLMENTS.STUDENT_ENROLLMENT(selectedCourseId, studentIdToUnenroll));
     },
     onSuccess: () => {
       toast.success('Student unenrolled successfully.');
       setIsConfirmOpen(false);
       setStudentIdToUnenroll(null);
-      queryClient.invalidateQueries({ queryKey: ['enrollments', selectedCourseId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-course-students', selectedCourseId] });
     },
     onError: (error: unknown) => {
       console.error('Failed to unenroll', error);

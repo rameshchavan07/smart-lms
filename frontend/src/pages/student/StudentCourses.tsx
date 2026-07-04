@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { CourseCard, ErrorState, PageHeader } from '../../components';
 import { CourseCardSkeleton } from '../../components/Skeleton';
 import { Search, Grid, List, BookOpen } from 'lucide-react';
@@ -23,7 +25,7 @@ const StudentCourses: React.FC = () => {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['student-enrollments'],
-    queryFn: () => api.get('/enrollments/my-courses').then(r => r.data.enrollments as EnrollmentData[]),
+    queryFn: () => api.get(API_ENDPOINTS.ENROLLMENTS.MY_COURSES).then(r => r.data.enrollments as EnrollmentData[]),
     staleTime: 60_000,
   });
 

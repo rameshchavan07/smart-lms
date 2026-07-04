@@ -3,164 +3,138 @@ import { AuthRequest } from '../middleware/auth';
 import prisma from '../config/db';
 import { logActivity } from '../utils/auditLogger';
 import { getOrCreateFolderId } from '../services/googleDriveService';
+import { catchAsync } from '../utils/catchAsync';
+import { AppError, NotFoundError, ValidationError, ForbiddenError } from '../utils/AppError';
 
-export const getInstitutes = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    if (req.user?.role !== 'SUPER_ADMIN') {
-      res.status(403).json({ message: 'Access denied. Super Admin only.' });
-      return;
-    }
+export const getInstitutes = catchAsync(async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'SUPER_ADMIN') {
+    throw new ForbiddenError('Access denied. Super Admin only.');
+  }
 
-    const institutes = await prisma.institute.findMany({
-      include: {
-        users: {
-          where: { role: 'ADMIN' },
-          select: { id: true, firstName: true, lastName: true, email: true }
-        },
-        _count: {
-          select: { courses: true, users: true }
+  const institutes = await prisma.institute.findMany({
+    include: {
+      users: {
+        where: { role: 'ADMIN' },
+        select: { id: true, firstName: true, lastName: true, email: true }
+      },
+      _count: {
+        select: { courses: true, users: true }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  res.json({ institutes });
+});
+
+export const getInstituteById = catchAsync(async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'SUPER_ADMIN') {
+    throw new ForbiddenError('Access denied. Super Admin only.');
+  }
+
+  const { id } = req.params;
+
+  const institute = await prisma.institute.findUnique({
+    where: { id: id as string },
+    include: {
+      users: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          isActive: true,
+          teacher: { select: { employeeCode: true, specialization: true } },
+          student: { select: { enrollmentNumber: true, academicYear: true } }
         }
       },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    res.json({ institutes });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-export const getInstituteById = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    if (req.user?.role !== 'SUPER_ADMIN') {
-      res.status(403).json({ message: 'Access denied. Super Admin only.' });
-      return;
-    }
-
-    const { id } = req.params;
-
-    const institute = await prisma.institute.findUnique({
-      where: { id: id as string },
-      include: {
-        users: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: true,
-            isActive: true,
-            teacher: { select: { employeeCode: true, specialization: true } },
-            student: { select: { enrollmentNumber: true, academicYear: true } }
-          }
-        },
-        courses: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            _count: { select: { enrollments: true, lectures: true } }
-          }
-        },
-        _count: {
-          select: { courses: true, users: true }
+      courses: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          _count: { select: { enrollments: true, lectures: true } }
         }
+      },
+      _count: {
+        select: { courses: true, users: true }
       }
-    });
-
-    if (!institute) {
-      res.status(404).json({ message: 'Institute not found' });
-      return;
     }
+  });
 
-    res.json({ institute });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  if (!institute) {
+    throw new NotFoundError('Institute not found');
   }
-};
 
-export const createInstitute = async (req: AuthRequest, res: Response): Promise<void> => {
+  res.json({ institute });
+});
+
+export const createInstitute = catchAsync(async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'SUPER_ADMIN') {
+    throw new ForbiddenError('Access denied.');
+  }
+
+  const { name, address, phone, email, website } = req.body;
+
+  const institute = await prisma.institute.create({
+    data: { name, address, phone, email, website }
+  });
+
+  // Automatically create Google Drive folder for the institute
   try {
-    if (req.user?.role !== 'SUPER_ADMIN') {
-      res.status(403).json({ message: 'Access denied.' });
-      return;
-    }
-
-    const { name, address, phone, email, website } = req.body;
-
-    const institute = await prisma.institute.create({
-      data: { name, address, phone, email, website }
-    });
-
-    // Automatically create Google Drive folder for the institute
-    try {
-      await getOrCreateFolderId([
-        { path: 'institutes', name: 'Institutes' },
-        { path: `institutes/${institute.id}`, name: institute.name }
-      ]);
-    } catch (err: any) {
-      console.error(`Failed to create Google Drive folder for institute ${name}:`, err.message);
-      // We don't fail the whole request just because Drive folder creation failed
-    }
-
-    await logActivity(req.user.id, `Created Institute: ${name}`, 'Institute', institute.id);
-
-    res.status(201).json({ message: 'Institute created successfully', institute });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    await getOrCreateFolderId([
+      { path: 'institutes', name: 'Institutes' },
+      { path: `institutes/${institute.id}`, name: institute.name }
+    ]);
+  } catch (err: any) {
+    console.error(`Failed to create Google Drive folder for institute ${name}:`, err.message);
+    // We don't fail the whole request just because Drive folder creation failed
   }
-};
 
-export const updateInstitute = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    if (req.user?.role !== 'SUPER_ADMIN') {
-      res.status(403).json({ message: 'Access denied.' });
-      return;
-    }
+  await logActivity(req.user.id, `Created Institute: ${name}`, 'Institute', institute.id);
 
-    const { id } = req.params;
-    const { name, address, phone, email, website } = req.body;
+  res.status(201).json({ message: 'Institute created successfully', institute });
+});
 
-    const institute = await prisma.institute.update({
-      where: { id: id as string },
-      data: { name, address, phone, email, website }
-    });
-
-    await logActivity(req.user.id, `Updated Institute: ${name}`, 'Institute', institute.id);
-
-    res.json({ message: 'Institute updated successfully', institute });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Failed to update institute' });
+export const updateInstitute = catchAsync(async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'SUPER_ADMIN') {
+    throw new ForbiddenError('Access denied.');
   }
-};
 
-export const deleteInstitute = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    if (req.user?.role !== 'SUPER_ADMIN') {
-      res.status(403).json({ message: 'Access denied.' });
-      return;
-    }
+  const { id } = req.params;
+  const { name, address, phone, email, website } = req.body;
 
-    const { id } = req.params;
+  const institute = await prisma.institute.update({
+    where: { id: id as string },
+    data: { name, address, phone, email, website }
+  });
 
-    // Check if there are dependent courses or users
-    const coursesCount = await prisma.course.count({ where: { instituteId: id as string } });
-    if (coursesCount > 0) {
-      res.status(400).json({ message: 'Cannot delete institute because it has associated courses.' });
-      return;
-    }
+  await logActivity(req.user.id, `Updated Institute: ${name}`, 'Institute', institute.id);
 
-    const usersCount = await prisma.user.count({ where: { instituteId: id as string } });
-    if (usersCount > 0) {
-      res.status(400).json({ message: 'Cannot delete institute because it has associated users. Delete them first.' });
-      return;
-    }
+  res.json({ message: 'Institute updated successfully', institute });
+});
 
-    await prisma.institute.delete({ where: { id: id as string } });
-    await logActivity(req.user.id, `Deleted Institute ID: ${id}`, 'Institute', id as string);
-
-    res.json({ message: 'Institute deleted successfully' });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Failed to delete institute' });
+export const deleteInstitute = catchAsync(async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'SUPER_ADMIN') {
+    throw new ForbiddenError('Access denied.');
   }
-};
+
+  const { id } = req.params;
+
+  // Check if there are dependent courses or users
+  const coursesCount = await prisma.course.count({ where: { instituteId: id as string } });
+  if (coursesCount > 0) {
+    throw new ValidationError('Cannot delete institute because it has associated courses.');
+  }
+
+  const usersCount = await prisma.user.count({ where: { instituteId: id as string } });
+  if (usersCount > 0) {
+    throw new ValidationError('Cannot delete institute because it has associated users. Delete them first.');
+  }
+
+  await prisma.institute.delete({ where: { id: id as string } });
+  await logActivity(req.user.id, `Deleted Institute ID: ${id}`, 'Institute', id as string);
+
+  res.json({ message: 'Institute deleted successfully' });
+});

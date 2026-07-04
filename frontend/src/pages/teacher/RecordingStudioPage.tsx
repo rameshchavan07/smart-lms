@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Play, Square, Pause, RotateCcw, UploadCloud, Download,
   ArrowLeft, Settings, Video, VideoOff, Mic, MicOff,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useScreenRecorder, type RecordingQuality } from '../../hooks/useScreenRecorder';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 const formatTime = (s: number) => {
@@ -96,11 +97,11 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
     abortRef.current = new AbortController();
 
     const formData = new FormData();
-    formData.append('recording', new File([blob], `recording-${lectureId}.webm`, { type: 'video/webm' }));
+    formData.append('recording', blob, `recording-${lectureId}.webm`);
     formData.append('duration', duration.toString());
 
     try {
-      await api.put(`/lectures/${lectureId}/recording`, formData, {
+      await api.put(API_ENDPOINTS.LECTURES.RECORDING(lectureId), formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         signal: abortRef.current.signal,
         onUploadProgress: (e) => {

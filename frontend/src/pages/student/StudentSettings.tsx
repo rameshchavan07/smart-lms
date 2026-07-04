@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { Save, User, Shield, Loader2 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 
 const StudentSettings: React.FC = () => {
   const { user, refreshUser } = useAuth();
@@ -16,20 +18,20 @@ const StudentSettings: React.FC = () => {
 
   const updateProfile = useMutation({
     mutationFn: async () => {
-      const res = await api.put('/users/profile', { firstName, lastName, bio });
+      const res = await api.put(API_ENDPOINTS.USERS.PROFILE, { firstName, lastName, bio });
       return res.data;
     },
     onSuccess: () => {
+      toast.success('Profile updated successfully');
       refreshUser();
-      alert('Profile updated successfully!');
     }
   });
 
   const updateAvatar = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append('avatar', file);
-      const res = await api.post('/users/profile-image', formData, {
+      formData.append('image', file);
+      const res = await api.post(API_ENDPOINTS.USERS.PROFILE_IMAGE, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       return res.data;

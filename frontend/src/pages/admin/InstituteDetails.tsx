@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Card } from '../../components';
 import { Building, Users, BookOpen, ChevronLeft, Shield, GraduationCap } from 'lucide-react';
 
@@ -12,7 +13,7 @@ export default function InstituteDetails() {
   const { data: institute, isLoading, isError } = useQuery({
     queryKey: ['institute', id],
     queryFn: async () => {
-      const res = await api.get(`/institutes/${id}`);
+      const res = await api.get(API_ENDPOINTS.INSTITUTES.BY_ID(id as string));
       return res.data.institute;
     }
   });

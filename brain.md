@@ -66,6 +66,7 @@ The PostgreSQL database is modeled using Prisma (`backend/prisma/schema.prisma`)
 **Core Entities & Relationships:**
 - **User:** The base authentication entity. Has a specific `UserRole` (`SUPER_ADMIN`, `ADMIN`, `TEACHER`, `STUDENT`). 
   - `User` has one-to-one relations with `Teacher` or `Student` profiles depending on the role.
+  - **Institute Admin Assignment:** `SUPER_ADMIN`s have the ability to assign an `ADMIN` role to a user and link them to a specific `Institute` directly from the user management modals.
 - **Institute:** Organizations that users and courses belong to.
 - **Course:** The central learning unit. A course has one `Teacher`, many `Enrollment`s (Students), `Lecture`s, `StudyMaterial`s, `Assignment`s, and `Quiz`zes.
 - **Lecture:** Represents a live session (Jitsi meeting). Tracks attendance.

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import api from '../services/api';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
 import { X } from 'lucide-react';
 
 interface CreateCourseModalProps {
@@ -27,7 +29,7 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
   const { data: teachers = [] } = useQuery<TeacherData[]>({
     queryKey: ['teachers'],
     queryFn: async () => {
-      const { data } = await api.get('/users?role=TEACHER&limit=100');
+      const { data } = await api.get(`${API_ENDPOINTS.USERS.BASE}?role=TEACHER&limit=100`);
       return data.users.filter((u: { teacher: unknown }) => u.teacher);
     },
     enabled: isOpen
@@ -35,7 +37,7 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
 
   const createCourseMutation = useMutation({
     mutationFn: async () => {
-      return api.post('/courses', {
+      return api.post(API_ENDPOINTS.COURSES.BASE, {
         title: formData.title,
         description: formData.description,
         teacherId: formData.teacherId || null,
@@ -43,6 +45,7 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
     },
     onSuccess: () => {
       onSuccess();
+      toast.success('Course created successfully');
     },
     onError: (err: unknown) => {
       const error = err as Error | { response?: { data?: { message?: string } } };

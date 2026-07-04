@@ -2,9 +2,10 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import prisma from '../config/db';
 import { getIO } from '../utils/socket';
+import { catchAsync } from '../utils/catchAsync';
+import { AppError, NotFoundError, ValidationError, ForbiddenError } from '../utils/AppError';
 
-export const getAnnouncements = async (req: AuthRequest, res: Response) => {
-  try {
+export const getAnnouncements = catchAsync(async (req: AuthRequest, res: Response) => {
     const teacherId = req.user!.role === 'TEACHER' 
       ? (await prisma.teacher.findUnique({ where: { userId: req.user!.id } }))?.id 
       : undefined;
@@ -34,23 +35,20 @@ export const getAnnouncements = async (req: AuthRequest, res: Response) => {
       orderBy: { createdAt: 'desc' }
     });
     res.json({ announcements });
-  } catch (error) {
-    console.error('Get announcements error:', error);
-    res.status(500).json({ message: 'Failed to fetch announcements' });
-  }
-};
+});
 
-export const createAnnouncement = async (req: AuthRequest, res: Response) => {
-  try {
+export const createAnnouncement = catchAsync(async (req: AuthRequest, res: Response) => {
     const { title, content, courseId } = req.body;
     let teacherId = null;
 
     if (req.user!.role === 'TEACHER') {
       const teacher = await prisma.teacher.findUnique({ where: { userId: req.user!.id } });
-      if (!teacher) return res.status(403).json({ message: 'Teacher record not found' });
+      if (!teacher) {
+        throw new ForbiddenError('Teacher record not found');
+      }
       teacherId = teacher.id;
     } else if (req.user!.role !== 'ADMIN') {
-      return res.status(403).json({ message: 'Only teachers or admins can create announcements' });
+      throw new ForbiddenError('Only teachers or admins can create announcements');
     }
 
     const announcement = await prisma.announcement.create({
@@ -66,14 +64,9 @@ export const createAnnouncement = async (req: AuthRequest, res: Response) => {
     });
 
     res.status(201).json({ message: 'Announcement created', announcement });
-  } catch (error) {
-    console.error('Create announcement error:', error);
-    res.status(500).json({ message: 'Failed to create announcement' });
-  }
-};
+});
 
-export const getMessages = async (req: AuthRequest, res: Response) => {
-  try {
+export const getMessages = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
     const targetId = req.params.id as string; // this could be receiverId or groupId
 
@@ -106,19 +99,14 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
     }
 
     res.json({ messages });
-  } catch (error) {
-    console.error('Get messages error:', error);
-    res.status(500).json({ message: 'Failed to fetch messages' });
-  }
-};
+});
 
-export const sendMessage = async (req: AuthRequest, res: Response) => {
-  try {
+export const sendMessage = catchAsync(async (req: AuthRequest, res: Response) => {
     const { receiverId, groupId, content } = req.body;
     const senderId = req.user!.id;
 
     if (!receiverId && !groupId) {
-      return res.status(400).json({ message: 'Must provide receiverId or groupId' });
+      throw new ValidationError('Must provide receiverId or groupId');
     }
 
     let fileUrl: string | undefined;
@@ -156,14 +144,9 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
     }
 
     res.status(201).json({ message: 'Message sent', data: message });
-  } catch (error) {
-    console.error('Send message error:', error);
-    res.status(500).json({ message: 'Failed to send message' });
-  }
-};
+});
 
-export const getContacts = async (req: AuthRequest, res: Response) => {
-  try {
+export const getContacts = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
     const role = req.user!.role;
 
@@ -230,19 +213,14 @@ export const getContacts = async (req: AuthRequest, res: Response) => {
     }
 
     res.json({ contacts: { peers, teachers, students, groups } });
-  } catch (error) {
-    console.error('Get contacts error:', error);
-    res.status(500).json({ message: 'Failed to fetch contacts' });
-  }
-};
+});
 
-export const createGroupChat = async (req: AuthRequest, res: Response) => {
-  try {
+export const createGroupChat = catchAsync(async (req: AuthRequest, res: Response) => {
     const { name, courseId, memberIds } = req.body;
     const userId = req.user!.id;
 
     if (!name || !memberIds || memberIds.length === 0) {
-      return res.status(400).json({ message: 'Name and memberIds are required' });
+      throw new ValidationError('Name and memberIds are required');
     }
 
     const membersData = memberIds.map((id: string) => ({ userId: id }));
@@ -264,25 +242,20 @@ export const createGroupChat = async (req: AuthRequest, res: Response) => {
     });
 
     res.status(201).json({ message: 'Group chat created', group });
-  } catch (error) {
-    console.error('Create group chat error:', error);
-    res.status(500).json({ message: 'Failed to create group chat' });
-  }
-};
+});
 
-export const deleteMessage = async (req: AuthRequest, res: Response) => {
-  try {
+export const deleteMessage = catchAsync(async (req: AuthRequest, res: Response) => {
     const messageId = req.params.id as string;
     const userId = req.user!.id;
     const role = req.user!.role;
 
     const message = await prisma.message.findUnique({ where: { id: messageId } });
     if (!message) {
-      return res.status(404).json({ message: 'Message not found' });
+      throw new NotFoundError('Message not found');
     }
 
     if (message.senderId !== userId && role !== 'ADMIN' && role !== 'TEACHER') {
-      return res.status(403).json({ message: 'You can only delete your own messages' });
+      throw new ForbiddenError('You can only delete your own messages');
     }
 
     await prisma.message.delete({ where: { id: messageId } });
@@ -296,24 +269,19 @@ export const deleteMessage = async (req: AuthRequest, res: Response) => {
     }
 
     res.json({ message: 'Message deleted successfully', messageId });
-  } catch (error) {
-    console.error('Delete message error:', error);
-    res.status(500).json({ message: 'Failed to delete message' });
-  }
-};
+});
 
-export const deleteGroup = async (req: AuthRequest, res: Response) => {
-  try {
+export const deleteGroup = catchAsync(async (req: AuthRequest, res: Response) => {
     const groupId = req.params.id as string;
     const role = req.user!.role;
 
     if (role !== 'ADMIN' && role !== 'TEACHER') {
-      return res.status(403).json({ message: 'Only Teachers and Admins can delete groups' });
+      throw new ForbiddenError('Only Teachers and Admins can delete groups');
     }
 
     const group = await prisma.chatGroup.findUnique({ where: { id: groupId } });
     if (!group) {
-      return res.status(404).json({ message: 'Group not found' });
+      throw new NotFoundError('Group not found');
     }
 
     await prisma.chatGroup.delete({ where: { id: groupId } });
@@ -322,8 +290,4 @@ export const deleteGroup = async (req: AuthRequest, res: Response) => {
     io.to(`group_${groupId}`).emit('delete_group', { groupId });
 
     res.json({ message: 'Group deleted successfully', groupId });
-  } catch (error) {
-    console.error('Delete group error:', error);
-    res.status(500).json({ message: 'Failed to delete group' });
-  }
-};
+});

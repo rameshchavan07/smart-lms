@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import api from '../services/api';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
 
 interface TakeQuizModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ const TakeQuizModal: React.FC<TakeQuizModalProps> = ({ isOpen, onClose, quizId, 
     const fetchQuiz = async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/quizzes/${quizId}`);
+        const res = await api.get(API_ENDPOINTS.QUIZZES.BY_ID(quizId));
         setQuizData(res.data.quiz);
       } catch (err: unknown) {
         const errorResponse = err as { response?: { data?: { message?: string } } };
@@ -60,7 +61,7 @@ const TakeQuizModal: React.FC<TakeQuizModalProps> = ({ isOpen, onClose, quizId, 
     setSubmitting(true);
     setError(null);
     try {
-      const res = await api.post(`/quizzes/${quizId}/submit`, { answers: formattedAnswers });
+      const res = await api.post(API_ENDPOINTS.QUIZZES.SUBMIT(quizId), { answers: formattedAnswers });
       setResult({ score: res.data.score, totalMarks: res.data.totalMarks });
       onSuccess();
     } catch (err: unknown) {

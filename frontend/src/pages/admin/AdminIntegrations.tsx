@@ -1,7 +1,9 @@
 import React from 'react';
 import { Globe, Plug, Check, X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Skeleton } from '../../components/Skeleton';
 
 const AdminIntegrations: React.FC = () => {
@@ -10,17 +12,21 @@ const AdminIntegrations: React.FC = () => {
   const { data: integrations = [], isLoading } = useQuery({
     queryKey: ['adminIntegrations'],
     queryFn: async () => {
-      const res = await api.get('/integrations');
+      const res = await api.get(API_ENDPOINTS.INTEGRATIONS.BASE);
       return res.data.integrations;
     }
   });
 
   const toggleIntegration = useMutation({
     mutationFn: async ({ id, isActive }: { id: string, isActive: boolean }) => {
-      return api.put(`/integrations/${id}`, { isActive });
+      return api.put(API_ENDPOINTS.INTEGRATIONS.BY_ID(id), { isActive });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminIntegrations'] });
+      toast.success('Integration updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update integration');
     }
   });
 

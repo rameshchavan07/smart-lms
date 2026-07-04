@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Megaphone } from 'lucide-react';
+import { Megaphone, Users, Building, Send, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Skeleton } from '../../components/Skeleton';
 
 const AdminCommunication: React.FC = () => {
@@ -11,23 +13,23 @@ const AdminCommunication: React.FC = () => {
   const queryClient = useQueryClient();
 
   const { data: announcements = [], isLoading: loadingAnnouncements } = useQuery({
-    queryKey: ['communications', 'announcements'],
+    queryKey: ['admin-announcements'],
     queryFn: async () => {
-      const res = await api.get('/communications/announcements');
+      const res = await api.get(API_ENDPOINTS.COMMUNICATIONS.ANNOUNCEMENTS);
       return res.data.announcements;
     }
   });
 
   const postAnnouncement = useMutation({
     mutationFn: async () => {
-      return api.post('/communications/announcements', { 
+      return api.post(API_ENDPOINTS.COMMUNICATIONS.ANNOUNCEMENTS, { 
         title: announcementTitle, 
         content: announcementContent, 
         courseId: 'All Courses' // Admin announcements are system-wide
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['communications', 'announcements'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-announcements'] });
       setAnnouncementTitle('');
       setAnnouncementContent('');
     }

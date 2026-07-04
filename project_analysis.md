@@ -7,6 +7,7 @@ I have conducted a thorough review of the Smart LMS codebase, encompassing its a
 This is a well-structured, modern, and highly secure web application. The codebase reflects a strong understanding of full-stack TypeScript development, utilizing some of the best tools available in the modern ecosystem (React 19, Vite, Tailwind v4, Prisma v6).
 
 ### 🏆 Key Strengths
+
 1. **Exceptional Security Posture:**
    - **Authentication:** The decision to use **HTTPOnly cookies** for JWTs rather than `localStorage` is fantastic. It effectively mitigates XSS attacks.
    - **CSRF Protection:** Implemented double CSRF token validation (`csrf-csrf`) for state-changing endpoints, which perfectly complements the cookie-based auth.
@@ -44,7 +45,8 @@ While the project is incredibly solid, here are technical refinements to take it
 > [!IMPORTANT]
 > **4. Enhance Test Coverage and CI/CD**
 > The infrastructure for testing (`vitest`) is present, but to ensure enterprise readiness, you need automation.
-> **Action:** 
+> **Action:**
+>
 > - Set up GitHub Actions to run your `npm run lint` and `npm run test` scripts on every Pull Request.
 > - Ensure critical paths (like the JWT cookie assignment in `authController`) have high code coverage.
 
@@ -54,4 +56,5 @@ While the project is incredibly solid, here are technical refinements to take it
 > **Action:** Create an `apiEndpoints.ts` file that stores these routes as constants or functions. This makes global refactoring significantly easier if your backend routes change.
 
 ## Conclusion
+
 Smart LMS is a highly scalable and secure application. By implementing stricter typing, custom error classes, and backend caching, it will be fully enterprise-ready. Excellent work!

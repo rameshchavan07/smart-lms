@@ -11,6 +11,7 @@ import {
   Loader2 
 } from 'lucide-react';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface MaterialData {
@@ -65,7 +66,8 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ courseId }) => {
   const { data: materials = [], isLoading: materialsLoading } = useQuery({
     queryKey: ['materials', courseId],
     queryFn: async () => {
-      const { data } = await api.get(`/study-materials/course/${courseId}`);
+      if (!courseId) return [];
+      const { data } = await api.get(API_ENDPOINTS.STUDY_MATERIALS.BY_COURSE(courseId));
       return data.materials as MaterialData[];
     }
   });
@@ -78,7 +80,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ courseId }) => {
       formData.append('description', materialDescription);
       formData.append('file', selectedFile);
       
-      return api.post(`/study-materials/course/${courseId}`, formData, {
+      return api.post(API_ENDPOINTS.STUDY_MATERIALS.BY_COURSE(courseId), formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 120000, // 2 min timeout for large files
       });
@@ -99,7 +101,7 @@ export const MaterialsTab: React.FC<MaterialsTabProps> = ({ courseId }) => {
 
   const deleteMaterialMutation = useMutation({
     mutationFn: async (materialId: string) => {
-      return api.delete(`/study-materials/${materialId}`);
+      return api.delete(API_ENDPOINTS.STUDY_MATERIALS.BY_ID(materialId));
     },
     onSuccess: () => {
       toast.success('Material deleted successfully!');

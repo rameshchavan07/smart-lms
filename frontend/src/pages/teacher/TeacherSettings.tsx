@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { User, Bell, Shield, Save, Upload, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 
 const TeacherSettings: React.FC = () => {
   const { user, refreshUser } = useAuth();
@@ -12,29 +14,30 @@ const TeacherSettings: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.profileImage || null);
   const queryClient = useQueryClient();
-
   const updateProfile = useMutation({
     mutationFn: async () => {
-      return api.put('/users/profile', { firstName, lastName });
+      const res = await api.put(API_ENDPOINTS.USERS.PROFILE, { firstName, lastName });
+      return res.data;
     },
     onSuccess: () => {
+      toast.success('Profile updated successfully');
       refreshUser();
-      alert('Profile updated successfully!');
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-    }
+    },
+    onError: () => toast.error('Failed to update profile')
   });
 
   const updateAvatar = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
-      formData.append('avatar', file);
-      const res = await api.post('/users/profile-image', formData, {
+      formData.append('image', file);
+      const res = await api.post(API_ENDPOINTS.USERS.PROFILE_IMAGE, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       return res.data;
     },
     onSuccess: () => {
       refreshUser();
+      toast.success('Avatar updated successfully!');
     }
   });
 

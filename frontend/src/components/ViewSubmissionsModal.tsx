@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ExternalLink, Loader2, Check } from 'lucide-react';
 import api from '../services/api';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 interface ViewSubmissionsModalProps {
   isOpen: boolean;
@@ -25,43 +28,41 @@ const ViewSubmissionsModal: React.FC<ViewSubmissionsModalProps> = ({ isOpen, onC
     marks: number | null;
     feedback: string | null;
   }
-  const [loading, setLoading] = useState(true);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  
+  const queryClient = useQueryClient();
   const [gradingId, setGradingId] = useState<string | null>(null);
   const [marks, setMarks] = useState<number | ''>('');
   const [feedback, setFeedback] = useState('');
 
-  const fetchSubmissions = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get(`/assignments/${assignmentId}/submissions`);
-      setSubmissions(res.data.submissions);
-    } catch (error) {
-      console.error('Failed to fetch submissions', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [assignmentId]);
+  const { data: submissions = [], isLoading } = useQuery({
+    queryKey: ['assignment-submissions', assignmentId],
+    queryFn: async () => {
+      const res = await api.get(API_ENDPOINTS.ASSIGNMENTS.SUBMISSIONS(assignmentId));
+      return res.data.submissions as Submission[];
+    },
+    enabled: isOpen && !!assignmentId
+  });
 
-  useEffect(() => {
-    if (isOpen && assignmentId) {
-      fetchSubmissions();
+  const gradeMutation = useMutation({
+    mutationFn: async ({ submissionId, grade, feedback }: { submissionId: string, grade: number, feedback: string }) => {
+      return await api.put(API_ENDPOINTS.ASSIGNMENTS.GRADE(submissionId), {
+        marks: grade,
+        feedback
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assignment-submissions', assignmentId] });
+      setGradingId(null);
+      toast.success('Graded successfully');
+    },
+    onError: () => {
+      toast.error('Failed to grade submission');
     }
-  }, [isOpen, assignmentId, fetchSubmissions]);
+  });
 
   const handleGrade = async (submissionId: string) => {
     if (marks === '') return;
-    try {
-      await api.put(`/assignments/submission/${submissionId}/grade`, {
-        marks: Number(marks),
-        feedback
-      });
-      setGradingId(null);
-      fetchSubmissions();
-    } catch (error) {
-      console.error('Failed to grade submission', error);
-      alert('Failed to grade submission');
-    }
+    gradeMutation.mutate({ submissionId, grade: Number(marks), feedback });
   };
 
   if (!isOpen) return null;
@@ -79,7 +80,7 @@ const ViewSubmissionsModal: React.FC<ViewSubmissionsModalProps> = ({ isOpen, onC
         </div>
         
         <div className="p-6 overflow-y-auto flex-1">
-          {loading ? (
+          {isLoading ? (
             <div className="py-12 flex justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
             </div>

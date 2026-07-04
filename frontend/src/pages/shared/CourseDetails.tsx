@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import { LecturesTab } from './LecturesTab';
 import { MaterialsTab } from './MaterialsTab';
@@ -47,7 +48,7 @@ const CourseDetails: React.FC = () => {
   const { data: progress } = useQuery({
     queryKey: ['courseProgress', id],
     queryFn: async () => {
-      const { data } = await api.get(`/progress/course/${id}`);
+      const { data } = await api.get(API_ENDPOINTS.PROGRESS.BY_COURSE(id as string));
       return data.progress as number;
     },
     enabled: user?.role === 'STUDENT' && !!id,
@@ -56,7 +57,7 @@ const CourseDetails: React.FC = () => {
   const handleDownloadCertificate = async () => {
     try {
       setIsGeneratingCertificate(true);
-      const response = await api.get(`/certificates/generate/${id}`, {
+      const response = await api.get(API_ENDPOINTS.CERTIFICATES.GENERATE(id as string), {
         responseType: 'blob'
       });
       

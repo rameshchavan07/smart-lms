@@ -2,98 +2,75 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import prisma from '../config/db';
 import { getVapidPublicKey as getPublicKey, saveSubscription } from '../services/notifications.service';
+import { catchAsync } from '../utils/catchAsync';
+import { AppError, NotFoundError } from '../utils/AppError';
 
-export const getMyNotifications = async (req: AuthRequest, res: Response) => {
-  try {
-    const userId = req.user!.id;
-    const notifications = await prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-    });
-    res.json({ notifications });
-  } catch (error) {
-    console.error('Get notifications error:', error);
-    res.status(500).json({ message: 'Failed to fetch notifications' });
+export const getMyNotifications = catchAsync(async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.id;
+  const notifications = await prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json({ notifications });
+});
+
+export const markAsRead = catchAsync(async (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
+  const userId = req.user!.id;
+
+  const notification = await prisma.notification.findFirst({
+    where: { id, userId },
+  });
+
+  if (!notification) {
+    throw new NotFoundError('Notification not found');
   }
-};
 
-export const markAsRead = async (req: AuthRequest, res: Response) => {
-  try {
-    const id = req.params.id as string;
-    const userId = req.user!.id;
+  const updated = await prisma.notification.update({
+    where: { id },
+    data: { isRead: true },
+  });
 
-    const notification = await prisma.notification.findFirst({
-      where: { id, userId },
-    });
+  res.json({ message: 'Notification marked as read', notification: updated });
+});
 
-    if (!notification) {
-      return res.status(404).json({ message: 'Notification not found' });
-    }
+export const markAllAsRead = catchAsync(async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.id;
 
-    const updated = await prisma.notification.update({
-      where: { id },
-      data: { isRead: true },
-    });
+  await prisma.notification.updateMany({
+    where: { userId, isRead: false },
+    data: { isRead: true },
+  });
 
-    res.json({ message: 'Notification marked as read', notification: updated });
-  } catch (error) {
-    console.error('Mark notification as read error:', error);
-    res.status(500).json({ message: 'Failed to update notification' });
+  res.json({ message: 'All notifications marked as read' });
+});
+
+export const deleteNotification = catchAsync(async (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
+  const userId = req.user!.id;
+
+  const notification = await prisma.notification.findFirst({
+    where: { id, userId },
+  });
+
+  if (!notification) {
+    throw new NotFoundError('Notification not found');
   }
-};
 
-export const markAllAsRead = async (req: AuthRequest, res: Response) => {
-  try {
-    const userId = req.user!.id;
+  await prisma.notification.delete({
+    where: { id },
+  });
 
-    await prisma.notification.updateMany({
-      where: { userId, isRead: false },
-      data: { isRead: true },
-    });
-
-    res.json({ message: 'All notifications marked as read' });
-  } catch (error) {
-    console.error('Mark all notifications as read error:', error);
-    res.status(500).json({ message: 'Failed to update notifications' });
-  }
-};
-
-export const deleteNotification = async (req: AuthRequest, res: Response) => {
-  try {
-    const id = req.params.id as string;
-    const userId = req.user!.id;
-
-    const notification = await prisma.notification.findFirst({
-      where: { id, userId },
-    });
-
-    if (!notification) {
-      return res.status(404).json({ message: 'Notification not found' });
-    }
-
-    await prisma.notification.delete({
-      where: { id },
-    });
-
-    res.json({ message: 'Notification deleted successfully' });
-  } catch (error) {
-    console.error('Delete notification error:', error);
-    res.status(500).json({ message: 'Failed to delete notification' });
-  }
-};
+  res.json({ message: 'Notification deleted successfully' });
+});
 
 export const getVapidPublicKey = (req: AuthRequest, res: Response) => {
   res.send(getPublicKey());
 };
 
-export const subscribeToPush = async (req: AuthRequest, res: Response) => {
-  try {
-    const userId = req.user!.id;
-    const subscription = req.body;
-    await saveSubscription(userId, subscription);
-    res.status(201).json({ message: 'Subscription saved successfully.' });
-  } catch (error) {
-    console.error('Error saving subscription:', error);
-    res.status(500).json({ message: 'Failed to save subscription' });
-  }
-};
+export const subscribeToPush = catchAsync(async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.id;
+  const subscription = req.body;
+  await saveSubscription(userId, subscription);
+  res.status(201).json({ message: 'Subscription saved successfully.' });
+});

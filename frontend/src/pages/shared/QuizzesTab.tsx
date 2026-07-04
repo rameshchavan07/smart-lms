@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
+import CreateQuizModal from '../../components/CreateQuizModal';
 import TakeQuizModal from '../../components/TakeQuizModal';
 
 interface QuizzesTabProps {
@@ -25,7 +28,8 @@ export const QuizzesTab: React.FC<QuizzesTabProps> = ({ courseId }) => {
   const { data: quizzes = [], isLoading: quizzesLoading } = useQuery({
     queryKey: ['quizzes', courseId],
     queryFn: async () => {
-      const { data } = await api.get(`/quizzes/course/${courseId}`);
+      if (!courseId) return [];
+      const { data } = await api.get(API_ENDPOINTS.QUIZZES.BY_COURSE(courseId));
       return data.quizzes as Quiz[];
     }
   });

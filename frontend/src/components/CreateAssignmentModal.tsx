@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { X, Check } from 'lucide-react';
 import api from '../services/api';
-import { useQuery } from '@tanstack/react-query';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface CreateAssignmentModalProps {
   isOpen: boolean;
@@ -10,9 +12,7 @@ interface CreateAssignmentModalProps {
 }
 
 const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     courseId: '',
     title: '',
@@ -24,10 +24,25 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ isOpen, o
   const { data: courses = [] } = useQuery({
     queryKey: ['my-courses-for-assignment'],
     queryFn: async () => {
-      const res = await api.get('/courses/my-courses?limit=100');
-      return res.data.courses;
+      const res = await api.get(`${API_ENDPOINTS.COURSES.MY_COURSES}?limit=100`);
+      return res.data.enrollments?.map((e: any) => e.course) || res.data.courses || [];
     },
     enabled: isOpen
+  });
+
+  const createAssignmentMutation = useMutation({
+    mutationFn: async (data: any) => {
+      await api.post(API_ENDPOINTS.ASSIGNMENTS.BY_COURSE(formData.courseId), data);
+    },
+    onSuccess: () => {
+      toast.success('Assignment created successfully');
+      queryClient.invalidateQueries({ queryKey: ['assignments'] });
+      onSuccess();
+      onClose();
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to create assignment');
+    }
   });
 
   if (!isOpen) return null;
@@ -35,30 +50,16 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ isOpen, o
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.courseId) {
-      setError('Please select a course');
+      toast.error('Please select a course');
       return;
     }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      await api.post(`/assignments/course/${formData.courseId}`, {
-        title: formData.title,
-        description: formData.description,
-        dueDate: new Date(formData.dueDate).toISOString(),
-        totalMarks: Number(formData.totalMarks)
-      });
-      onSuccess();
-      onClose();
-    } catch (err: unknown) {
-      const errorResponse = err as { response?: { data?: { message?: string } } };
-      setError(errorResponse.response?.data?.message || 'Failed to create assignment');
-    } finally {
-      setLoading(false);
-    }
+    createAssignmentMutation.mutate({
+      title: formData.title,
+      description: formData.description,
+      dueDate: new Date(formData.dueDate).toISOString(),
+      totalMarks: Number(formData.totalMarks)
+    });
   };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-surface w-full max-w-lg rounded-2xl shadow-xl flex flex-col">
@@ -70,12 +71,6 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ isOpen, o
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div className="p-3 text-sm text-rose-500 bg-rose-500/10 rounded-lg border border-rose-500/20">
-              {error}
-            </div>
-          )}
-
           <div>
             <label className="block text-sm font-semibold text-primary mb-1">Course</label>
             <select 
@@ -148,10 +143,10 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ isOpen, o
             </button>
             <button 
               type="submit" 
-              disabled={loading}
+              disabled={createAssignmentMutation.isPending}
               className="px-5 py-2.5 text-sm font-semibold bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
-              {loading ? 'Creating...' : <><Check size={16} /> Create Assignment</>}
+              {createAssignmentMutation.isPending ? 'Creating...' : <><Check size={16} /> Create Assignment</>}
             </button>
           </div>
         </form>

@@ -11,6 +11,7 @@ import {
   Loader2 
 } from 'lucide-react';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import { getDirectDriveUrl } from '../../utils/drive';
 import UploadRecordingModal from '../../components/UploadRecordingModal';
@@ -49,14 +50,14 @@ export const LecturesTab: React.FC<LecturesTabProps> = ({ courseId }) => {
   const { data: lectures = [], isLoading: lecturesLoading } = useQuery({
     queryKey: ['lectures', courseId],
     queryFn: async () => {
-      const { data } = await api.get(`/lectures/course/${courseId}`);
+      const { data } = await api.get(API_ENDPOINTS.LECTURES.BY_COURSE(courseId));
       return data.lectures as LectureData[];
     }
   });
 
   const createLectureMutation = useMutation({
     mutationFn: async (newLecture: typeof lectureForm) => {
-      return api.post(`/lectures/course/${courseId}`, newLecture);
+      return api.post(API_ENDPOINTS.LECTURES.BY_COURSE(courseId), newLecture);
     },
     onSuccess: () => {
       toast.success('Class scheduled successfully!');
@@ -74,7 +75,7 @@ export const LecturesTab: React.FC<LecturesTabProps> = ({ courseId }) => {
     mutationFn: async ({ lectureId, file }: { lectureId: string, file: File }) => {
       const formData = new FormData();
       formData.append('thumbnail', file);
-      return api.put(`/lectures/${lectureId}/thumbnail`, formData, {
+      return api.put(API_ENDPOINTS.LECTURES.THUMBNAIL(lectureId), formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     },

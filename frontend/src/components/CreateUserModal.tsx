@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import api from '../services/api';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
 import { X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -33,18 +35,18 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
   };
 
   const { data: institutes = [] } = useQuery({
-    queryKey: ['institutes'],
+    queryKey: ['institutes-list'],
     queryFn: async () => {
-      const { data } = await api.get('/institutes');
+      const { data } = await api.get(API_ENDPOINTS.INSTITUTES.BASE);
       return data.institutes;
     },
-    enabled: isOpen && user?.role === 'SUPER_ADMIN',
+    enabled: isOpen,
   });
 
   const createUserMutation = useMutation({
     mutationFn: async () => {
-      if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
-        return api.post('/users/admin', {
+      if (role === 'ADMIN') {
+        return api.post(API_ENDPOINTS.USERS.ADMIN, {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -55,7 +57,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
           role: role,
         });
       } else if (role === 'TEACHER') {
-        return api.post('/users/teacher', {
+        return api.post(API_ENDPOINTS.USERS.CREATE_TEACHER, {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -125,12 +127,11 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onSu
                     <option value="TEACHER">Teacher</option>
                     <option value="STUDENT">Student</option>
                     <option value="ADMIN">Admin</option>
-                    {user?.role === 'SUPER_ADMIN' && <option value="SUPER_ADMIN">Super Admin</option>}
                   </select>
                 </div>
               )}
 
-              {role === 'ADMIN' && user?.role === 'SUPER_ADMIN' && (
+              {role === 'ADMIN' && (
                 <div>
                   <label className="block text-sm font-medium text-secondary mb-1">Institute</label>
                   <select

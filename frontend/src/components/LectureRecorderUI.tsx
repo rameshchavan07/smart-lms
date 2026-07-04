@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Play, Square, Pause, RotateCcw, UploadCloud, Loader2,
-  Download, Settings, Video, VideoOff,
-  X, Check, Mic, MicOff, ChevronUp, ChevronDown
-} from 'lucide-react';
+import { Camera, Check, Circle, Loader2, Maximize, Minimize, Square, Settings, RefreshCw, AlertCircle, Play, Pause, RotateCcw, UploadCloud, Download, Video, VideoOff, X, Mic, MicOff, ChevronUp, ChevronDown } from 'lucide-react';
 import { useScreenRecorder, type RecordingQuality } from '../hooks/useScreenRecorder';
 import api from '../services/api';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
+import toast from 'react-hot-toast';
 
 interface LectureRecorderUIProps {
   lectureId: string;
@@ -115,11 +113,11 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ blob, duration, lectureId, 
     abortRef.current = new AbortController();
 
     const formData = new FormData();
-    formData.append('recording', new File([blob], `recording-${lectureId}.webm`, { type: 'video/webm' }));
+    formData.append('recording', blob, `lecture-${lectureId}.webm`);
     formData.append('duration', duration.toString());
 
     try {
-      await api.put(`/lectures/${lectureId}/recording`, formData, {
+      await api.put(API_ENDPOINTS.LECTURES.RECORDING(lectureId), formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         signal: abortRef.current.signal,
         onUploadProgress: (e) => {

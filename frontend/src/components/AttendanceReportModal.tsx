@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
 import { X, CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
 import ErrorState from './ErrorState';
 
@@ -22,10 +23,10 @@ interface AttendanceReportModalProps {
 }
 
 const AttendanceReportModal: React.FC<AttendanceReportModalProps> = ({ lectureId, lectureTitle, isOpen, onClose }) => {
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['lecture-attendance', lectureId],
-    queryFn: () => api.get(`/attendance/lecture/${lectureId}`).then(r => r.data.attendance as AttendanceRecord[]),
-    enabled: isOpen
+  const { data: attendanceData = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ['attendanceReport', lectureId],
+    queryFn: () => api.get(API_ENDPOINTS.ATTENDANCE.BY_LECTURE(lectureId)).then(r => r.data.attendance as AttendanceRecord[]),
+    enabled: !!lectureId && isOpen,
   });
 
   if (!isOpen) return null;
@@ -36,9 +37,9 @@ const AttendanceReportModal: React.FC<AttendanceReportModalProps> = ({ lectureId
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
-          <div>
-            <h2 className="text-[18px] font-bold" style={{ color: 'var(--text-primary)' }}>Attendance Report</h2>
-            <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{lectureTitle}</p>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Student Attendance</h3>
+            <p className="text-sm font-medium text-secondary">Total Records: {attendanceData?.length || 0}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
             <X size={20} style={{ color: 'var(--text-muted)' }} />
@@ -54,7 +55,7 @@ const AttendanceReportModal: React.FC<AttendanceReportModalProps> = ({ lectureId
             </div>
           ) : isError ? (
             <ErrorState message="Failed to load attendance report" onRetry={refetch} />
-          ) : !data || data.length === 0 ? (
+          ) : !attendanceData || attendanceData.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>No students found in this course.</p>
             </div>
@@ -70,7 +71,7 @@ const AttendanceReportModal: React.FC<AttendanceReportModalProps> = ({ lectureId
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]">
-                  {data.map(record => (
+                  {attendanceData.map(record => (
                     <tr key={record.studentId} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                       <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
                         {record.firstName} {record.lastName}

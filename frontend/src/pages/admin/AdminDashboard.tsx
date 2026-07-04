@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import {
   Users, BookOpen, GraduationCap, ClipboardList,
@@ -11,22 +12,9 @@ import {
 import { StatCard, ErrorState } from '../../components';
 import { StatCardSkeleton } from '../../components/Skeleton';
 
+
 /* ── Types ── */
-interface AdminMetrics {
-  totalUsers: number;
-  totalTeachers: number;
-  totalStudents: number;
-  totalCourses: number;
-  totalEnrollments: number;
-  totalAssessments?: number;
-  roleBreakdown?: { students: number; teachers: number; admins: number; parents: number };
-  growth?: { users: number; courses: number; enrollments: number; assessments: number };
-}
-
-interface EnrollmentPoint { name: string; enrollments: number }
-
 interface SystemService { name: string; status: 'operational' | 'degraded' | 'down'; icon: React.ElementType }
-interface RecentActivity { id: string; text: string; time: string; color: string }
 
 const PIE_COLORS = ['#4361f0', '#10b981', '#8b5cf6', '#f59e0b'];
 
@@ -47,35 +35,25 @@ const STATUS_CONFIG = {
 /* ── Component ── */
 const AdminDashboard: React.FC = () => {
   const { data: metrics, isLoading: metricsLoading, isError: metricsError, refetch } = useQuery({
-    queryKey: ['admin-analytics'],
-    queryFn: () => api.get('/analytics/admin').then(r => r.data.metrics as AdminMetrics),
-    staleTime: 60_000,
+    queryKey: ['adminMetrics'],
+    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.ADMIN_STATS).then(res => res.data as any),
+    refetchInterval: 300000,
   });
 
   const { data: trendData } = useQuery({
-    queryKey: ['admin-enrollment-trend'],
-    queryFn: () => api.get('/analytics/admin/enrollment-trend').then(r => r.data.data as EnrollmentPoint[]),
-    staleTime: 60_000,
-    retry: false,
-    // Use sensible placeholder until endpoint is ready
-    placeholderData: (['Mon','Tue','Wed','Thu','Fri','Sat','Sun']).map(name => ({ name, enrollments: 0 })),
+    queryKey: ['adminEnrollmentTrend'],
+    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.ADMIN_ENROLLMENT_TREND).then(res => res.data as any[]),
+    refetchInterval: 300000,
   });
 
   const { data: topCourses } = useQuery({
-    queryKey: ['admin-top-courses'],
-    queryFn: () => api.get('/courses?sort=enrollments&limit=5').then(r =>
-      (r.data.courses as { id: string; title: string; _count: { enrollments: number }; completionRate?: number }[])
-        .map(c => ({ id: c.id, name: c.title, enrollments: c._count.enrollments, completionRate: c.completionRate ?? 0 }))
-    ),
-    staleTime: 60_000,
-    retry: false,
+    queryKey: ['adminRecentCourses'],
+    queryFn: () => api.get(`${API_ENDPOINTS.COURSES.BASE}?limit=5&sort=desc`).then(res => res.data.courses as any[]),
   });
 
   const { data: recentActivity } = useQuery({
-    queryKey: ['admin-recent-activity'],
-    queryFn: () => api.get('/activity/admin/recent?limit=4').then(r => r.data.activities as RecentActivity[]),
-    staleTime: 30_000,
-    retry: false,
+    queryKey: ['adminRecentActivity'],
+    queryFn: () => api.get(API_ENDPOINTS.ACTIVITY.ADMIN_RECENT).then(res => res.data as any[]),
   });
 
   const roleBreakdown = metrics?.roleBreakdown

@@ -1,99 +1,91 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { logActivity } from '../utils/auditLogger';
+import { catchAsync } from '../utils/catchAsync';
+import { AppError, NotFoundError, ValidationError, ForbiddenError } from '../utils/AppError';
 
 import prisma from '../config/db';
 
 // Enroll a student in a course (Admin / Teacher)
-export const enrollStudent = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { studentId, courseId } = req.body;
+export const enrollStudent = catchAsync(async (req: AuthRequest, res: Response) => {
+  const { studentId, courseId } = req.body;
 
-    // Verify student exists
-    const student = await prisma.student.findUnique({
-      where: { id: studentId }
-    });
-    if (!student) {
-      res.status(404).json({ message: 'Student not found' });
-      return;
-    }
-
-    // Verify course exists
-    const course = await prisma.course.findUnique({
-      where: { id: courseId }
-    });
-    if (!course) {
-      res.status(404).json({ message: 'Course not found' });
-      return;
-    }
-
-    // Teacher authorization check
-    if (req.user!.role === 'TEACHER') {
-      const teacher = await prisma.teacher.findUnique({
-        where: { userId: req.user!.id }
-      });
-      if (!teacher || course.teacherId !== teacher.id) {
-        res.status(403).json({ message: 'You are not authorized to enroll students in this course' });
-        return;
-      }
-    }
-
-    // Check if already enrolled
-    const existingEnrollment = await prisma.enrollment.findUnique({
-      where: {
-        studentId_courseId: { studentId, courseId }
-      }
-    });
-
-    if (existingEnrollment) {
-      res.status(400).json({ message: 'Student is already enrolled in this course' });
-      return;
-    }
-
-    const enrollment = await prisma.enrollment.create({
-      data: {
-        studentId,
-        courseId
-      },
-      include: {
-        student: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
-        course: { select: { title: true } }
-      }
-    });
-
-    await logActivity(req.user!.id, `Enrolled student: ${enrollment.student.user.firstName} ${enrollment.student.user.lastName} in ${enrollment.course.title}`, 'Enrollment', enrollment.id);
-
-    res.status(201).json({ message: 'Student enrolled successfully', enrollment });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  // Verify student exists
+  const student = await prisma.student.findUnique({
+    where: { id: studentId }
+  });
+  if (!student) {
+    throw new NotFoundError('Student not found');
   }
-};
+
+  // Verify course exists
+  const course = await prisma.course.findUnique({
+    where: { id: courseId }
+  });
+  if (!course) {
+    throw new NotFoundError('Course not found');
+  }
+
+  // Teacher authorization check
+  if (req.user!.role === 'TEACHER') {
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId: req.user!.id }
+    });
+    if (!teacher || course.teacherId !== teacher.id) {
+      throw new ForbiddenError('You are not authorized to enroll students in this course');
+    }
+  }
+
+  // Check if already enrolled
+  const existingEnrollment = await prisma.enrollment.findUnique({
+    where: {
+      studentId_courseId: { studentId, courseId }
+    }
+  });
+
+  if (existingEnrollment) {
+    throw new ValidationError('Student is already enrolled in this course');
+  }
+
+  const enrollment = await prisma.enrollment.create({
+    data: {
+      studentId,
+      courseId
+    },
+    include: {
+      student: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
+      course: { select: { title: true } }
+    }
+  });
+
+  await logActivity(req.user!.id, `Enrolled student: ${enrollment.student.user.firstName} ${enrollment.student.user.lastName} in ${enrollment.course.title}`, 'Enrollment', enrollment.id);
+
+  res.status(201).json({ message: 'Student enrolled successfully', enrollment });
+});
 
 // Unenroll a student from a course (Admin / Teacher)
-export const unenrollStudent = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { courseId, studentId } = req.params;
+export const unenrollStudent = catchAsync(async (req: AuthRequest, res: Response) => {
+  const { courseId, studentId } = req.params;
 
-    // Verify course exists
-    const course = await prisma.course.findUnique({
-      where: { id: courseId as string }
+  // Verify course exists
+  const course = await prisma.course.findUnique({
+    where: { id: courseId as string }
+  });
+  if (!course) {
+    throw new NotFoundError('Course not found');
+  }
+
+  // Teacher authorization check
+  if (req.user!.role === 'TEACHER') {
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId: req.user!.id }
     });
-    if (!course) {
-      res.status(404).json({ message: 'Course not found' });
-      return;
+    if (!teacher || course.teacherId !== teacher.id) {
+      throw new ForbiddenError('You are not authorized to unenroll students from this course');
     }
+  }
 
-    // Teacher authorization check
-    if (req.user!.role === 'TEACHER') {
-      const teacher = await prisma.teacher.findUnique({
-        where: { userId: req.user!.id }
-      });
-      if (!teacher || course.teacherId !== teacher.id) {
-        res.status(403).json({ message: 'You are not authorized to unenroll students from this course' });
-        return;
-      }
-    }
-
+  try {
     const deleted = await prisma.enrollment.delete({
       where: {
         studentId_courseId: { studentId: studentId as string, courseId: courseId as string }
@@ -109,111 +101,94 @@ export const unenrollStudent = async (req: AuthRequest, res: Response): Promise<
     res.json({ message: 'Student unenrolled successfully' });
   } catch (error: any) {
     // If record not found, Prisma throws an error
-    res.status(500).json({ message: 'Failed to unenroll student or record not found' });
+    throw new ValidationError('Failed to unenroll student or record not found');
   }
-};
+});
 
 // Get students enrolled in a specific course
-export const getCourseStudents = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { courseId } = req.params;
+export const getCourseStudents = catchAsync(async (req: AuthRequest, res: Response) => {
+  const { courseId } = req.params;
 
-    const enrollments = await prisma.enrollment.findMany({
-      where: { courseId: courseId as string },
-      include: {
-        student: {
-          include: {
-            user: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, address: true } }
-          }
+  const enrollments = await prisma.enrollment.findMany({
+    where: { courseId: courseId as string },
+    include: {
+      student: {
+        include: {
+          user: { select: { firstName: true, lastName: true, email: true, phoneNumber: true, address: true } }
         }
-      },
-      orderBy: { enrolledAt: 'desc' }
-    });
+      }
+    },
+    orderBy: { enrolledAt: 'desc' }
+  });
 
-    res.json({ enrollments });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+  res.json({ enrollments });
+});
 
 // Get courses enrolled by the current student
-export const getMyEnrolledCourses = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    if (!req.user || req.user.role !== 'STUDENT') {
-      res.status(403).json({ message: 'Access denied' });
-      return;
-    }
-
-    const student = await prisma.student.findUnique({
-      where: { userId: req.user.id }
-    });
-
-    if (!student) {
-      res.status(404).json({ message: 'Student record not found' });
-      return;
-    }
-
-    const enrollments = await prisma.enrollment.findMany({
-      where: { studentId: student.id },
-      include: {
-        course: {
-          include: {
-            teacher: {
-              include: { user: { select: { firstName: true, lastName: true } } }
-            },
-            _count: { select: { lectures: true } }
-          }
-        }
-      },
-      orderBy: { enrolledAt: 'desc' }
-    });
-
-    res.json({ enrollments });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+export const getMyEnrolledCourses = catchAsync(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'STUDENT') {
+    throw new ForbiddenError('Access denied');
   }
-};
+
+  const student = await prisma.student.findUnique({
+    where: { userId: req.user.id }
+  });
+
+  if (!student) {
+    throw new NotFoundError('Student record not found');
+  }
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: { studentId: student.id },
+    include: {
+      course: {
+        include: {
+          teacher: {
+            include: { user: { select: { firstName: true, lastName: true } } }
+          },
+          _count: { select: { lectures: true } }
+        }
+      }
+    },
+    orderBy: { enrolledAt: 'desc' }
+  });
+
+  res.json({ enrollments });
+});
 
 // Get all enrollments across all courses for the current teacher
-export const getTeacherEnrollments = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    if (!req.user || req.user.role !== 'TEACHER') {
-      res.status(403).json({ message: 'Access denied' });
-      return;
-    }
-
-    const teacher = await prisma.teacher.findUnique({
-      where: { userId: req.user.id }
-    });
-
-    if (!teacher) {
-      res.status(404).json({ message: 'Teacher record not found' });
-      return;
-    }
-
-    const enrollments = await prisma.enrollment.findMany({
-      where: {
-        course: { teacherId: teacher.id }
-      },
-      include: {
-        student: {
-          include: { user: { select: { firstName: true, lastName: true, email: true } } }
-        },
-        course: { select: { title: true, id: true } }
-      },
-      orderBy: { enrolledAt: 'desc' }
-    });
-
-    // Mock progress calculation just to satisfy UI requirements
-    const enrollmentsWithProgress = enrollments.map(e => ({
-      ...e,
-      progress: Math.floor(Math.random() * 100), 
-      status: 'Active'
-    }));
-
-    res.json({ enrollments: enrollmentsWithProgress });
-  } catch (error: any) {
-    console.error('getTeacherEnrollments error:', error);
-    res.status(500).json({ message: error.message });
+export const getTeacherEnrollments = catchAsync(async (req: AuthRequest, res: Response) => {
+  if (!req.user || req.user.role !== 'TEACHER') {
+    throw new ForbiddenError('Access denied');
   }
-};
+
+  const teacher = await prisma.teacher.findUnique({
+    where: { userId: req.user.id }
+  });
+
+  if (!teacher) {
+    throw new NotFoundError('Teacher record not found');
+  }
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: {
+      course: { teacherId: teacher.id }
+    },
+    include: {
+      student: {
+        include: { user: { select: { firstName: true, lastName: true, email: true } } }
+      },
+      course: { select: { title: true, id: true } }
+    },
+    orderBy: { enrolledAt: 'desc' }
+  });
+
+  // Mock progress calculation just to satisfy UI requirements
+  const enrollmentsWithProgress = enrollments.map(e => ({
+    ...e,
+    progress: Math.floor(Math.random() * 100), 
+    status: 'Active'
+  }));
+
+  res.json({ enrollments: enrollmentsWithProgress });
+});

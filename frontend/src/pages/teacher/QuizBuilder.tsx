@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
-import { ArrowLeft, Plus, Trash2, Save, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Save, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Button } from '../../components';
 import toast from 'react-hot-toast';
 
@@ -90,7 +91,7 @@ const QuizBuilder: React.FC = () => {
 
     setSaving(true);
     try {
-      await api.post(`/quizzes/course/${courseId}`, {
+      await api.post(API_ENDPOINTS.QUIZZES.BY_COURSE(courseId!), {
         title,
         description,
         durationMins: durationMins || null,

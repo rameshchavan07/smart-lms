@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { Save, User, Shield, Loader2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 
 const AdminSettings: React.FC = () => {
   const { user } = useAuth();
@@ -14,13 +16,16 @@ const AdminSettings: React.FC = () => {
 
   const updateProfile = useMutation({
     mutationFn: async () => {
-      const res = await api.put('/users/profile', { firstName, lastName, bio });
+      const res = await api.put(API_ENDPOINTS.USERS.PROFILE, { firstName, lastName, bio });
       return res.data;
     },
     onSuccess: () => {
       // Refresh current user data if needed (via context or query)
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      alert('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
+    },
+    onError: () => {
+      toast.error('Failed to update profile.');
     }
   });
 

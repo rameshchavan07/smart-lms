@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import { Loader2, Users, Calendar, CheckCircle2, XCircle, Clock } from 'lucide-react';
 
@@ -11,7 +12,7 @@ export const AttendanceTab: React.FC<{ courseId: string }> = ({ courseId }) => {
     return <TeacherAttendanceView courseId={courseId} />;
   }
   
-  return <StudentAttendanceView />;
+  return <StudentAttendanceView courseId={courseId} />;
 };
 
 const TeacherAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => {
@@ -19,19 +20,19 @@ const TeacherAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
 
   // Fetch all lectures for this course to populate the dropdown
   const { data: lectures = [], isLoading: loadingLectures } = useQuery({
-    queryKey: ['lectures', courseId],
+    queryKey: ['course-lectures-attendance', courseId],
     queryFn: async () => {
-      const res = await api.get(`/lectures/course/${courseId}`);
+      const res = await api.get(API_ENDPOINTS.LECTURES.BY_COURSE(courseId!));
       return res.data.lectures;
     }
   });
 
   // Fetch attendance report for the selected lecture
-  const { data: attendanceReport, isLoading: loadingAttendance } = useQuery({
-    queryKey: ['attendance', selectedLecture],
+  const { data: attendanceReport = [], isLoading: loadingAttendance } = useQuery({
+    queryKey: ['lecture-attendance', selectedLecture],
     queryFn: async () => {
-      if (!selectedLecture) return null;
-      const res = await api.get(`/attendance/lecture/${selectedLecture}`);
+      if (!selectedLecture) return [];
+      const res = await api.get(API_ENDPOINTS.ATTENDANCE.BY_LECTURE(selectedLecture));
       return res.data.attendance;
     },
     enabled: !!selectedLecture
@@ -151,12 +152,13 @@ const TeacherAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
   );
 };
 
-const StudentAttendanceView: React.FC = () => {
+const StudentAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => {
   const { data: myAttendance = [], isLoading } = useQuery({
-    queryKey: ['attendance', 'my'],
+    queryKey: ['my-attendance', courseId],
     queryFn: async () => {
-      const res = await api.get(`/attendance/my`);
-      return res.data.attendance;
+      const res = await api.get(API_ENDPOINTS.ATTENDANCE.MY);
+      // Filter by course in frontend for now
+      return res.data.attendance.filter((a: any) => a.lecture.courseId === courseId);
     }
   });
 

@@ -1,7 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Megaphone, Loader2 } from 'lucide-react';
+import { Skeleton } from '../../components/Skeleton';
 
 interface Announcement {
   id: string;
@@ -13,10 +15,11 @@ interface Announcement {
 
 export const AnnouncementsTab: React.FC<{ courseId: string }> = ({ courseId }) => {
   const { data: announcements = [], isLoading } = useQuery({
-    queryKey: ['communications', 'announcements'],
+    queryKey: ['course-announcements', courseId],
     queryFn: async () => {
-      const res = await api.get('/communications/announcements');
-      return res.data.announcements as Announcement[];
+      const res = await api.get(API_ENDPOINTS.COMMUNICATIONS.ANNOUNCEMENTS);
+      // Filter by courseId if needed, though backend should handle it if passed as query
+      return res.data.announcements.filter((a: any) => a.courseId === courseId || a.courseId === null);
     }
   });
 
@@ -29,9 +32,7 @@ export const AnnouncementsTab: React.FC<{ courseId: string }> = ({ courseId }) =
   }
 
   // Filter announcements for this specific course or global announcements (courseId === null)
-  const courseAnnouncements = announcements.filter(
-    (a) => a.courseId === courseId || a.courseId === null
-  );
+  const sortedAnnouncements = [...announcements].sort((a: Announcement, b: Announcement) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -40,13 +41,13 @@ export const AnnouncementsTab: React.FC<{ courseId: string }> = ({ courseId }) =
       </div>
 
       <div className="space-y-4">
-        {courseAnnouncements.length === 0 ? (
+        {sortedAnnouncements.length === 0 ? (
           <div className="text-center py-12 text-gray-500 border border-dashed rounded-xl border-gray-300">
             <Megaphone size={32} className="mx-auto mb-3 opacity-50" />
             <p>No announcements for this class yet.</p>
           </div>
         ) : (
-          courseAnnouncements.map((announcement) => (
+          sortedAnnouncements.map((announcement) => (
             <div key={announcement.id} className="card p-6 border border-border rounded-xl">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-500 shrink-0">

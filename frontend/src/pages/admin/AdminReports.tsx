@@ -3,13 +3,14 @@ import { Users, BookOpen, GraduationCap } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar, Tooltip } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { StatCardSkeleton, Skeleton } from '../../components/Skeleton';
 
 const AdminReports: React.FC = () => {
-  const { data: reports, isLoading } = useQuery({
-    queryKey: ['adminReports'],
+  const { data: reportData, isLoading } = useQuery({
+    queryKey: ['admin-reports'],
     queryFn: async () => {
-      const res = await api.get('/analytics/admin/reports');
+      const res = await api.get(API_ENDPOINTS.ANALYTICS.ADMIN_REPORTS);
       return res.data;
     }
   });
@@ -43,7 +44,7 @@ const AdminReports: React.FC = () => {
     );
   }
 
-  const { metrics, engagementData, coursePerformance } = reports || {};
+  const { metrics, engagementData, coursePerformance } = reportData || {};
 
   return (
     <div className="space-y-6">

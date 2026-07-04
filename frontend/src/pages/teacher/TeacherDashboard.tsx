@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import {
   BookOpen, Users, ClipboardList, TrendingUp,
@@ -61,34 +62,34 @@ const TeacherDashboard: React.FC = () => {
 
   const { data: metrics, isLoading: metricsLoading, isError: metricsError, refetch } = useQuery({
     queryKey: ['teacher-analytics'],
-    queryFn: () => api.get('/analytics/teacher').then(r => r.data.metrics as TeacherMetrics),
+    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.TEACHER_BASE).then(r => r.data.metrics as TeacherMetrics),
     staleTime: 60_000,
   });
 
   const { data: weeklyData } = useQuery({
     queryKey: ['teacher-weekly-progress'],
-    queryFn: () => api.get('/analytics/teacher/weekly').then(r => r.data.data as WeeklyData[]),
+    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.TEACHER_WEEKLY).then(r => r.data.data as WeeklyData[]),
     staleTime: 60_000,
     retry: false,
   });
 
   const { data: upcomingClasses } = useQuery({
     queryKey: ['teacher-upcoming-classes'],
-    queryFn: () => api.get('/live-classes/upcoming?limit=3').then(r => r.data.classes as UpcomingClass[]),
+    queryFn: () => api.get(`${API_ENDPOINTS.LIVE_CLASSES.UPCOMING}?limit=3`).then(r => r.data.classes as UpcomingClass[]),
     staleTime: 60_000,
     retry: false,
   });
 
   const { data: recentAssignments } = useQuery({
     queryKey: ['teacher-recent-assignments'],
-    queryFn: () => api.get('/assignments/teacher/recent?limit=3').then(r => r.data.assignments as RecentAssignment[]),
+    queryFn: () => api.get(`${API_ENDPOINTS.ASSIGNMENTS.TEACHER_RECENT}?limit=3`).then(r => r.data.assignments as RecentAssignment[]),
     staleTime: 60_000,
     retry: false,
   });
 
   const { data: courseProgressData } = useQuery({
     queryKey: ['teacher-course-progress'],
-    queryFn: () => api.get('/courses/my-courses?limit=4').then(r =>
+    queryFn: () => api.get(`${API_ENDPOINTS.COURSES.MY_COURSES}?limit=4`).then(r =>
       (r.data.courses as { id: string; title: string; avgProgress?: number; _count: { enrollments: number } }[])
         .map((c, i) => ({
           id: c.id,

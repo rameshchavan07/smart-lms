@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import api from '../services/api';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
 import { X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -55,9 +57,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
   };
 
   const { data: institutes = [] } = useQuery({
-    queryKey: ['institutes'],
+    queryKey: ['institutes-list'],
     queryFn: async () => {
-      const { data } = await api.get('/institutes');
+      const { data } = await api.get(API_ENDPOINTS.INSTITUTES.BASE);
       return data.institutes;
     },
     enabled: isOpen && currentUser?.role === 'SUPER_ADMIN',
@@ -65,7 +67,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
 
   const editUserMutation = useMutation({
     mutationFn: async () => {
-      return api.put(`/users/${userToEdit.id}`, {
+      return api.put(API_ENDPOINTS.USERS.BY_ID(userToEdit.id), {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
 import api from '../services/api';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
+import { useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 interface SubmitAssignmentModalProps {
   isOpen: boolean;
@@ -11,11 +14,25 @@ interface SubmitAssignmentModalProps {
 }
 
 const SubmitAssignmentModal: React.FC<SubmitAssignmentModalProps> = ({ isOpen, onClose, assignmentId, assignmentTitle, onSuccess }) => {
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fileUrl, setFileUrl] = useState('');
 
   if (!isOpen) return null;
+
+  const { mutate: submitAssignment, isPending: loading } = useMutation({
+    mutationFn: async () => {
+      await api.post(API_ENDPOINTS.ASSIGNMENTS.SUBMIT(assignmentId), { fileUrl });
+    },
+    onSuccess: () => {
+      onSuccess();
+      onClose();
+      toast.success('Assignment submitted successfully');
+    },
+    onError: (err: any) => {
+      setError(err.response?.data?.message || 'Failed to submit assignment');
+      toast.error('Failed to submit assignment');
+    }
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,20 +40,8 @@ const SubmitAssignmentModal: React.FC<SubmitAssignmentModalProps> = ({ isOpen, o
       setError('Please provide a URL to your submission');
       return;
     }
-
-    setLoading(true);
     setError(null);
-
-    try {
-      await api.post(`/assignments/${assignmentId}/submit`, { fileUrl });
-      onSuccess();
-      onClose();
-    } catch (err: unknown) {
-      const errorResponse = err as { response?: { data?: { message?: string } } };
-      setError(errorResponse.response?.data?.message || 'Failed to submit assignment');
-    } finally {
-      setLoading(false);
-    }
+    submitAssignment();
   };
 
   return (

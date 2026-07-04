@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import api from '../services/api';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
 import { X } from 'lucide-react';
 
 interface EnrollStudentModalProps {
@@ -26,7 +28,7 @@ const EnrollStudentModal: React.FC<EnrollStudentModalProps> = ({ isOpen, onClose
   const { data: students = [] } = useQuery<StudentData[]>({
     queryKey: ['availableStudents'],
     queryFn: async () => {
-      const { data } = await api.get('/users?role=STUDENT&limit=100');
+      const { data } = await api.get(`${API_ENDPOINTS.USERS.BASE}?role=STUDENT&limit=100`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return data.users.filter((u: any) => u.student);
     },
@@ -44,7 +46,7 @@ const EnrollStudentModal: React.FC<EnrollStudentModalProps> = ({ isOpen, onClose
 
   const enrollStudentMutation = useMutation({
     mutationFn: async () => {
-      return api.post('/enrollments', {
+      return api.post(API_ENDPOINTS.ENROLLMENTS.BASE, {
         studentId: selectedStudentId,
         courseId,
       });

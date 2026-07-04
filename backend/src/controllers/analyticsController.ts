@@ -1,11 +1,11 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-
 import prisma from '../config/db';
+import { catchAsync } from '../utils/catchAsync';
+import { AppError, NotFoundError } from '../utils/AppError';
 
 // Admin Dashboard Analytics
-export const getAdminStats = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
+export const getAdminStats = catchAsync(async (req: AuthRequest, res: Response) => {
     const totalUsers = await prisma.user.count();
     const totalTeachers = await prisma.user.count({ where: { role: 'TEACHER' } });
     const totalStudents = await prisma.user.count({ where: { role: 'STUDENT' } });
@@ -40,21 +40,16 @@ export const getAdminStats = async (req: AuthRequest, res: Response): Promise<vo
       recentCourses,
       recentActivities
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+});
 
 // Teacher Dashboard Analytics
-export const getTeacherStats = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
+export const getTeacherStats = catchAsync(async (req: AuthRequest, res: Response) => {
     const teacher = await prisma.teacher.findUnique({
       where: { userId: req.user!.id }
     });
 
     if (!teacher) {
-      res.status(404).json({ message: 'Teacher record not found' });
-      return;
+      throw new NotFoundError('Teacher record not found');
     }
 
     const totalCourses = await prisma.course.count({
@@ -95,21 +90,16 @@ export const getTeacherStats = async (req: AuthRequest, res: Response): Promise<
       },
       recentActivities
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+});
 
 // Student Dashboard Analytics
-export const getStudentStats = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
+export const getStudentStats = catchAsync(async (req: AuthRequest, res: Response) => {
     const student = await prisma.student.findUnique({
       where: { userId: req.user!.id }
     });
 
     if (!student) {
-      res.status(404).json({ message: 'Student record not found' });
-      return;
+      throw new NotFoundError('Student record not found');
     }
 
     const enrollments = await prisma.enrollment.findMany({
@@ -169,17 +159,12 @@ export const getStudentStats = async (req: AuthRequest, res: Response): Promise<
         progressBreakdown: { excellent: 2, good: 1, average: 0 }
       }
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+});
 
-export const getTeacherReports = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
+export const getTeacherReports = catchAsync(async (req: AuthRequest, res: Response) => {
     const teacher = await prisma.teacher.findUnique({ where: { userId: req.user!.id } });
     if (!teacher) {
-      res.status(404).json({ message: 'Teacher not found' });
-      return;
+      throw new NotFoundError('Teacher not found');
     }
 
     const enrollments = await prisma.enrollment.findMany({
@@ -217,13 +202,9 @@ export const getTeacherReports = async (req: AuthRequest, res: Response): Promis
       engagementData,
       coursePerformance
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+});
 
-export const getAdminReports = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
+export const getAdminReports = catchAsync(async (req: AuthRequest, res: Response) => {
     const totalStudents = await prisma.student.count();
     const totalTeachers = await prisma.teacher.count();
     const totalCourses = await prisma.course.count();
@@ -261,20 +242,15 @@ export const getAdminReports = async (req: AuthRequest, res: Response): Promise<
       engagementData,
       coursePerformance
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+});
 
-export const getStudentPerformance = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
+export const getStudentPerformance = catchAsync(async (req: AuthRequest, res: Response) => {
     const student = await prisma.student.findUnique({
       where: { userId: req.user!.id }
     });
 
     if (!student) {
-      res.status(404).json({ message: 'Student record not found' });
-      return;
+      throw new NotFoundError('Student record not found');
     }
 
     const last7Days = Array.from({ length: 7 }).map((_, i) => {
@@ -302,20 +278,15 @@ export const getStudentPerformance = async (req: AuthRequest, res: Response): Pr
     });
 
     res.json({ data: last7Days.map(d => ({ name: d.name, score: d.score })) });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+});
 
-export const getTeacherWeeklyProgress = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
+export const getTeacherWeeklyProgress = catchAsync(async (req: AuthRequest, res: Response) => {
     const teacher = await prisma.teacher.findUnique({
       where: { userId: req.user!.id }
     });
 
     if (!teacher) {
-      res.status(404).json({ message: 'Teacher record not found' });
-      return;
+      throw new NotFoundError('Teacher record not found');
     }
 
     const last7Days = Array.from({ length: 7 }).map((_, i) => {
@@ -347,7 +318,4 @@ export const getTeacherWeeklyProgress = async (req: AuthRequest, res: Response):
     });
 
     res.json({ data: last7Days.map(d => ({ day: d.day, progress: d.progress, submissions: d.submissions })) });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
+});

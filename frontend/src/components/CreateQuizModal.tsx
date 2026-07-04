@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { X, Check, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../services/api';
-import { useQuery } from '@tanstack/react-query';
+import { API_ENDPOINTS } from '../services/apiEndpoints';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 interface CreateQuizModalProps {
   isOpen: boolean;
@@ -35,10 +37,10 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSu
   ]);
 
   const { data: courses = [] } = useQuery({
-    queryKey: ['my-courses-for-quiz'],
+    queryKey: ['my-courses-quiz'],
     queryFn: async () => {
-      const res = await api.get('/courses/my-courses?limit=100');
-      return res.data.courses;
+      const res = await api.get(`${API_ENDPOINTS.COURSES.MY_COURSES}?limit=100`);
+      return res.data.enrollments.map((e: any) => e.course);
     },
     enabled: isOpen
   });
@@ -85,6 +87,30 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSu
     setQuestions(updated);
   };
 
+  const mutation = useMutation({
+    mutationFn: async () => {
+      await api.post(API_ENDPOINTS.QUIZZES.BY_COURSE(formData.courseId), {
+        title: formData.title,
+        description: formData.description,
+        durationMins: Number(formData.durationMins),
+        totalMarks: Number(formData.totalMarks),
+        questions: questions.map(q => ({
+          text: q.text,
+          marks: Number(q.marks),
+          options: q.options
+        }))
+      });
+    },
+    onSuccess: () => {
+      toast.success('Quiz created successfully');
+      onSuccess();
+      onClose();
+    },
+    onError: (err: any) => {
+      setError(err.response?.data?.message || 'Failed to create quiz');
+    }
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.courseId) {
@@ -111,31 +137,9 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSu
       }
     }
 
-    setLoading(true);
     setError(null);
-
-    try {
-      await api.post(`/quizzes/course/${formData.courseId}`, {
-        title: formData.title,
-        description: formData.description,
-        durationMins: Number(formData.durationMins),
-        totalMarks: Number(formData.totalMarks),
-        questions: questions.map(q => ({
-          text: q.text,
-          marks: Number(q.marks),
-          options: q.options
-        }))
-      });
-      onSuccess();
-      onClose();
-    } catch (err: unknown) {
-      const errorResponse = err as { response?: { data?: { message?: string } } };
-      setError(errorResponse.response?.data?.message || 'Failed to create quiz');
-    } finally {
-      setLoading(false);
-    }
+    mutation.mutate();
   };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-surface w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-xl flex flex-col overflow-hidden">
@@ -298,7 +302,7 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSu
             disabled={loading}
             className="px-5 py-2.5 text-sm font-semibold bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
-            {loading ? 'Creating...' : <><Check size={16} /> Create Quiz</>}
+            {loading ? 'Creating...' : 'Create Quiz'}
           </button>
         </div>
       </div>

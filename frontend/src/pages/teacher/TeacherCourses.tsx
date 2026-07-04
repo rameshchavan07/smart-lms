@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Link } from 'react-router-dom';
 import { BookOpen, Users, Video, Plus, Search, Grid, List, Layers } from 'lucide-react';
 import { getDirectDriveUrl } from '../../utils/drive';
@@ -34,7 +35,7 @@ const TeacherCourses: React.FC = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const { data } = await api.get('/courses/my-courses');
+        const { data } = await api.get(API_ENDPOINTS.COURSES.MY_COURSES);
         setCourses(data.courses);
       } catch (e) {
         console.error(e);

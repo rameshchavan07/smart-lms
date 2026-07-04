@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { Skeleton } from '../../components/Skeleton';
 import { useAuth } from '../../contexts/AuthContext';
 import { io, Socket } from 'socket.io-client';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import toast from 'react-hot-toast';
 
 interface ChatUser {
@@ -58,16 +59,16 @@ const TeacherCommunication: React.FC = () => {
 
   // --- Announcements Data ---
   const { data: announcements = [], isLoading: loadingAnnouncements } = useQuery({
-    queryKey: ['communications', 'announcements'],
+    queryKey: ['teacher-announcements'],
     queryFn: async () => {
-      const res = await api.get('/communications/announcements');
+      const res = await api.get(API_ENDPOINTS.COMMUNICATIONS.ANNOUNCEMENTS);
       return res.data.announcements;
     }
   });
 
   const postAnnouncement = useMutation({
     mutationFn: async () => {
-      return api.post('/communications/announcements', { 
+      return api.post(API_ENDPOINTS.COMMUNICATIONS.ANNOUNCEMENTS, { 
         title: announcementTitle, 
         content: announcementContent, 
         courseId: announcementCourse === 'All Courses' ? undefined : announcementCourse 
@@ -84,22 +85,22 @@ const TeacherCommunication: React.FC = () => {
   });
 
   // --- Messaging Data ---
-  const { data: contactsData, isLoading: loadingContacts } = useQuery({
-    queryKey: ['communications', 'contacts'],
+  const { data: contacts = [], isLoading: loadingContacts } = useQuery({
+    queryKey: ['contacts'],
     queryFn: async () => {
-      const res = await api.get('/communications/contacts');
-      return res.data.contacts;
+      const res = await api.get(API_ENDPOINTS.COMMUNICATIONS.CONTACTS);
+      return res.data;
     }
   });
 
-  const allContacts = [...(contactsData?.peers || []), ...(contactsData?.teachers || []), ...(contactsData?.students || [])];
+  const allContacts = [...(contacts?.peers || []), ...(contacts?.teachers || []), ...(contacts?.students || [])];
   const uniqueContacts = Array.from(new Map(allContacts.map(c => [c.id, c])).values());
 
-  const { data: messages = [], isLoading: loadingMessages } = useQuery({
-    queryKey: ['communications', 'messages', selectedChat?.id],
+  const { data: currentChatMessages = [], isLoading: loadingMessages } = useQuery({
+    queryKey: ['messages', selectedChat?.id],
     queryFn: async () => {
       if (!selectedChat) return [];
-      const res = await api.get(`/communications/messages/${selectedChat.id}`);
+      const res = await api.get(API_ENDPOINTS.COMMUNICATIONS.MESSAGES_BY_ID(selectedChat.id));
       return res.data.messages;
     },
     enabled: !!selectedChat
@@ -107,7 +108,7 @@ const TeacherCommunication: React.FC = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [currentChatMessages]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -120,7 +121,7 @@ const TeacherCommunication: React.FC = () => {
     socketRef.current = newSocket;
 
     newSocket.on('receive_message', (newMessage: ChatMessage) => {
-      queryClient.setQueryData(['communications', 'messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
+      queryClient.setQueryData(['messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
         if (!old) return [newMessage];
         const isForCurrentGroup = selectedChat?.name && newMessage.groupId === selectedChat.id;
         const isForCurrentUser = !selectedChat?.name && (newMessage.senderId === selectedChat?.id || newMessage.receiverId === selectedChat?.id);
@@ -135,14 +136,14 @@ const TeacherCommunication: React.FC = () => {
     });
 
     newSocket.on('delete_message', ({ messageId }) => {
-      queryClient.setQueryData(['communications', 'messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
+      queryClient.setQueryData(['messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
         if (!old) return old;
         return old.filter((m: ChatMessage) => m.id !== messageId);
       });
     });
 
     newSocket.on('delete_group', ({ groupId }) => {
-      queryClient.invalidateQueries({ queryKey: ['communications', 'contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
       if (selectedChat?.id === groupId) {
         setSelectedChat(null);
       }
@@ -154,12 +155,12 @@ const TeacherCommunication: React.FC = () => {
   }, [selectedChat, queryClient]);
 
   useEffect(() => {
-    if (socketRef.current && contactsData?.groups) {
-      contactsData.groups.forEach((g: ChatUser) => {
+    if (socketRef.current && contacts?.groups) {
+      contacts.groups.forEach((g: ChatUser) => {
         socketRef.current?.emit('join_group', g.id);
       });
     }
-  }, [contactsData]);
+  }, [contacts]);
 
   const sendMessage = useMutation({
     mutationFn: async () => {
@@ -176,7 +177,7 @@ const TeacherCommunication: React.FC = () => {
         formData.append('file', selectedFile);
       }
       
-      return api.post('/communications/messages', formData, {
+      return api.post(API_ENDPOINTS.COMMUNICATIONS.SEND_MESSAGE, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
     },
@@ -186,7 +187,7 @@ const TeacherCommunication: React.FC = () => {
       // Optimistic update for sender
       if (res.data?.data) {
         const newMessage = res.data.data;
-        queryClient.setQueryData(['communications', 'messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
+        queryClient.setQueryData(['messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
           if (!old) return [newMessage];
           if (!old.find(m => m.id === newMessage.id)) {
             return [...old, newMessage];
@@ -200,14 +201,14 @@ const TeacherCommunication: React.FC = () => {
     }
   });
 
-  const deleteMessage = useMutation({
+  const deleteMessageMutation = useMutation({
     mutationFn: async (messageId: string) => {
-      return api.delete(`/communications/messages/${messageId}`);
+      return api.delete(API_ENDPOINTS.COMMUNICATIONS.MESSAGES_BY_ID(messageId));
     },
     onSuccess: (_, messageId) => {
-      queryClient.setQueryData(['communications', 'messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
+      queryClient.setQueryData(['messages', selectedChat?.id], (old: ChatMessage[] | undefined) => {
         if (!old) return old;
-        return old.filter(m => m.id !== messageId);
+        return old.filter((m: ChatMessage) => m.id !== messageId);
       });
       toast.success('Message deleted');
     },
@@ -216,12 +217,12 @@ const TeacherCommunication: React.FC = () => {
     }
   });
 
-  const deleteGroup = useMutation({
+  const deleteGroupMutation = useMutation({
     mutationFn: async (groupId: string) => {
-      return api.delete(`/communications/groups/${groupId}`);
+      return api.delete(API_ENDPOINTS.COMMUNICATIONS.GROUP_BY_ID(groupId));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['communications', 'contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
       setSelectedChat(null);
       toast.success('Group deleted');
     },
@@ -286,10 +287,10 @@ const TeacherCommunication: React.FC = () => {
                 ) : (
                   <>
                     {/* Groups */}
-                    {contactsData?.groups?.length > 0 && (
+                    {contacts?.groups?.length > 0 && (
                       <div className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Group Chats</div>
                     )}
-                    {contactsData?.groups?.map((g: ChatUser) => (
+                    {contacts?.groups?.map((g: ChatUser) => (
                       <button 
                         key={g.id}
                         onClick={() => setSelectedChat(g)}
@@ -392,7 +393,7 @@ const TeacherCommunication: React.FC = () => {
                     <button 
                       onClick={() => {
                         if (window.confirm('Are you sure you want to delete this group?')) {
-                          deleteGroup.mutate(selectedChat.id);
+                          deleteGroupMutation.mutate(selectedChat.id);
                         }
                       }}
                       className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
@@ -412,14 +413,14 @@ const TeacherCommunication: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                  ) : messages.length === 0 ? (
+                  ) : currentChatMessages.length === 0 ? (
                     <div className="h-full flex items-center justify-center">
                       <div className="bg-surface-raised px-4 py-2 rounded-lg shadow-sm text-[12.5px] text-gray-600 dark:text-gray-400">
                         Messages are end-to-end encrypted. No one outside of this chat, not even SmartLMS, can read them.
                       </div>
                     </div>
                   ) : (
-                    messages.map((m: ChatMessage) => {
+                    currentChatMessages.map((m: ChatMessage) => {
                       const isSentByMe = !!user?.id && (m.senderId === user.id || m.sender?.id === user.id);
                       return (
                         <div key={m.id} className={`flex w-full ${isSentByMe ? 'justify-end' : 'justify-start'} mb-2`}>
@@ -482,7 +483,7 @@ const TeacherCommunication: React.FC = () => {
                                   </span>
                                   {(isSentByMe || user?.role === 'ADMIN' || user?.role === 'TEACHER') && (
                                     <button 
-                                      onClick={() => deleteMessage.mutate(m.id)} 
+                                      onClick={() => deleteMessageMutation.mutate(m.id)} 
                                       className={`ml-1 transition-colors ${isSentByMe ? 'text-white/60 hover:text-white' : 'text-red-500/60 hover:text-red-500'}`} 
                                       title="Delete message"
                                     >

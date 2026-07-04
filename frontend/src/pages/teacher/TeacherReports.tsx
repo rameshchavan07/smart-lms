@@ -1,17 +1,17 @@
 import React from 'react';
-import { BarChart3, Download, TrendingUp, Users, BookOpen } from 'lucide-react';
+import { BarChart3, Download, TrendingUp, Users, BookOpen, FileText } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
-
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { StatCardSkeleton } from '../../components/Skeleton';
 
 const TeacherReports: React.FC = () => {
   const { data: reports, isLoading } = useQuery({
-    queryKey: ['teacherReports'],
+    queryKey: ['teacher-reports'],
     queryFn: async () => {
-      const res = await api.get('/analytics/teacher/reports');
-      return res.data;
+      const res = await api.get(API_ENDPOINTS.ANALYTICS.TEACHER_REPORTS);
+      return res.data.reports;
     }
   });
 

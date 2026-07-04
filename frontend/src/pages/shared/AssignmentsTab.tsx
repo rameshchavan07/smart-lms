@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
 import { EmptyState, Button, Card } from '../../components';
 import { FileText, Plus, CheckCircle2, Download } from 'lucide-react';
@@ -35,12 +36,13 @@ export const AssignmentsTab: React.FC<{ courseId: string }> = ({ courseId }) => 
   const [showCreate, setShowCreate] = useState(false);
   const [viewingAssignment, setViewingAssignment] = useState<string | null>(null);
 
-  const { data: assignments, isLoading } = useQuery({
-    queryKey: ['assignments', courseId],
-    queryFn: () => api.get(`/assignments/course/${courseId}`).then(res => res.data.assignments as Assignment[]),
+  const { data: assignments = [], isLoading: assignmentsLoading } = useQuery({
+    queryKey: ['course-assignments', courseId],
+    queryFn: () => api.get(API_ENDPOINTS.ASSIGNMENTS.BY_COURSE(courseId!)).then(res => res.data.assignments as Assignment[]),
+    enabled: !!courseId,
   });
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading assignments...</div>;
+  if (assignmentsLoading) return <div className="p-8 text-center text-gray-500">Loading assignments...</div>;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -112,10 +114,10 @@ const CreateAssignmentModal = ({ courseId, onClose }: { courseId: string, onClos
   const [dueDate, setDueDate] = useState('');
   const [totalMarks, setTotalMarks] = useState(100);
 
-  const mutation = useMutation({
-    mutationFn: () => api.post(`/assignments/course/${courseId}`, { title, description, dueDate: new Date(dueDate).toISOString(), totalMarks: Number(totalMarks) }),
+  const createMutation = useMutation({
+    mutationFn: () => api.post(API_ENDPOINTS.ASSIGNMENTS.BY_COURSE(courseId!), { title, description, dueDate: new Date(dueDate).toISOString(), totalMarks: Number(totalMarks) }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assignments', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['course-assignments', courseId] });
       toast.success('Assignment created');
       onClose();
     },
@@ -126,7 +128,7 @@ const CreateAssignmentModal = ({ courseId, onClose }: { courseId: string, onClos
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-surface dark:bg-slate-900 rounded-2xl w-full max-w-lg p-6 shadow-xl">
         <h3 className="text-lg font-bold mb-4">New Assignment</h3>
-        <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
           <div>
             <label className="block text-[13px] font-semibold mb-1">Title</label>
             <input required type="text" className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -147,8 +149,8 @@ const CreateAssignmentModal = ({ courseId, onClose }: { courseId: string, onClos
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-            <Button variant="primary" type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Creating...' : 'Create'}
+            <Button variant="primary" type="submit" disabled={createMutation.isPending}>
+              {createMutation.isPending ? 'Creating...' : 'Create'}
             </Button>
           </div>
         </form>
@@ -161,17 +163,17 @@ const StudentSubmission = ({ assignmentId }: { assignmentId: string }) => {
   const [fileUrl, setFileUrl] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: mySubmissions } = useQuery({
-    queryKey: ['my-submissions'],
-    queryFn: () => api.get('/assignments/my-submissions').then(r => r.data.submissions as AssignmentSubmission[])
+  const { data: mySubmissions = [] } = useQuery({
+    queryKey: ['my-submissions', assignmentId],
+    queryFn: () => api.get(API_ENDPOINTS.ASSIGNMENTS.MY_SUBMISSIONS).then(r => r.data.submissions as AssignmentSubmission[])
   });
 
   const submission = mySubmissions?.find(s => s.id === assignmentId || (s as { assignmentId?: string }).assignmentId === assignmentId);
 
-  const mutation = useMutation({
-    mutationFn: () => api.post(`/assignments/${assignmentId}/submit`, { fileUrl }),
+  const submitMutation = useMutation({
+    mutationFn: () => api.post(API_ENDPOINTS.ASSIGNMENTS.SUBMIT(assignmentId), { fileUrl }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['my-submissions', assignmentId] });
       toast.success('Submitted successfully');
       setFileUrl('');
     }
@@ -211,9 +213,9 @@ const StudentSubmission = ({ assignmentId }: { assignmentId: string }) => {
       />
       <Button 
         variant="primary"
-        onClick={() => { if(fileUrl) mutation.mutate(); else toast.error('Please provide a URL'); }} 
+        onClick={() => { if(fileUrl) submitMutation.mutate(); else toast.error('Please provide a URL'); }} 
         className="btn-sm"
-        disabled={mutation.isPending}
+        disabled={submitMutation.isPending}
       >
         Submit Work
       </Button>
@@ -227,13 +229,13 @@ const AssignmentSubmissions = ({ assignmentId, onBack }: { assignmentId: string,
   const [marks, setMarks] = useState('');
   const [feedback, setFeedback] = useState('');
 
-  const { data: submissions, isLoading } = useQuery({
+  const { data: submissions = [], isLoading } = useQuery({
     queryKey: ['assignment-submissions', assignmentId],
-    queryFn: () => api.get(`/assignments/${assignmentId}/submissions`).then(r => r.data.submissions as AssignmentSubmission[])
+    queryFn: () => api.get(API_ENDPOINTS.ASSIGNMENTS.SUBMISSIONS(assignmentId)).then(r => r.data.submissions as AssignmentSubmission[])
   });
 
   const gradeMutation = useMutation({
-    mutationFn: (id: string) => api.put(`/assignments/submission/${id}/grade`, { marks: Number(marks), feedback }),
+    mutationFn: (id: string) => api.put(API_ENDPOINTS.ASSIGNMENTS.GRADE(id), { marks: Number(marks), feedback }),
     onSuccess: () => {
       toast.success('Graded successfully');
       queryClient.invalidateQueries({ queryKey: ['assignment-submissions', assignmentId] });

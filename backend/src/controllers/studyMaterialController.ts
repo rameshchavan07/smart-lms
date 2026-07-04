@@ -4,20 +4,21 @@ import { uploadFileToDrive, deleteFileFromDrive, getOrCreateFolderId } from '../
 import fs from 'fs';
 import { logActivity } from '../utils/auditLogger';
 import { createNotification } from '../services/notificationService';
+import { catchAsync } from '../utils/catchAsync';
+import { AppError, NotFoundError, ValidationError, ForbiddenError, UnauthorizedError } from '../utils/AppError';
 
 import prisma from '../config/db';
 
 // Upload study material (Teacher only)
-export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<void> => {
+export const uploadMaterial = catchAsync(async (req: AuthRequest, res: Response) => {
+  const courseId = req.params.courseId as string;
+  const { title, description } = req.body;
+
+  if (!req.file) {
+    throw new ValidationError('No file uploaded');
+  }
+
   try {
-    const courseId = req.params.courseId as string;
-    const { title, description } = req.body;
-
-    if (!req.file) {
-      res.status(400).json({ message: 'No file uploaded' });
-      return;
-    }
-
     // Verify course exists and belongs to this teacher
     const teacher = await prisma.teacher.findUnique({
       where: { userId: req.user!.id },
@@ -25,10 +26,7 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
     });
 
     if (!teacher) {
-      res.status(403).json({ message: 'Only teachers can upload study materials' });
-      // Cleanup file if user is unauthorized
-      fs.unlinkSync(req.file.path);
-      return;
+      throw new ForbiddenError('Only teachers can upload study materials');
     }
 
     const course = await prisma.course.findFirst({
@@ -37,10 +35,7 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
     });
 
     if (!course) {
-      res.status(404).json({ message: 'Course not found or you are not assigned to it' });
-      // Cleanup file if course is not found
-      fs.unlinkSync(req.file.path);
-      return;
+      throw new NotFoundError('Course not found or you are not assigned to it');
     }
 
     // Resolve Google Drive target folder: Institutes/[Institute]/Courses/[Course]/Teachers/[Teacher]/Documents
@@ -122,120 +117,104 @@ export const uploadMaterial = async (req: AuthRequest, res: Response): Promise<v
     });
 
   } catch (error: any) {
-    console.error('Upload error:', error?.message || error);
     // Cleanup temp file on error
     if (req.file && fs.existsSync(req.file.path)) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
     }
-    res.status(500).json({ message: error.message || 'Upload failed' });
+    throw error;
   }
-};
+});
 
 // Get study materials for a course (Student & Teacher)
-export const getCourseMaterials = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const courseId = req.params.courseId as string;
+export const getCourseMaterials = catchAsync(async (req: AuthRequest, res: Response) => {
+  const courseId = req.params.courseId as string;
 
-    // Verify course access
-    if (req.user!.role === 'STUDENT') {
-      const student = await prisma.student.findUnique({
-        where: { userId: req.user!.id }
-      });
-      if (!student) {
-        res.status(403).json({ message: 'Student record not found' });
-        return;
-      }
-      const enrollment = await prisma.enrollment.findUnique({
-        where: { studentId_courseId: { studentId: student.id, courseId } }
-      });
-      if (!enrollment) {
-        res.status(403).json({ message: 'You are not enrolled in this course' });
-        return;
-      }
-    } else if (req.user!.role === 'TEACHER') {
-      const teacher = await prisma.teacher.findUnique({
-        where: { userId: req.user!.id }
-      });
-      if (!teacher) {
-        res.status(403).json({ message: 'Teacher record not found' });
-        return;
-      }
-      const course = await prisma.course.findFirst({
-        where: { id: courseId, teacherId: teacher.id }
-      });
-      if (!course) {
-        res.status(403).json({ message: 'You are not assigned to this course' });
-        return;
-      }
-    }
-
-    const materials = await prisma.studyMaterial.findMany({
-      where: { courseId },
-      orderBy: { uploadedAt: 'desc' }
+  // Verify course access
+  if (req.user!.role === 'STUDENT') {
+    const student = await prisma.student.findUnique({
+      where: { userId: req.user!.id }
     });
-
-    res.json({ materials });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Delete study material (Teacher only)
-export const deleteMaterial = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const id = req.params.id as string;
-
-    const studyMaterial = await prisma.studyMaterial.findUnique({
-      where: { id }
-    });
-
-    if (!studyMaterial) {
-      res.status(404).json({ message: 'Study material not found' });
-      return;
+    if (!student) {
+      throw new ForbiddenError('Student record not found');
     }
-
-    // Verify user is teacher assigned to the course
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { studentId_courseId: { studentId: student.id, courseId } }
+    });
+    if (!enrollment) {
+      throw new ForbiddenError('You are not enrolled in this course');
+    }
+  } else if (req.user!.role === 'TEACHER') {
     const teacher = await prisma.teacher.findUnique({
       where: { userId: req.user!.id }
     });
-
-    if (!teacher && req.user!.role !== 'ADMIN') {
-      res.status(403).json({ message: 'Access denied' });
-      return;
+    if (!teacher) {
+      throw new ForbiddenError('Teacher record not found');
     }
-
-    if (req.user!.role !== 'ADMIN') {
-      const course = await prisma.course.findFirst({
-        where: { id: studyMaterial.courseId, teacherId: teacher!.id }
-      });
-
-      if (!course) {
-        res.status(403).json({ message: 'You cannot delete materials from a course you do not teach' });
-        return;
-      }
-    }
-
-    // Find and delete from Google Drive
-    const driveFile = await prisma.googleDriveFile.findFirst({
-      where: { fileUrl: studyMaterial.fileUrl }
+    const course = await prisma.course.findFirst({
+      where: { id: courseId, teacherId: teacher.id }
     });
-
-    if (driveFile) {
-      await deleteFileFromDrive(driveFile.driveFileId);
-      await prisma.googleDriveFile.delete({
-        where: { id: driveFile.id }
-      });
+    if (!course) {
+      throw new ForbiddenError('You are not assigned to this course');
     }
-
-    // Delete from DB
-    await prisma.studyMaterial.delete({
-      where: { id }
-    });
-
-    await logActivity(req.user!.id, `Deleted study material: ${studyMaterial.title}`, 'StudyMaterial', id);
-
-    res.json({ message: 'Study material deleted successfully' });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
   }
-};
+
+  const materials = await prisma.studyMaterial.findMany({
+    where: { courseId },
+    orderBy: { uploadedAt: 'desc' }
+  });
+
+  res.json({ materials });
+});
+
+// Delete study material (Teacher only)
+export const deleteMaterial = catchAsync(async (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
+
+  const studyMaterial = await prisma.studyMaterial.findUnique({
+    where: { id }
+  });
+
+  if (!studyMaterial) {
+    throw new NotFoundError('Study material not found');
+  }
+
+  // Verify user is teacher assigned to the course
+  const teacher = await prisma.teacher.findUnique({
+    where: { userId: req.user!.id }
+  });
+
+  if (!teacher && req.user!.role !== 'ADMIN') {
+    throw new ForbiddenError('Access denied');
+  }
+
+  if (req.user!.role !== 'ADMIN') {
+    const course = await prisma.course.findFirst({
+      where: { id: studyMaterial.courseId, teacherId: teacher!.id }
+    });
+
+    if (!course) {
+      throw new ForbiddenError('You cannot delete materials from a course you do not teach');
+    }
+  }
+
+  // Find and delete from Google Drive
+  const driveFile = await prisma.googleDriveFile.findFirst({
+    where: { fileUrl: studyMaterial.fileUrl }
+  });
+
+  if (driveFile) {
+    await deleteFileFromDrive(driveFile.driveFileId);
+    await prisma.googleDriveFile.delete({
+      where: { id: driveFile.id }
+    });
+  }
+
+  // Delete from DB
+  await prisma.studyMaterial.delete({
+    where: { id }
+  });
+
+  await logActivity(req.user!.id, `Deleted study material: ${studyMaterial.title}`, 'StudyMaterial', id);
+
+  res.json({ message: 'Study material deleted successfully' });
+});

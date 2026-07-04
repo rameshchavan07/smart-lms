@@ -152,34 +152,10 @@ app.use('/api', (req: Request, res: Response) => {
   res.status(404).json({ message: 'API route not found' });
 });
 
+import { globalErrorHandler } from './middleware/errorHandler';
+
 // Global Error Handler
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  if (err === invalidCsrfTokenError) {
-    res.status(403).json({ message: 'Invalid CSRF token' });
-    return;
-  }
-  
-  console.error(err.stack);
-
-  let statusCode = 500;
-  let message = err.message || 'Internal Server Error';
-
-  if (err.name === 'MulterError') {
-    statusCode = 400;
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      message = 'File size is too large. Please upload a smaller file.';
-    } else {
-      message = `Upload error: ${err.message}`;
-    }
-  } else if (err.message && (err.message.includes('Invalid file type') || err.message.includes('Only'))) {
-    statusCode = 400;
-  }
-
-  res.status(statusCode).json({
-    status: 'error',
-    message
-  });
-});
+app.use(globalErrorHandler);
 
 export default app;
 

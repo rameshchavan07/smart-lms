@@ -3,25 +3,27 @@ import { Target } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { StatCardSkeleton, Skeleton } from '../../components/Skeleton';
 
 const StudentReports: React.FC = () => {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['studentStats'],
+  const { data: stats, isLoading: loadingAnalytics } = useQuery({
+    queryKey: ['student-analytics'],
     queryFn: async () => {
-      const res = await api.get('/analytics/student');
+      const res = await api.get(API_ENDPOINTS.ANALYTICS.STUDENT_BASE);
       return res.data.metrics;
     }
   });
 
-  const { data: assignments = [] } = useQuery({
-    queryKey: ['studentAssignments'],
+  const { data: assignments = [], isLoading: loadingAssignments } = useQuery({
+    queryKey: ['student-assignments'],
     queryFn: async () => {
-      const res = await api.get('/assignments/student');
+      const res = await api.get(API_ENDPOINTS.ASSIGNMENTS.STUDENT);
       return res.data.assignments;
     }
   });
 
+  const isLoading = loadingAnalytics || loadingAssignments;
   const gradedAssignments = assignments.filter((a: { status: string, title: string, grade: number, maxGrade: number }) => a.status === 'GRADED');
   
   // Prepare data for bar chart

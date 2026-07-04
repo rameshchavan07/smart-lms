@@ -1,7 +1,8 @@
 import React from 'react';
-import { MessageSquare, Pin } from 'lucide-react';
+import { MessageSquare, Pin, Users, ThumbsUp, Search, Plus, Filter } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { Skeleton } from '../../components/Skeleton';
 
 interface DiscussionData {
@@ -17,9 +18,9 @@ interface DiscussionData {
 
 const StudentCommunity: React.FC = () => {
   const { data: discussions = [], isLoading } = useQuery({
-    queryKey: ['myDiscussions'],
+    queryKey: ['student-discussions'],
     queryFn: async () => {
-      const res = await api.get('/discussions/my-discussions');
+      const res = await api.get(API_ENDPOINTS.DISCUSSIONS.MY_DISCUSSIONS);
       return res.data.discussions;
     }
   });
