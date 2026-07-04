@@ -3,13 +3,48 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { Button, Card } from '../../components';
-import { Plus, Trash2, Shield, Building, Building2 } from 'lucide-react';
+import { Plus, Trash2, Shield, Building, Building2, Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function InstitutesManagement() {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAssignAdminModalOpen, setIsAssignAdminModalOpen] = useState(false);
   const [selectedInstituteId, setSelectedInstituteId] = useState<string | null>(null);
+  
+  const [assignMode, setAssignMode] = useState<'new' | 'existing'>('new');
+  const [existingUserId, setExistingUserId] = useState('');
+
+  const { data: usersData, isLoading: isLoadingUsers } = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: async () => {
+      const res = await api.get('/users?limit=1000');
+      return res.data.users;
+    },
+    enabled: isAssignAdminModalOpen && assignMode === 'existing'
+  });
+
+  const assignExistingAdminMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return api.put(`/users/${userId}`, { role: 'ADMIN', instituteId: selectedInstituteId });
+    },
+    onSuccess: () => {
+      toast.success('Admin assigned successfully!');
+      setIsAssignAdminModalOpen(false);
+      setExistingUserId('');
+      queryClient.invalidateQueries({ queryKey: ['institutes'] });
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Failed to assign admin');
+    }
+  });
+
+  const handleAssignExistingAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedInstituteId || !existingUserId) return;
+    assignExistingAdminMutation.mutate(existingUserId);
+  };
 
   const [instituteForm, setInstituteForm] = useState({
     name: '',
@@ -137,7 +172,9 @@ export default function InstitutesManagement() {
                         <Building2 className="w-5 h-5 text-brand-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-primary">{inst.name}</p>
+                        <Link to={`/admin/institutes/${inst.id}`} className="font-semibold text-primary hover:text-brand-600 transition-colors">
+                          {inst.name}
+                        </Link>
                         <p className="text-xs text-muted max-w-[200px] truncate" title={inst.address}>{inst.address || 'No address'}</p>
                       </div>
                     </div>
@@ -168,6 +205,13 @@ export default function InstitutesManagement() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
+                      <Link
+                        to={`/admin/institutes/${inst.id}`}
+                        className="btn btn-ghost btn-sm gap-2 text-primary hover:bg-black/5 dark:hover:bg-white/5"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
+                      </Link>
                       <Button
                         variant="secondary"
                         size="sm"
@@ -244,38 +288,88 @@ export default function InstitutesManagement() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <Card className="w-full max-w-md p-6">
             <h2 className="text-xl font-bold mb-4">Assign Institute Admin</h2>
-            <p className="text-sm text-muted mb-6">Create a new admin account for this institute. They will be able to manage all courses and users within their institute.</p>
-            <form onSubmit={handleAssignAdmin} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-muted">First Name *</label>
-                  <input required type="text" className="input" value={adminForm.firstName} onChange={e => setAdminForm({...adminForm, firstName: e.target.value})} />
+            <p className="text-sm text-muted mb-6">Assign an administrator to manage this institute's courses and users.</p>
+            
+            <div className="flex gap-2 mb-6 p-1 bg-black/5 dark:bg-white/5 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setAssignMode('new')}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${assignMode === 'new' ? 'bg-white dark:bg-slate-800 shadow text-primary' : 'text-muted hover:text-primary'}`}
+              >
+                Create New
+              </button>
+              <button
+                type="button"
+                onClick={() => setAssignMode('existing')}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${assignMode === 'existing' ? 'bg-white dark:bg-slate-800 shadow text-primary' : 'text-muted hover:text-primary'}`}
+              >
+                Select Existing
+              </button>
+            </div>
+
+            {assignMode === 'new' ? (
+              <form onSubmit={handleAssignAdmin} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-muted">First Name *</label>
+                    <input required type="text" className="input" value={adminForm.firstName} onChange={e => setAdminForm({...adminForm, firstName: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-muted">Last Name *</label>
+                    <input required type="text" className="input" value={adminForm.lastName} onChange={e => setAdminForm({...adminForm, lastName: e.target.value})} />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-muted">Last Name *</label>
-                  <input required type="text" className="input" value={adminForm.lastName} onChange={e => setAdminForm({...adminForm, lastName: e.target.value})} />
+                  <label className="block text-sm font-medium mb-1 text-muted">Email Address *</label>
+                  <input required type="email" className="input" value={adminForm.email} onChange={e => setAdminForm({...adminForm, email: e.target.value})} />
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-muted">Email Address *</label>
-                <input required type="email" className="input" value={adminForm.email} onChange={e => setAdminForm({...adminForm, email: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-muted">Password *</label>
-                <input required type="password" minLength={6} className="input" value={adminForm.password} onChange={e => setAdminForm({...adminForm, password: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-muted">Phone Number</label>
-                <input type="text" className="input" value={adminForm.phoneNumber} onChange={e => setAdminForm({...adminForm, phoneNumber: e.target.value})} />
-              </div>
-              
-              <div className="flex justify-end gap-3 mt-6">
-                <Button variant="secondary" type="button" onClick={() => setIsAssignAdminModalOpen(false)}>Cancel</Button>
-                <Button type="submit" className="btn-primary" disabled={assignAdminMutation.isPending}>
-                  {assignAdminMutation.isPending ? 'Assigning...' : 'Assign Admin'}
-                </Button>
-              </div>
-            </form>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-muted">Password *</label>
+                  <input required type="password" minLength={6} className="input" value={adminForm.password} onChange={e => setAdminForm({...adminForm, password: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-muted">Phone Number</label>
+                  <input type="text" className="input" value={adminForm.phoneNumber} onChange={e => setAdminForm({...adminForm, phoneNumber: e.target.value})} />
+                </div>
+                
+                <div className="flex justify-end gap-3 mt-6">
+                  <Button variant="secondary" type="button" onClick={() => setIsAssignAdminModalOpen(false)}>Cancel</Button>
+                  <Button type="submit" className="btn-primary" disabled={assignAdminMutation.isPending}>
+                    {assignAdminMutation.isPending ? 'Assigning...' : 'Assign Admin'}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleAssignExistingAdmin} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-muted">Select User *</label>
+                  {isLoadingUsers ? (
+                    <div className="p-2 text-sm text-muted">Loading users...</div>
+                  ) : (
+                    <select 
+                      required 
+                      className="input" 
+                      value={existingUserId} 
+                      onChange={e => setExistingUserId(e.target.value)}
+                    >
+                      <option value="">-- Choose a user --</option>
+                      {usersData?.map((u: any) => (
+                        <option key={u.id} value={u.id}>
+                          {u.firstName} {u.lastName} ({u.email}) - {u.role}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                
+                <div className="flex justify-end gap-3 mt-6">
+                  <Button variant="secondary" type="button" onClick={() => setIsAssignAdminModalOpen(false)}>Cancel</Button>
+                  <Button type="submit" className="btn-primary" disabled={assignExistingAdminMutation.isPending || !existingUserId}>
+                    {assignExistingAdminMutation.isPending ? 'Assigning...' : 'Assign Admin'}
+                  </Button>
+                </div>
+              </form>
+            )}
           </Card>
         </div>
       )}

@@ -29,6 +29,55 @@ export const getInstitutes = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
+export const getInstituteById = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      res.status(403).json({ message: 'Access denied. Super Admin only.' });
+      return;
+    }
+
+    const { id } = req.params;
+
+    const institute = await prisma.institute.findUnique({
+      where: { id: id as string },
+      include: {
+        users: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            role: true,
+            isActive: true,
+            teacher: { select: { employeeCode: true, specialization: true } },
+            student: { select: { enrollmentNumber: true, academicYear: true } }
+          }
+        },
+        courses: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            _count: { select: { enrollments: true, lectures: true } }
+          }
+        },
+        _count: {
+          select: { courses: true, users: true }
+        }
+      }
+    });
+
+    if (!institute) {
+      res.status(404).json({ message: 'Institute not found' });
+      return;
+    }
+
+    res.json({ institute });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const createInstitute = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (req.user?.role !== 'SUPER_ADMIN') {

@@ -24,6 +24,7 @@ const StudentLayout    = React.lazy(() => import('./layouts/StudentLayout'));
 // ─── Code-split pages ─────────────────────────────────────────────────────
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
 const InstitutesManagement = React.lazy(() => import('./pages/admin/InstitutesManagement'));
+const InstituteDetails = React.lazy(() => import('./pages/admin/InstituteDetails'));
 const UserManagement = React.lazy(() => import('./pages/admin/UserManagement'));
 const CourseManagement = React.lazy(() => import('./pages/admin/CourseManagement'));
 const EnrollmentManagement = React.lazy(() => import('./pages/admin/EnrollmentManagement'));
@@ -125,6 +126,7 @@ function App() {
               }>
                 <Route index element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
                 <Route path="institutes"  element={<Suspense fallback={<PageLoader />}><InstitutesManagement /></Suspense>} />
+                <Route path="institutes/:id" element={<Suspense fallback={<PageLoader />}><InstituteDetails /></Suspense>} />
                 <Route path="users"       element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
                 <Route path="courses"     element={<Suspense fallback={<PageLoader />}><CourseManagement /></Suspense>} />
                 <Route path="enrollments" element={<Suspense fallback={<PageLoader />}><EnrollmentManagement /></Suspense>} />
