@@ -1,6 +1,9 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import jwt from 'jsonwebtoken';
+import { createAdapter } from '@socket.io/redis-adapter';
+import Redis from 'ioredis';
+import { REDIS_URL } from '../config/redis';
 
 let io: SocketIOServer;
 
@@ -11,6 +14,19 @@ export const initSocket = (server: HttpServer) => {
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
     },
   });
+
+  try {
+    const pubClient = new Redis(REDIS_URL, { maxRetriesPerRequest: null });
+    const subClient = pubClient.duplicate();
+
+    pubClient.on('error', (err) => console.warn('[Socket.io Redis Pub] Error:', err.message));
+    subClient.on('error', (err) => console.warn('[Socket.io Redis Sub] Error:', err.message));
+
+    io.adapter(createAdapter(pubClient, subClient));
+    console.log('[Socket.io] Redis adapter configured successfully.');
+  } catch (err: unknown) {
+    console.warn('[Socket.io] Failed to configure Redis adapter.', err instanceof Error ? err.message : String(err));
+  }
 
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;

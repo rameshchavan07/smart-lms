@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NotificationBell } from '../NotificationBell';
@@ -151,7 +150,7 @@ describe('NotificationBell', () => {
 
   it('closes the dropdown when clicking outside', async () => {
     setupMocks([]);
-    const { container } = render(
+    render(
       <div>
         <NotificationBell />
         <div data-testid="outside">Outside</div>

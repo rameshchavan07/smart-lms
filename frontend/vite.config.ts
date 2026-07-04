@@ -13,6 +13,11 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('recharts')) return 'vendor-recharts';
             if (id.includes('lucide')) return 'vendor-lucide';
+            if (id.includes('framer-motion')) return 'vendor-framer';
+            if (id.includes('@jitsi')) return 'vendor-jitsi';
+            if (id.includes('react-player')) return 'vendor-player';
+            if (id.includes('react-quill')) return 'vendor-quill';
+            if (id.includes('react-router-dom') || id.includes('@remix-run')) return 'vendor-router';
             if (id.includes('react')) return 'vendor-react';
             return 'vendor'; // all other node_modules
           }

@@ -1,7 +1,8 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
+import pinoHttp from 'pino-http';
+import logger from './utils/logger';
 import YAML from 'yamljs';
 import path from 'path';
 import passport from 'passport';
@@ -27,7 +28,7 @@ app.use(cors({
   origin: allowedOrigins,
   credentials: true
 }));
-app.use(morgan('dev'));
+app.use(pinoHttp({ logger, serializers: { req: (req) => ({ method: req.method, url: req.url }) } }));
 
 // Serve static uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
