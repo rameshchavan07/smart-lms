@@ -45,6 +45,7 @@ const TeacherAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
       if (pastLectures.length > 0) {
         // Sort by most recent
         pastLectures.sort((a: { startTime: string }, b: { startTime: string }) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedLecture(pastLectures[0].id);
       } else {
         setSelectedLecture(lectures[0].id);
@@ -246,7 +247,7 @@ const StudentAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
                   )}
                 </td>
                 <td className="px-6 py-3 text-secondary text-xs font-mono">
-                  {new Date(record.joinTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  {record.joinTime ? new Date(record.joinTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}
                 </td>
               </tr>
             ))}

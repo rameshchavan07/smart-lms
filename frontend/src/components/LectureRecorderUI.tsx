@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Check, Loader2, Square, Settings, UploadCloud, Download, Video, VideoOff, X, Mic, MicOff, ChevronUp, ChevronDown, Trash2, Play, Pause, RotateCcw } from 'lucide-react';
+import { Check, Loader2, Square, Settings, UploadCloud, Download, Video, VideoOff, X, Mic, MicOff, ChevronUp, ChevronDown, Play, Pause, RotateCcw } from 'lucide-react';
 import { useScreenRecorder, type RecordingQuality } from '../hooks/useScreenRecorder';
 import api from '../services/api';
 import { API_ENDPOINTS } from '../services/apiEndpoints';
-import toast from 'react-hot-toast';
 
 interface LectureRecorderUIProps {
   lectureId: string;

@@ -17,8 +17,6 @@ const SubmitAssignmentModal: React.FC<SubmitAssignmentModalProps> = ({ isOpen, o
   const [error, setError] = useState<string | null>(null);
   const [fileUrl, setFileUrl] = useState('');
 
-  if (!isOpen) return null;
-
   const { mutate: submitAssignment, isPending: loading } = useMutation({
     mutationFn: async () => {
       await api.post(API_ENDPOINTS.ASSIGNMENTS.SUBMIT(assignmentId), { fileUrl });
@@ -44,6 +42,8 @@ const SubmitAssignmentModal: React.FC<SubmitAssignmentModalProps> = ({ isOpen, o
     setError(null);
     submitAssignment();
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">

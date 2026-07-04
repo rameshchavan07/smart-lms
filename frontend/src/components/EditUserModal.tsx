@@ -5,12 +5,25 @@ import { API_ENDPOINTS } from '../services/apiEndpoints';
 import { X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
+export interface UserData {
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
+  address?: string;
+  role?: string;
+  isActive?: boolean;
+  instituteId?: string;
+  teacher?: { employeeCode?: string; specialization?: string; qualification?: string; };
+  student?: { enrollmentNumber?: string; academicYear?: string; };
+}
+
 interface EditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  userToEdit: Record<string, unknown>; // UserData with teacher/student info
+  userToEdit: UserData | null;
 }
 
 const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSuccess, userToEdit }) => {
@@ -66,7 +79,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
 
   const editUserMutation = useMutation({
     mutationFn: async () => {
-      return api.put(API_ENDPOINTS.USERS.BY_ID(userToEdit.id), {
+      return api.put(API_ENDPOINTS.USERS.BY_ID(userToEdit!.id as string), {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,

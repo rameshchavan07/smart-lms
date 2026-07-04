@@ -28,7 +28,6 @@ const EnrollStudentModal: React.FC<EnrollStudentModalProps> = ({ isOpen, onClose
     queryKey: ['availableStudents'],
     queryFn: async () => {
       const { data } = await api.get(`${API_ENDPOINTS.USERS.BASE}?role=STUDENT&limit=100`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return data.users.filter((u: { student: unknown }) => u.student);
     },
     enabled: isOpen
@@ -38,7 +37,6 @@ const EnrollStudentModal: React.FC<EnrollStudentModalProps> = ({ isOpen, onClose
     if (isOpen) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedStudentId('');
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError('');
     }
   }, [isOpen]);

@@ -35,6 +35,7 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSu
     }
   ]);
 
+
   const { data: courses = [] } = useQuery({
     queryKey: ['my-courses-quiz'],
     queryFn: async () => {
@@ -44,7 +45,7 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSu
     enabled: isOpen
   });
 
-  if (!isOpen) return null;
+
 
   const handleAddQuestion = () => {
     setQuestions([
@@ -140,6 +141,8 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSu
     setError(null);
     mutation.mutate();
   };
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-surface w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-xl flex flex-col overflow-hidden">
@@ -299,10 +302,10 @@ const CreateQuizModal: React.FC<CreateQuizModalProps> = ({ isOpen, onClose, onSu
           <button 
             type="submit" 
             form="quiz-form"
-            disabled={loading}
+            disabled={mutation.isPending}
             className="px-5 py-2.5 text-sm font-semibold bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors flex items-center gap-2 disabled:opacity-50"
           >
-            {loading ? 'Creating...' : 'Create Quiz'}
+            {mutation.isPending ? 'Creating...' : 'Create Quiz'}
           </button>
         </div>
       </div>

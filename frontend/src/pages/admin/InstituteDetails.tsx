@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
@@ -92,7 +92,7 @@ export default function InstituteDetails() {
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as 'overview' | 'admins' | 'teachers' | 'students' | 'courses')}
+              onClick={() => setActiveTab(tab.id as 'admins' | 'teachers' | 'students' | 'courses')}
               className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
                 activeTab === tab.id 
                   ? 'border-brand-500 text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-500/10' 
@@ -132,7 +132,7 @@ export default function InstituteDetails() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {activeTab === 'admins' && admins.map(admin => (
+              {activeTab === 'admins' && admins.map((admin: { id: string; firstName: string; lastName: string; email: string; isActive: boolean }) => (
                 <tr key={admin.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 font-medium text-primary">{admin.firstName} {admin.lastName}</td>
                   <td className="px-6 py-4 text-muted">{admin.email}</td>
@@ -143,7 +143,7 @@ export default function InstituteDetails() {
                   </td>
                 </tr>
               ))}
-              {activeTab === 'teachers' && teachers.map(teacher => (
+              {activeTab === 'teachers' && teachers.map((teacher: { id: string; firstName: string; lastName: string; email: string; isActive: boolean; teacher?: { employeeCode: string; specialization: string } }) => (
                 <tr key={teacher.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 font-medium text-primary">{teacher.firstName} {teacher.lastName}</td>
                   <td className="px-6 py-4 text-muted">{teacher.email}</td>
@@ -156,7 +156,7 @@ export default function InstituteDetails() {
                   </td>
                 </tr>
               ))}
-              {activeTab === 'students' && students.map(student => (
+              {activeTab === 'students' && students.map((student: { id: string; firstName: string; lastName: string; email: string; isActive: boolean; student?: { enrollmentNumber: string } }) => (
                 <tr key={student.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 font-medium text-primary">{student.firstName} {student.lastName}</td>
                   <td className="px-6 py-4 text-muted">{student.email}</td>
@@ -168,7 +168,7 @@ export default function InstituteDetails() {
                   </td>
                 </tr>
               ))}
-              {activeTab === 'courses' && institute.courses.map(course => (
+              {activeTab === 'courses' && institute.courses.map((course: { id: string; title: string; status: string; _count: { enrollments: number; lectures: number } }) => (
                 <tr key={course.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 font-medium text-primary">{course.title}</td>
                   <td className="px-6 py-4">

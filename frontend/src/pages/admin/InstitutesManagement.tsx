@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import toast from 'react-hot-toast';
 import { Button, EmptyState, Card } from '../../components';
-import { Plus, Trash2, Shield, Building, Building2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Shield, Building, Building2, Loader2, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface User {
@@ -12,6 +12,7 @@ interface User {
   firstName: string;
   lastName: string;
   email: string;
+  role?: string;
 }
 
 interface Institute {

@@ -43,7 +43,7 @@ const CourseManagement: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['courses', debouncedSearchTerm],
     queryFn: async () => {
       const { data } = await api.get(`${API_ENDPOINTS.COURSES.BASE}${debouncedSearchTerm ? `?search=${debouncedSearchTerm}` : ''}`);

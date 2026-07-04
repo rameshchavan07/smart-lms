@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { API_ENDPOINTS } from '../services/apiEndpoints';
-import { format } from 'date-fns';
+
 
 interface NotificationData {
   id: string;
