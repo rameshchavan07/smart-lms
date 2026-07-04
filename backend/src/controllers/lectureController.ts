@@ -9,6 +9,8 @@ import { getOrCreateFolderId, uploadFileToDrive, deleteFileFromDrive } from '../
 import { createNotification } from '../services/notificationService';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, NotFoundError, ValidationError, ForbiddenError, UnauthorizedError } from '../utils/AppError';
+import { getCache, setCache, invalidateCache } from '../utils/cache';
+import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
 import prisma from '../config/db';
 
@@ -51,6 +53,9 @@ export const createLecture = catchAsync(async (req: AuthRequest, res: Response) 
 
   await logActivity(req.user!.id, `Scheduled lecture: ${title} for course: ${course.title}`, 'Lecture', lecture.id);
 
+  // Invalidate lecture list cache for this course
+  await invalidateCache(CACHE_KEYS.COURSE_LECTURES(courseId));
+
   // Notify enrolled students
   const enrollments = await prisma.enrollment.findMany({
     where: { courseId },
@@ -89,12 +94,18 @@ export const getCourseLectures = catchAsync(async (req: AuthRequest, res: Respon
     }
   }
 
+  const cacheKey = CACHE_KEYS.COURSE_LECTURES(courseId);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
+
   const lectures = await prisma.lecture.findMany({
     where: { courseId },
     orderBy: { startTime: 'asc' }
   });
 
-  res.json({ lectures });
+  const payload = { lectures };
+  await setCache(cacheKey, payload, CACHE_TTL.COURSE_LECTURES);
+  res.json(payload);
 });
 
 // Join a lecture (record attendance logic later, just fetch info for now)
@@ -116,8 +127,8 @@ export const getLectureDetails = catchAsync(async (req: AuthRequest, res: Respon
   const jitsiToken = generateJitsiToken(
     {
       id: req.user!.id,
-      firstName: req.user!.firstName,
-      lastName: req.user!.lastName,
+      firstName: req.user!.firstName || '',
+      lastName: req.user!.lastName || '',
       email: req.user!.email,
       role: req.user!.role,
     },
@@ -163,6 +174,9 @@ export const updateLecture = catchAsync(async (req: AuthRequest, res: Response) 
 
   // @ts-ignore
   await logActivity(req.user!.id, `Updated lecture: ${title} for course: ${lecture.course?.title || lecture.courseId}`, 'Lecture', lecture.id);
+
+  // Invalidate the lecture list cache for this course
+  await invalidateCache(CACHE_KEYS.COURSE_LECTURES(lecture.courseId));
 
   res.json({ message: 'Lecture updated successfully', lecture: updatedLecture });
 });
@@ -221,6 +235,9 @@ export const deleteLecture = catchAsync(async (req: AuthRequest, res: Response) 
 
   // @ts-ignore
   await logActivity(req.user!.id, `Deleted lecture: ${lecture.title} from course: ${lecture.course?.title || lecture.courseId}`, 'Lecture', id);
+
+  // Invalidate the lecture list cache for this course
+  await invalidateCache(CACHE_KEYS.COURSE_LECTURES(lecture.courseId));
 
   res.json({ message: 'Lecture deleted successfully' });
 });
@@ -387,7 +404,7 @@ export const uploadLectureRecording = catchAsync(async (req: AuthRequest, res: R
   // Save to GoogleDriveFile table
   await prisma.googleDriveFile.create({
     data: {
-      driveFileId: result.fileId,
+      driveFileId: result.fileId || '',
       fileName: req.file.originalname || `recording-${lecture.id}.webm`,
       fileUrl: result.webViewLink || '',
       uploadedBy: req.user!.id,

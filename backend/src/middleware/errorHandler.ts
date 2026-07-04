@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError';
 import { invalidCsrfTokenError } from './csrf';
 
-export const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFunction): void => {
+export const globalErrorHandler = (err: unknown, req: Request, res: Response, next: NextFunction): void => {
   if (err === invalidCsrfTokenError) {
     res.status(403).json({ message: 'Invalid CSRF token' });
     return;
@@ -16,17 +16,19 @@ export const globalErrorHandler = (err: any, req: Request, res: Response, next: 
     return;
   }
 
+  const errObj = err as any;
+
   // Known 3rd party errors
-  if (err.name === 'MulterError') {
+  if (errObj && errObj.name === 'MulterError') {
     const statusCode = 400;
-    const message = err.code === 'LIMIT_FILE_SIZE' 
+    const message = errObj.code === 'LIMIT_FILE_SIZE' 
       ? 'File size is too large. Please upload a smaller file.'
-      : `Upload error: ${err.message}`;
+      : `Upload error: ${errObj.message}`;
     res.status(statusCode).json({ status: 'error', message });
     return;
   } 
 
-  if (err.message && (err.message.includes('Invalid file type') || err.message.includes('Only'))) {
+  if (err instanceof Error && err.message && (err.message.includes('Invalid file type') || err.message.includes('Only'))) {
     res.status(400).json({ status: 'error', message: err.message });
     return;
   }
@@ -34,6 +36,6 @@ export const globalErrorHandler = (err: any, req: Request, res: Response, next: 
   console.error('Unhandled Error:', err);
   res.status(500).json({
     status: 'error',
-    message: err.message || 'Internal Server Error'
+    message: (err instanceof Error ? err.message : null) || 'Internal Server Error'
   });
 };

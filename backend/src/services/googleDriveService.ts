@@ -1,9 +1,9 @@
-import { google } from 'googleapis';
+import { google, drive_v3 } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 import prisma from '../config/db';
 
-let driveClient: any = null;
+let driveClient: drive_v3.Drive | null = null;
 
 /**
  * Initialize Google Drive client.
@@ -27,8 +27,8 @@ const getDriveClient = () => {
       driveClient = google.drive({ version: 'v3', auth: oauth2Client });
       console.log('[GoogleDrive] ✅ Using OAuth2 (personal account - full 5TB storage)');
       return driveClient;
-    } catch (err: any) {
-      console.error('[GoogleDrive] OAuth2 init failed:', err.message);
+    } catch (err) {
+      console.error('[GoogleDrive] OAuth2 init failed:', err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -48,8 +48,8 @@ const getDriveClient = () => {
     driveClient = google.drive({ version: 'v3', auth });
     console.log('[GoogleDrive] Using Service Account (note: requires Shared Drive for uploads)');
     return driveClient;
-  } catch (err: any) {
-    console.error('[GoogleDrive] Service Account init failed:', err.message);
+  } catch (err) {
+    console.error('[GoogleDrive] Service Account init failed:', err instanceof Error ? err.message : String(err));
     return null;
   }
 };
@@ -57,10 +57,11 @@ const getDriveClient = () => {
 /**
  * Extracts a human-readable error from Google API errors
  */
-const getGoogleErrorMessage = (error: any): string => {
-  const googleError = error?.response?.data?.error;
+const getGoogleErrorMessage = (error: unknown): string => {
+  const err = error as any;
+  const googleError = err?.response?.data?.error;
   if (googleError) {
-    const code = googleError.code || error?.response?.status;
+    const code = googleError.code || err?.response?.status;
     const message = googleError.message || 'Unknown Google API error';
     const reason = googleError.errors?.[0]?.reason || '';
 
@@ -72,11 +73,17 @@ const getGoogleErrorMessage = (error: any): string => {
     if (code === 401) return `Authentication failed (401): Re-run node getGoogleToken.js`;
     return `Google API [${code}]: ${message}`;
   }
-  if (error?.response?.data?.error === 'invalid_grant') {
+  if (err?.response?.data?.error === 'invalid_grant') {
     return 'Google Drive token expired or revoked. Please run: node getGoogleToken.js';
   }
-  if (error?.code === 'ENOENT') return `Temp file not found: ${error.path}`;
-  return error?.message || 'Unknown error';
+  if (err?.code === 'ENOENT') return `Temp file not found: ${err.path}`;
+  if (err?.errors && err.errors.length > 0) {
+    return err.errors[0].message;
+  }
+  if (err?.message) {
+    return err.message;
+  }
+  return 'Unknown Google Drive error occurred.';
 };
 
 interface PathComponent {
@@ -141,8 +148,8 @@ export const getOrCreateFolderId = async (
           supportsAllDrives: true,
           requestBody: { role: 'reader', type: 'anyone' },
         });
-      } catch (err: any) {
-        console.warn(`[GoogleDrive] Could not set folder permissions for "${folderName}":`, err.message);
+      } catch (err) {
+        console.warn(`[GoogleDrive] Could not set folder permissions for "${folderName}":`, err instanceof Error ? err.message : String(err));
       }
 
       // Save to database cache
@@ -156,8 +163,8 @@ export const getOrCreateFolderId = async (
 
       parentFolderId = newFolderId;
       console.log(`[GoogleDrive] ✅ Created and cached folder: "${folderName}" (ID: ${newFolderId})`);
-    } catch (error: any) {
-      console.error(`[GoogleDrive] ❌ Failed to create folder "${folderName}":`, error.message);
+    } catch (error) {
+      console.error(`[GoogleDrive] ❌ Failed to create folder "${folderName}":`, error instanceof Error ? error.message : String(error));
       throw new Error(`Failed to create Google Drive folder "${folderName}": ${getGoogleErrorMessage(error)}`);
     }
   }
@@ -197,10 +204,11 @@ export const uploadFileToDrive = async (
       supportsAllDrives: true,
     });
 
-    fileId = file.data.id;
+    fileId = file.data.id || '';
     console.log('[GoogleDrive] ✅ Uploaded, File ID:', fileId);
-  } catch (error: any) {
-    console.error('[GoogleDrive] Full upload error:', JSON.stringify(error?.response?.data || error?.message || error, null, 2));
+  } catch (error) {
+    const errObj = error as any;
+    console.error('[GoogleDrive] Full upload error:', JSON.stringify(errObj?.response?.data || errObj?.message || error, null, 2));
     const msg = getGoogleErrorMessage(error);
     console.error('[GoogleDrive] ❌ Upload failed:', msg);
     throw new Error(msg);
@@ -214,7 +222,7 @@ export const uploadFileToDrive = async (
       requestBody: { role: 'reader', type: 'anyone' },
     });
     console.log('[GoogleDrive] ✅ File set to public reader');
-  } catch (error: any) {
+  } catch (error) {
     console.warn('[GoogleDrive] ⚠️ Could not set public permission:', getGoogleErrorMessage(error));
   }
 
@@ -250,7 +258,7 @@ export const deleteFileFromDrive = async (fileId: string) => {
   try {
     await drive.files.delete({ fileId, supportsAllDrives: true });
     console.log('[GoogleDrive] ✅ File deleted:', fileId);
-  } catch (error: any) {
+  } catch (error) {
     console.error('[GoogleDrive] ❌ Delete failed:', getGoogleErrorMessage(error));
   }
 };

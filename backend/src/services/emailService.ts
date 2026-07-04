@@ -90,7 +90,7 @@ export const sendEmailVerificationOtp = async (email: string, firstName: string,
       }
       throw new Error(`Email delivery failed: ${error.message}`);
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error('Resend sendEmailVerificationOtp exception:', err);
     if (process.env.NODE_ENV !== 'production' || !process.env.RESEND_API_KEY) {
       console.log('\n==================================================');
@@ -133,7 +133,7 @@ export const sendPasswordResetOtp = async (email: string, firstName: string, otp
       }
       throw new Error(`Email delivery failed: ${error.message}`);
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error('Resend sendPasswordResetOtp exception:', err);
     if (process.env.NODE_ENV !== 'production' || !process.env.RESEND_API_KEY) {
       console.log('\n==================================================');
@@ -176,7 +176,7 @@ export const sendWelcomeEmail = async (email: string, firstName: string): Promis
       }
       throw new Error(`Email delivery failed: ${error.message}`);
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error('Resend sendWelcomeEmail exception:', err);
     if (process.env.NODE_ENV !== 'production' || !process.env.RESEND_API_KEY) {
       console.log(`[DEV FALLBACK] Welcome email to ${email} simulated successfully.`);

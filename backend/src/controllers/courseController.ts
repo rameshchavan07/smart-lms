@@ -9,6 +9,7 @@ import { AppError, NotFoundError, ValidationError, ForbiddenError } from '../uti
 import { getCache, setCache, invalidateCacheByPattern } from '../utils/cache';
 import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
+import { Prisma } from '@prisma/client';
 import prisma from '../config/db';
 
 // Get all courses with pagination and optional search
@@ -23,7 +24,7 @@ export const getCourses = catchAsync(async (req: AuthRequest, res: Response) => 
   const cached = await getCache<object>(cacheKey);
   if (cached) return res.json(cached);
 
-  const whereClause: any = {};
+  const whereClause: Prisma.CourseWhereInput = {};
   if (search) {
     whereClause.OR = [
       { title: { contains: search, mode: 'insensitive' } },
@@ -107,8 +108,8 @@ export const createCourse = catchAsync(async (req: AuthRequest, res: Response) =
         { path: `institutes/${instId}/courses/${cId}/${sub}`, name: sub }
       ]);
     }
-  } catch (err: any) {
-    console.error(`Failed to create Google Drive folder for course ${title}:`, err.message);
+  } catch (err) {
+    console.error(`Failed to create Google Drive folder for course ${title}:`, err instanceof Error ? err.message : String(err));
   }
 
   await logActivity(req.user!.id, `Created course: ${title}`, 'Course', course.id);

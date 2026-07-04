@@ -1,15 +1,36 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt';
 
+import { UserRole } from '@prisma/client';
 import prisma from '../config/db';
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  firstName: string | null;
+  lastName: string | null;
+  isActive: boolean;
+  profileImage: string | null;
+  instituteId: string | null;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthUser;
+    }
+    interface User extends AuthUser {}
+  }
+}
+
 export interface AuthRequest extends Request {
-  user?: any;
+  user?: AuthUser;
 }
 
 // Simple in-memory cache for user sessions to reduce DB hits
 // Key: userId, Value: { user, expiresAt }
-const userCache = new Map<string, { user: any; expiresAt: number }>();
+const userCache = new Map<string, { user: AuthUser; expiresAt: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -21,17 +42,18 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
 
   if (token) {
     try {
-      const decoded: any = verifyToken(token);
+      const decoded = verifyToken(token) as { id: string };
 
       // Check cache first
       const cached = userCache.get(decoded.id);
       if (cached && cached.expiresAt > Date.now()) {
         req.user = cached.user;
       } else {
-        req.user = await prisma.user.findUnique({
+        const user = await prisma.user.findUnique({
           where: { id: decoded.id },
           select: { id: true, email: true, role: true, firstName: true, lastName: true, isActive: true, profileImage: true, instituteId: true },
         });
+        req.user = user || undefined;
         
         if (req.user) {
           userCache.set(decoded.id, { user: req.user, expiresAt: Date.now() + CACHE_TTL });

@@ -1,5 +1,16 @@
 import bcrypt from 'bcrypt';
 import prisma from '../config/db';
+import { UserRole } from '@prisma/client';
+
+export interface RegisterUserData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password?: string;
+  phoneNumber?: string;
+  address?: string;
+  role?: UserRole;
+}
 import { generateToken, generateRefreshToken } from '../utils/jwt';
 import { logActivity } from '../utils/auditLogger';
 import { createOtp, verifyOtp, deleteOtpsForEmail } from './otpService';
@@ -33,7 +44,7 @@ export const buildAuthResponse = async (user: User) => {
   };
 };
 
-export const registerUserLogic = async (data: any) => {
+export const registerUserLogic = async (data: RegisterUserData) => {
   const { firstName, lastName, email, password, phoneNumber, address, role } = data;
   
   const userRole = (role === 'TEACHER' || role === 'ADMIN') ? role : 'STUDENT';
@@ -44,7 +55,7 @@ export const registerUserLogic = async (data: any) => {
   }
 
   const salt = await bcrypt.genSalt(10);
-  const passwordHash = await bcrypt.hash(password, salt);
+  const passwordHash = await bcrypt.hash(password || '', salt);
 
   const user = await prisma.user.create({
     data: {

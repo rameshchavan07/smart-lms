@@ -25,7 +25,15 @@ export const getVapidPublicKey = () => {
   return vapidKeys.publicKey;
 };
 
-export const saveSubscription = async (userId: string, subscription: any) => {
+export interface PushSubscriptionData {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
+export const saveSubscription = async (userId: string, subscription: PushSubscriptionData) => {
   return prisma.pushSubscription.upsert({
     where: { endpoint: subscription.endpoint },
     update: {
@@ -76,8 +84,9 @@ export const sendNotification = async (userId: string, title: string, message: s
         },
         payload
       );
-    } catch (error: any) {
-      if (error.statusCode === 404 || error.statusCode === 410) {
+    } catch (error) {
+      const err = error as any;
+      if (err.statusCode === 404 || err.statusCode === 410) {
         // Subscription has expired or is no longer valid
         console.log('Subscription has expired or is no longer valid. Deleting...');
         await prisma.pushSubscription.delete({ where: { id: sub.id } });

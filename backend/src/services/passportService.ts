@@ -68,7 +68,7 @@ export const configurePassport = () => {
 
   // We use stateless JWT — no session serialization needed.
   // Passport still requires these to exist when session middleware is present.
-  passport.serializeUser((user: any, done) => done(null, user.id));
+  passport.serializeUser((user: Express.User | { id: string }, done) => done(null, (user as { id: string }).id));
   passport.deserializeUser(async (id: string, done) => {
     const user = await prisma.user.findUnique({ where: { id } });
     done(null, user);

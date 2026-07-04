@@ -78,8 +78,8 @@ let swaggerDocument: object;
 try {
   swaggerDocument = YAML.load(swaggerFilePath);
   console.log('Swagger YAML loaded successfully');
-} catch (err: any) {
-  console.error('Failed to load swagger.yaml:', err.message);
+} catch (err) {
+  console.error('Failed to load swagger.yaml:', err instanceof Error ? err.message : String(err));
   swaggerDocument = { openapi: '3.0.0', info: { title: 'OpenLearnX API', version: '1.0.0' }, paths: {} };
 }
 

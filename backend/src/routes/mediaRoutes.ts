@@ -27,7 +27,7 @@ router.get('/drive/:fileId', async (req: Request, res: Response): Promise<void> 
     res.status(isRangeRequest ? 206 : 200);
 
     // Pipe Google Drive file stream straight to client response
-    stream.on('error', (err: any) => {
+    stream.on('error', (err: unknown) => {
       console.error('[MediaProxy] Stream error:', err);
       if (!res.headersSent) {
         res.status(500).json({ message: 'Error streaming file' });
@@ -35,8 +35,8 @@ router.get('/drive/:fileId', async (req: Request, res: Response): Promise<void> 
     });
 
     stream.pipe(res);
-  } catch (error: any) {
-    console.error(`[MediaProxy] Failed to fetch file ${fileId} from Drive:`, error.message);
+  } catch (error) {
+    console.error(`[MediaProxy] Failed to fetch file ${fileId} from Drive:`, error instanceof Error ? error.message : String(error));
     res.status(404).json({ message: 'Resource not found or access denied' });
   }
 });

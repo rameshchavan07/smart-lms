@@ -4,6 +4,8 @@ import { getIO } from '../utils/socket';
 import { AuthRequest } from '../middleware/auth';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, NotFoundError, ValidationError, ForbiddenError } from '../utils/AppError';
+import { getCache, setCache, invalidateCache } from '../utils/cache';
+import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
 import prisma from '../config/db';
 import { sendNotification } from '../services/notifications.service';
@@ -24,6 +26,11 @@ const gradeSubmissionSchema = z.object({
 
 export const getAssignmentsByCourse = catchAsync(async (req: AuthRequest, res: Response) => {
   const { courseId } = req.params;
+
+  const cacheKey = CACHE_KEYS.COURSE_ASSIGNMENTS(courseId as string);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
+
   const assignments = await prisma.assignment.findMany({
     where: { courseId: courseId as string },
     include: {
@@ -31,7 +38,10 @@ export const getAssignmentsByCourse = catchAsync(async (req: AuthRequest, res: R
     },
     orderBy: { dueDate: 'asc' },
   });
-  res.json({ assignments });
+
+  const payload = { assignments };
+  await setCache(cacheKey, payload, CACHE_TTL.COURSE_ASSIGNMENTS);
+  res.json(payload);
 });
 
 export const createAssignment = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -54,6 +64,9 @@ export const createAssignment = catchAsync(async (req: AuthRequest, res: Respons
   });
 
   getIO().to(`course_${courseId}`).emit('new_assignment', { courseId, assignment });
+
+  // Invalidate course assignments and teacher assessments caches
+  await invalidateCache(CACHE_KEYS.COURSE_ASSIGNMENTS(courseId as string));
 
   // Notify enrolled students
   const course = await prisma.course.findUnique({
@@ -101,6 +114,10 @@ export const submitAssignment = catchAsync(async (req: AuthRequest, res: Respons
     },
   });
 
+  // Invalidate student-specific assignment and submission caches
+  await invalidateCache(CACHE_KEYS.STUDENT_ASSIGNMENTS(student.id));
+  await invalidateCache(CACHE_KEYS.MY_SUBMISSIONS(student.id));
+
   res.status(201).json({ message: 'Assignment submitted successfully', submission });
 });
 
@@ -139,6 +156,10 @@ export const gradeSubmission = catchAsync(async (req: AuthRequest, res: Response
     `Your submission for "${submission.assignment.title}" has been graded: ${marks} marks.`
   ).catch(err => console.error('Grading notification error:', err));
 
+  // Invalidate student assignment/submission caches (status changes) and teacher assessments (submission counts change)
+  await invalidateCache(CACHE_KEYS.STUDENT_ASSIGNMENTS(submission.studentId));
+  await invalidateCache(CACHE_KEYS.MY_SUBMISSIONS(submission.studentId));
+
   res.json({ message: 'Submission graded', submission });
 });
 
@@ -163,13 +184,19 @@ export const getMySubmissions = catchAsync(async (req: AuthRequest, res: Respons
     throw new NotFoundError('Student not found');
   }
 
+  const cacheKey = CACHE_KEYS.MY_SUBMISSIONS(student.id);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
+
   const submissions = await prisma.assignmentSubmission.findMany({
     where: { studentId: student.id },
     include: { assignment: true },
     orderBy: { submittedAt: 'desc' }
   });
 
-  res.json({ submissions });
+  const payload = { submissions };
+  await setCache(cacheKey, payload, CACHE_TTL.MY_SUBMISSIONS);
+  res.json(payload);
 });
 
 export const getTeacherAssessments = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -178,6 +205,10 @@ export const getTeacherAssessments = catchAsync(async (req: AuthRequest, res: Re
   if (!teacher) {
     throw new NotFoundError('Teacher not found');
   }
+
+  const cacheKey = CACHE_KEYS.TEACHER_ASSESSMENTS(teacher.id);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
 
   const assignments = await prisma.assignment.findMany({
     where: { course: { teacherId: teacher.id } },
@@ -219,7 +250,9 @@ export const getTeacherAssessments = catchAsync(async (req: AuthRequest, res: Re
 
   const allAssessments = [...formattedAssignments, ...formattedQuizzes].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-  res.json({ assessments: allAssessments });
+  const payload = { assessments: allAssessments };
+  await setCache(cacheKey, payload, CACHE_TTL.TEACHER_ASSESSMENTS);
+  res.json(payload);
 });
 
 export const getAdminAssessments = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -271,6 +304,10 @@ export const getStudentAssignments = catchAsync(async (req: AuthRequest, res: Re
     throw new NotFoundError('Student not found');
   }
 
+  const cacheKey = CACHE_KEYS.STUDENT_ASSIGNMENTS(student.id);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
+
   const enrollments = await prisma.enrollment.findMany({ where: { studentId: student.id } });
   const courseIds = enrollments.map(e => e.courseId);
 
@@ -305,5 +342,7 @@ export const getStudentAssignments = catchAsync(async (req: AuthRequest, res: Re
     };
   });
 
-  res.json({ assignments: formatted });
+  const payload = { assignments: formatted };
+  await setCache(cacheKey, payload, CACHE_TTL.STUDENT_ASSIGNMENTS);
+  res.json(payload);
 });

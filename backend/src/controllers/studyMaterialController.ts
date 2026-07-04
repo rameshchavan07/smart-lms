@@ -6,6 +6,8 @@ import { logActivity } from '../utils/auditLogger';
 import { createNotification } from '../services/notificationService';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, NotFoundError, ValidationError, ForbiddenError, UnauthorizedError } from '../utils/AppError';
+import { getCache, setCache, invalidateCache } from '../utils/cache';
+import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
 import prisma from '../config/db';
 
@@ -68,7 +70,7 @@ export const uploadMaterial = catchAsync(async (req: AuthRequest, res: Response)
     // Save to GoogleDriveFile table first (tracks drive storage usage)
     await prisma.googleDriveFile.create({
       data: {
-        driveFileId: result.fileId,
+        driveFileId: result.fileId || '',
         fileName: req.file.originalname,
         fileUrl: result.webViewLink || '',
         uploadedBy: req.user!.id,
@@ -95,6 +97,9 @@ export const uploadMaterial = catchAsync(async (req: AuthRequest, res: Response)
       try { fs.unlinkSync(req.file.path); } catch (_) {}
     }
 
+    // Invalidate the course materials cache
+    await invalidateCache(CACHE_KEYS.COURSE_MATERIALS(courseId));
+
     // Notify enrolled students
     const enrollments = await prisma.enrollment.findMany({
       where: { courseId },
@@ -116,7 +121,7 @@ export const uploadMaterial = catchAsync(async (req: AuthRequest, res: Response)
       studyMaterial
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Cleanup temp file on error
     if (req.file && fs.existsSync(req.file.path)) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
@@ -158,12 +163,18 @@ export const getCourseMaterials = catchAsync(async (req: AuthRequest, res: Respo
     }
   }
 
+  const cacheKey = CACHE_KEYS.COURSE_MATERIALS(courseId);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
+
   const materials = await prisma.studyMaterial.findMany({
     where: { courseId },
     orderBy: { uploadedAt: 'desc' }
   });
 
-  res.json({ materials });
+  const payload = { materials };
+  await setCache(cacheKey, payload, CACHE_TTL.COURSE_MATERIALS);
+  res.json(payload);
 });
 
 // Delete study material (Teacher only)
@@ -215,6 +226,9 @@ export const deleteMaterial = catchAsync(async (req: AuthRequest, res: Response)
   });
 
   await logActivity(req.user!.id, `Deleted study material: ${studyMaterial.title}`, 'StudyMaterial', id);
+
+  // Invalidate the course materials cache
+  await invalidateCache(CACHE_KEYS.COURSE_MATERIALS(studyMaterial.courseId));
 
   res.json({ message: 'Study material deleted successfully' });
 });

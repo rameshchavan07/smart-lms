@@ -7,6 +7,7 @@ import { NotFoundError, ValidationError, ForbiddenError } from '../utils/AppErro
 import { getCache, setCache, invalidateCacheByPattern } from '../utils/cache';
 import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
+import { Prisma, UserRole } from '@prisma/client';
 import prisma from '../config/db';
 
 const ROLE_HIERARCHY: Record<string, number> = {
@@ -34,8 +35,8 @@ export const getUsers = catchAsync(async (req: AuthRequest, res: Response) => {
 
   const skip = (page - 1) * limit;
 
-  const whereClause: any = {};
-  if (role) whereClause.role = role;
+  const whereClause: Prisma.UserWhereInput = {};
+  if (role) whereClause.role = role as UserRole;
   if (search) {
     whereClause.OR = [
       { firstName: { contains: search, mode: 'insensitive' } },
@@ -329,7 +330,7 @@ export const deleteUser = catchAsync(async (req: AuthRequest, res: Response) => 
 export const updateProfile = catchAsync(async (req: AuthRequest, res: Response) => {
   const userId = req.user!.id;
   const { firstName, lastName, password } = req.body;
-  const updateData: any = {};
+  const updateData: Prisma.UserUpdateInput = {};
   if (firstName) updateData.firstName = firstName;
   if (lastName) updateData.lastName = lastName;
 

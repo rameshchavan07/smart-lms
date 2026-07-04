@@ -87,8 +87,8 @@ export const createInstitute = catchAsync(async (req: AuthRequest, res: Response
       { path: 'institutes', name: 'Institutes' },
       { path: `institutes/${institute.id}`, name: institute.name }
     ]);
-  } catch (err: any) {
-    console.error(`Failed to create Google Drive folder for institute ${name}:`, err.message);
+  } catch (err) {
+    console.error(`Failed to create Google Drive folder for institute ${name}:`, err instanceof Error ? err.message : String(err));
     // We don't fail the whole request just because Drive folder creation failed
   }
 

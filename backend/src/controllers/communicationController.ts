@@ -1,9 +1,22 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
+import { Prisma } from '@prisma/client';
 import prisma from '../config/db';
 import { getIO } from '../utils/socket';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, NotFoundError, ValidationError, ForbiddenError } from '../utils/AppError';
+
+interface ContactUser {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  role?: string;
+  profileImage: string | null;
+}
+
+type ChatGroupPayload = Prisma.ChatGroupGetPayload<{ 
+  include: { members: { include: { user: { select: { id: true, firstName: true, lastName: true, profileImage: true } } } } } 
+}>;
 
 export const getAnnouncements = catchAsync(async (req: AuthRequest, res: Response) => {
     const teacherId = req.user!.role === 'TEACHER' 
@@ -150,10 +163,10 @@ export const getContacts = catchAsync(async (req: AuthRequest, res: Response) =>
     const userId = req.user!.id;
     const role = req.user!.role;
 
-    let peers: any[] = [];
-    let teachers: any[] = [];
-    let students: any[] = [];
-    let groups: any[] = [];
+    let peers: ContactUser[] = [];
+    let teachers: ContactUser[] = [];
+    let students: ContactUser[] = [];
+    let groups: ChatGroupPayload[] = [];
 
     // Fetch groups user is part of
     groups = await prisma.chatGroup.findMany({
@@ -224,7 +237,7 @@ export const createGroupChat = catchAsync(async (req: AuthRequest, res: Response
     }
 
     const membersData = memberIds.map((id: string) => ({ userId: id }));
-    if (!membersData.some((m: any) => m.userId === userId)) {
+    if (!membersData.some((m: { userId: string }) => m.userId === userId)) {
       membersData.push({ userId }); // add creator
     }
 

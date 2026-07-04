@@ -2,11 +2,31 @@ import { Request, Response } from 'express';
 // Cache bust comment
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, NotFoundError, ValidationError, ForbiddenError, UnauthorizedError } from '../utils/AppError';
+import { getCache, setCache, invalidateCache } from '../utils/cache';
+import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
+import { AuthRequest } from '../middleware/auth';
 
+import { Prisma } from '@prisma/client';
 import prisma from '../config/db';
 
+type FullQuizPayload = Prisma.QuizGetPayload<{ include: { questions: { include: { options: true } } } }>;
+
+interface QuizAnswer {
+  questionId: string;
+  selectedOptionId: string;
+}
+
+interface QuizQuestionInput {
+  text: string;
+  marks: string | number;
+  options: {
+    text: string;
+    isCorrect: boolean;
+  }[];
+}
+
 // Create a new quiz for a course
-export const createQuiz = catchAsync(async (req: Request, res: Response) => {
+export const createQuiz = catchAsync(async (req: AuthRequest, res: Response) => {
   const courseId = req.params.courseId as string;
   const { title, description, durationMins, totalMarks, questions } = req.body;
 
@@ -22,19 +42,14 @@ export const createQuiz = catchAsync(async (req: Request, res: Response) => {
       courseId,
       title,
       description,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      durationMins: durationMins ? parseInt(durationMins as any) : null,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      totalMarks: parseInt(totalMarks as any),
+      durationMins: durationMins ? Number(durationMins) : null,
+      totalMarks: Number(totalMarks),
       questions: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        create: questions.map((q: any) => ({
+        create: (questions as QuizQuestionInput[]).map((q) => ({
           text: q.text,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          marks: parseInt(q.marks as any),
+          marks: Number(q.marks),
           options: {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            create: q.options.map((o: any) => ({
+            create: q.options.map((o) => ({
               text: o.text,
               isCorrect: o.isCorrect
             }))
@@ -51,13 +66,20 @@ export const createQuiz = catchAsync(async (req: Request, res: Response) => {
     }
   });
 
+  // Invalidate the course quiz list so the new quiz appears immediately
+  await invalidateCache(CACHE_KEYS.COURSE_QUIZZES(courseId));
+
   res.status(201).json({ message: 'Quiz created successfully', quiz });
 });
 
 // Get all quizzes for a specific course
-export const getCourseQuizzes = catchAsync(async (req: Request, res: Response) => {
+export const getCourseQuizzes = catchAsync(async (req: AuthRequest, res: Response) => {
   const courseId = req.params.courseId as string;
-  
+
+  const cacheKey = CACHE_KEYS.COURSE_QUIZZES(courseId);
+  const cached = await getCache<object>(cacheKey);
+  if (cached) return res.json(cached);
+
   const quizzes = await prisma.quiz.findMany({
     where: { courseId },
     orderBy: { createdAt: 'desc' },
@@ -68,15 +90,40 @@ export const getCourseQuizzes = catchAsync(async (req: Request, res: Response) =
     }
   });
 
-  res.json({ quizzes });
+  const payload = { quizzes };
+  await setCache(cacheKey, payload, CACHE_TTL.COURSE_QUIZZES);
+  res.json(payload);
 });
 
 // Get quiz details (by ID)
-export const getQuizById = catchAsync(async (req: Request, res: Response) => {
+export const getQuizById = catchAsync(async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
-  // Assuming req.user is set by auth middleware
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const userRole = (req as any).user?.role;
+  const userRole = req.user?.role;
+
+  const cacheKey = CACHE_KEYS.QUIZ_DETAIL(id);
+  const cached = await getCache<object>(cacheKey);
+
+  if (cached) {
+    // Strip isCorrect for students at the cache-read layer
+    if (userRole === 'STUDENT') {
+      const cachedQuiz = (cached as { quiz?: FullQuizPayload }).quiz;
+      if (cachedQuiz) {
+        const sanitized = {
+          ...cachedQuiz,
+          questions: cachedQuiz.questions.map((q) => ({
+            ...q,
+            options: q.options.map((o) => ({
+              id: o.id,
+              text: o.text,
+              questionId: o.questionId
+            }))
+          }))
+        };
+        return res.json({ quiz: sanitized });
+      }
+    }
+    return res.json(cached);
+  }
 
   const quiz = await prisma.quiz.findUnique({
     where: { id },
@@ -93,13 +140,16 @@ export const getQuizById = catchAsync(async (req: Request, res: Response) => {
     throw new NotFoundError('Quiz not found');
   }
 
-  // If student, strip out isCorrect field
+  // Cache the full version (with isCorrect) — students get a stripped version
+  await setCache(cacheKey, { quiz }, CACHE_TTL.QUIZ_DETAIL);
+
+  // If student, strip out isCorrect field before responding
   if (userRole === 'STUDENT') {
     const sanitizedQuiz = {
       ...quiz,
-      questions: (quiz as any).questions.map((q: any) => ({
+      questions: quiz.questions.map((q) => ({
         ...q,
-        options: q.options.map((o: any) => ({
+        options: q.options.map((o) => ({
           id: o.id,
           text: o.text,
           questionId: o.questionId
@@ -114,12 +164,11 @@ export const getQuizById = catchAsync(async (req: Request, res: Response) => {
 });
 
 // Submit a quiz
-export const submitQuiz = catchAsync(async (req: Request, res: Response) => {
+export const submitQuiz = catchAsync(async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const { answers } = req.body; // Array of { questionId, selectedOptionId }
-  
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const userId = (req as any).user?.id;
+
+  const userId = req.user?.id;
   if (!userId) {
     throw new UnauthorizedError('Unauthorized');
   }
@@ -160,12 +209,11 @@ export const submitQuiz = catchAsync(async (req: Request, res: Response) => {
   let totalScore = 0;
   const formattedAnswers = [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const ans of answers as any[]) {
-    const question = (quiz as any).questions.find((q: any) => q.id === ans.questionId);
+  for (const ans of answers as QuizAnswer[]) {
+    const question = quiz.questions.find((q) => q.id === ans.questionId);
     if (!question) continue;
 
-    const selectedOption = question.options.find((o: any) => o.id === ans.selectedOptionId);
+    const selectedOption = question.options.find((o) => o.id === ans.selectedOptionId);
     if (selectedOption?.isCorrect) {
       totalScore += question.marks;
     }
@@ -187,11 +235,14 @@ export const submitQuiz = catchAsync(async (req: Request, res: Response) => {
     }
   });
 
+  // Invalidate student stats so dashboard reflects updated quiz scores
+  await invalidateCache(CACHE_KEYS.STUDENT_STATS(userId));
+
   res.status(201).json({ message: 'Quiz submitted successfully', score: totalScore, totalMarks: quiz.totalMarks, submission });
 });
 
 // Get quiz submissions (for teachers)
-export const getQuizSubmissions = catchAsync(async (req: Request, res: Response) => {
+export const getQuizSubmissions = catchAsync(async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   
   const submissions = await prisma.quizSubmission.findMany({

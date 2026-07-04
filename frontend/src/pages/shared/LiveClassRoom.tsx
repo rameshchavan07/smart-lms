@@ -7,6 +7,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ArrowLeft, PlayCircle } from 'lucide-react';
 import { LectureRecordingPlayer, LectureRecorderUI, Skeleton } from '../../components';
 
+interface JitsiExternalApi {
+  addListener: (event: string, callback: (...args: unknown[]) => void) => void;
+  executeCommand: (cmd: string) => void;
+}
+
 const LiveClassRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -126,8 +131,7 @@ const LiveClassRoom: React.FC = () => {
               displayName: `${user?.firstName} ${user?.lastName} (${user?.role})`,
               email: user?.email || 'guest@openlearnx.com'
             }}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onApiReady={(externalApi: { addListener: (event: string, callback: (...args: any[]) => void) => void, executeCommand: (cmd: string) => void }) => {
+            onApiReady={(externalApi: JitsiExternalApi) => {
               externalApi.addListener('videoConferenceJoined', () => {
                 console.log('[Attendance Hook] I Joined the conference');
                 if (user?.role === 'STUDENT' && id) {

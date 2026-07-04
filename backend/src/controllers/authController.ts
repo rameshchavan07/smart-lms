@@ -70,8 +70,8 @@ export const registerUser = catchAsync(async (req: Request, res: Response) => {
       message: 'Registration successful. Please check your email for a 6-digit verification code.',
       email,
     });
-  } catch (error: any) {
-    throw new ValidationError(error.message);
+  } catch (error) {
+    throw new ValidationError(error instanceof Error ? error.message : String(error));
   }
 });
 
@@ -89,9 +89,10 @@ export const verifyEmail = catchAsync(async (req: Request, res: Response) => {
       refreshToken,
       user,
     });
-  } catch (error: any) {
-    if (error.message === 'User not found.') throw new NotFoundError(error.message);
-    else throw new ValidationError(error.message);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg === 'User not found.') throw new NotFoundError(msg);
+    else throw new ValidationError(msg);
   }
 });
 
@@ -185,9 +186,9 @@ export const verifyResetOtp = catchAsync(async (req: Request, res: Response) => 
 export const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const { resetToken, newPassword } = req.body;
 
-  let decoded: any;
+  let decoded: { email: string; purpose: string };
   try {
-    decoded = jwt.verify(resetToken, process.env.OTP_RESET_SECRET!);
+    decoded = jwt.verify(resetToken, process.env.OTP_RESET_SECRET!) as { email: string; purpose: string };
   } catch {
     throw new ValidationError('Reset token is invalid or has expired. Please start over.');
   }
@@ -257,7 +258,7 @@ export const refresh = catchAsync(async (req: Request, res: Response) => {
     throw new UnauthorizedError('Invalid or expired refresh token');
   }
 
-  const decoded: any = verifyRefreshToken(refreshToken);
+  const decoded = verifyRefreshToken(refreshToken) as { id: string };
   const user = await prisma.user.findUnique({ where: { id: decoded.id } });
   if (!user) {
     throw new UnauthorizedError('User not found');

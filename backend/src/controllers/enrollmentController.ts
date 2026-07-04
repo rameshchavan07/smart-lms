@@ -102,7 +102,7 @@ export const unenrollStudent = catchAsync(async (req: AuthRequest, res: Response
     await logActivity(req.user!.id, `Unenrolled student: ${deleted.student.user.firstName} ${deleted.student.user.lastName} from ${deleted.course.title}`, 'Enrollment', deleted.id);
 
     res.json({ message: 'Student unenrolled successfully' });
-  } catch (error: any) {
+  } catch (error) {
     // If record not found, Prisma throws an error
     throw new ValidationError('Failed to unenroll student or record not found');
   }
