@@ -84,9 +84,7 @@ const TeacherCourses: React.FC = () => {
           </p>
         </div>
         <div className="sm:ml-auto flex items-center gap-2">
-          <Link to="#" className="btn btn-primary btn-sm gap-2">
-            <Plus className="w-4 h-4" /> Add Course
-          </Link>
+          {/* Removed Add Course button for teachers */}
         </div>
       </div>
 

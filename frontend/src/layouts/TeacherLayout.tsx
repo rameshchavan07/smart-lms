@@ -102,12 +102,7 @@ const TeacherLayout: React.FC = () => {
             );
           })}
 
-          <div className="mx-3 mt-4">
-            <button className={`w-full btn btn-primary btn-sm ${isCollapsed ? 'justify-center p-2' : 'justify-start gap-2'}`}>
-              <Plus className="w-4 h-4 shrink-0" />
-              {!isCollapsed && <span>Add New Course</span>}
-            </button>
-          </div>
+          {/* Removed Add New Course button for teachers as they don't create courses */}
         </nav>
 
         {/* Bottom */}

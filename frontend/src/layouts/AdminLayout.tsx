@@ -38,6 +38,7 @@ const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const isActive = (href: string) =>
     href === '/admin' ? location.pathname === href : location.pathname.startsWith(href) && href !== '#';
@@ -171,6 +172,8 @@ const AdminLayout: React.FC = () => {
               placeholder="Search anything..."
               className="input pl-9 py-2 text-[13px] h-9"
               aria-label="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
@@ -206,7 +209,7 @@ const AdminLayout: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="h-full"
             >
-              <Outlet />
+              <Outlet context={{ searchQuery }} />
             </motion.div>
           </AnimatePresence>
         </main>

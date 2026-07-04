@@ -5,6 +5,18 @@ import { logActivity } from '../utils/auditLogger';
 
 import prisma from '../config/db';
 
+const ROLE_HIERARCHY: Record<string, number> = {
+  SUPER_ADMIN: 4,
+  ADMIN: 3,
+  TEACHER: 2,
+  STUDENT: 1
+};
+
+const canModifyUser = (currentUserRole: string, targetUserRole: string): boolean => {
+  if (currentUserRole === 'SUPER_ADMIN') return true;
+  return ROLE_HIERARCHY[currentUserRole] > ROLE_HIERARCHY[targetUserRole];
+};
+
 // Get all users with pagination and filtering
 export const getUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -185,6 +197,13 @@ export const updateUserStatus = async (req: AuthRequest, res: Response): Promise
     const { id } = req.params;
     const { isActive } = req.body;
 
+    const targetUser = await prisma.user.findUnique({ where: { id: id as string } });
+    if (!targetUser) return { res: res.status(404).json({ message: 'User not found' }) } as any;
+
+    if (!canModifyUser(req.user!.role, targetUser.role) && req.user!.id !== id) {
+      return { res: res.status(403).json({ message: 'Permission denied: Cannot modify users with equal or higher roles.' }) } as any;
+    }
+
     const user = await prisma.user.update({
       where: { id: id as string },
       data: { isActive },
@@ -211,6 +230,11 @@ export const updateUser = async (req: AuthRequest, res: Response): Promise<void>
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    if (!canModifyUser(req.user!.role, user.role) && req.user!.id !== id) {
+      res.status(403).json({ message: 'Permission denied: Cannot modify users with equal or higher roles.' });
       return;
     }
 
@@ -280,6 +304,11 @@ export const deleteUser = async (req: AuthRequest, res: Response): Promise<void>
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    if (!canModifyUser(req.user!.role, user.role)) {
+      res.status(403).json({ message: 'Permission denied: Cannot delete users with equal or higher roles.' });
       return;
     }
 

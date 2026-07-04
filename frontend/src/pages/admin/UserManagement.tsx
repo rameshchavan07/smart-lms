@@ -7,6 +7,7 @@ import { UserPlus, MoreVertical, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Badge, Button, EmptyState, Modal, ConfirmDialog } from '../../components';
 import toast from 'react-hot-toast';
+import { useOutletContext } from 'react-router-dom';
 
 interface UserData {
   id: string;
@@ -17,6 +18,13 @@ interface UserData {
   isActive: boolean;
   createdAt: string;
 }
+
+const ROLE_HIERARCHY: Record<string, number> = {
+  SUPER_ADMIN: 4,
+  ADMIN: 3,
+  TEACHER: 2,
+  STUDENT: 1
+};
 
 const UserManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -37,6 +45,18 @@ const UserManagement: React.FC = () => {
       const { data } = await api.get(`/users${roleToFetch ? `?role=${roleToFetch}` : ''}`);
       return data.users;
     }
+  });
+
+  const { searchQuery = '' } = useOutletContext<{ searchQuery?: string }>() || {};
+
+  const filteredUsers = users.filter((user) => {
+    if (!searchQuery) return true;
+    const lowerQuery = searchQuery.toLowerCase();
+    return (
+      user.firstName.toLowerCase().includes(lowerQuery) ||
+      user.lastName.toLowerCase().includes(lowerQuery) ||
+      user.email.toLowerCase().includes(lowerQuery)
+    );
   });
 
   const toggleStatusMutation = useMutation({
@@ -126,7 +146,7 @@ const UserManagement: React.FC = () => {
             <div className="skeleton h-10 w-full rounded-xl" />
             <div className="skeleton h-10 w-full rounded-xl" />
           </div>
-        ) : users.length === 0 ? (
+        ) : filteredUsers.length === 0 ? (
           <div className="p-8">
             <EmptyState
               icon={<ShieldAlert className="w-8 h-8 text-primary-500" />}
@@ -149,7 +169,7 @@ const UserManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-surface divide-y divide-slate-200 dark:divide-slate-700">
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-bg-subtle/50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -171,17 +191,23 @@ const UserManagement: React.FC = () => {
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <button 
-                        onClick={() => toggleStatus(user.id, user.isActive)}
-                        className="cursor-pointer"
-                      >
+                      {(currentUser?.role === 'SUPER_ADMIN' || (ROLE_HIERARCHY[currentUser?.role || 'STUDENT'] > ROLE_HIERARCHY[user.role])) ? (
+                        <button 
+                          onClick={() => toggleStatus(user.id, user.isActive)}
+                          className="cursor-pointer"
+                        >
+                          <Badge variant={user.isActive ? 'success' : 'neutral'}>
+                            {user.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </button>
+                      ) : (
                         <Badge variant={user.isActive ? 'success' : 'neutral'}>
                           {user.isActive ? 'Active' : 'Inactive'}
                         </Badge>
-                      </button>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      {currentUser?.role === 'ADMIN' && (
+                      {(currentUser?.role === 'SUPER_ADMIN' || (ROLE_HIERARCHY[currentUser?.role || 'STUDENT'] > ROLE_HIERARCHY[user.role])) && (
                         <>
                           <Button 
                             variant="ghost"
