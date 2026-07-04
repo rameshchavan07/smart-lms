@@ -31,9 +31,12 @@ Built using a high-performance **Monorepo** structure, it combines a secure, str
 - **Real-Time Communication:** Integrated WebSockets (Socket.io) powering Chat Groups, Discussion Boards, and instant messaging.
 - **Cloud Storage Integration:** Automated Google Drive folder creation and secure, direct link proxying for study materials.
 - **Enterprise-Grade Security:** JWT-based auth via strict HTTPOnly cookies, Double CSRF Token validation, and strict API rate limiting.
+- **Horizontal Scalability:** Configured with `@socket.io/redis-adapter` for multi-node WebSocket broadcasting and `ioredis` for API-level database caching.
+- **Structured APM Logging:** Integrated `pino` and `pino-http` for lightweight, JSON-formatted request logging.
+- **Frontend Optimization:** Granular Vite bundle chunking ensures fast shell loading and aggressive caching of heavy dependencies (Jitsi, Framer).
 - **Notifications & Certificates:** Web-push notifications, email alerts (Resend), and dynamic PDF certificate generation (PDFKit) upon course completion.
 - **Responsive UI/UX:** Built with Tailwind CSS v4 featuring dark mode, animated skeleton loaders, and modern design tokens.
-- **Comprehensive Testing:** End-to-end and unit testing powered by Vitest and React Testing Library.
+- **Comprehensive Testing:** End-to-end and unit testing powered by Vitest and React Testing Library in a Strict TypeScript environment.
 
 ## 💻 Technologies and Frameworks Used
 
@@ -45,11 +48,13 @@ Built using a high-performance **Monorepo** structure, it combines a secure, str
 *   **Testing**: Vitest + React Testing Library
 
 ### Backend Services
-*   **Engine**: Node.js + Express.js + TypeScript
+*   **Engine**: Node.js + Express.js + Strict TypeScript
 *   **ORM**: Prisma Client v6
 *   **Database**: PostgreSQL
+*   **Caching & Pub/Sub**: Redis (via `ioredis`) for Socket.io adapter and query caching
 *   **File Engine**: Google Drive API v3 (for secure, scalable cloud storage)
-*   **Security**: JSON Web Tokens (JWT) via HTTPOnly Cookies + BCrypt hashing + Cookie Parser
+*   **Logging**: Pino & Pino-HTTP for structured JSON logging
+*   **Security**: JSON Web Tokens (JWT) via HTTPOnly Cookies + BCrypt hashing + Double CSRF
 *   **Testing**: Vitest + Supertest
 
 ---
