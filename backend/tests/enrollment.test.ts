@@ -41,7 +41,7 @@ function buildApp(role: string, userId = 'user-admin-1') {
   app.use(express.json());
   app.use(cookieParser());
   app.use((req: express.Request & { user?: unknown }, _res, next) => {
-    req.user = { id: userId, role, firstName: 'Test', lastName: 'User', email: 'test@lms.com' };
+    req.user = { id: userId, role: role as any, firstName: 'Test', lastName: 'User', email: 'test@lms.com' } as any;
     next();
   });
   app.post('/api/enrollments', enrollStudent);

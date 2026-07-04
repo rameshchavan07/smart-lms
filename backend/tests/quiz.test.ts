@@ -34,7 +34,7 @@ function buildApp(role: string, userId = 'user-1') {
   app.use(express.json());
   app.use(cookieParser());
   app.use((req: express.Request & { user?: unknown }, _res, next) => {
-    req.user = { id: userId, role };
+    req.user = { id: userId, role: role as any } as any;
     next();
   });
   app.get('/api/courses/:courseId/quizzes', getCourseQuizzes);

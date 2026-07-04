@@ -114,7 +114,7 @@ describe('Auth Controller — loginUser', () => {
 
     expect(res.status).toBe(200);
 
-    const cookies = (res.headers['set-cookie'] as string[]) ?? [];
+    const cookies = (res.headers['set-cookie'] as unknown as string[]) ?? [];
     const tokenCookie   = cookies.find((c: string) => c.startsWith('token='));
     const refreshCookie = cookies.find((c: string) => c.startsWith('refreshToken='));
 
@@ -193,7 +193,7 @@ describe('Auth Controller — refresh', () => {
       .set('Cookie', ['refreshToken=mock-refresh-token']);
 
     expect(res.status).toBe(200);
-    const cookies = (res.headers['set-cookie'] as string[]) ?? [];
+    const cookies = (res.headers['set-cookie'] as unknown as string[]) ?? [];
     const newTokenCookie = cookies.find((c: string) => c.startsWith('token='));
     expect(newTokenCookie).toBeDefined();
     expect(newTokenCookie).toContain('HttpOnly');
