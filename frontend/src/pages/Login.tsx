@@ -8,8 +8,9 @@ import {
   BookOpen, Users, ShieldCheck, BarChart3,
   Sparkles, ArrowRight, CheckCircle2
 } from 'lucide-react';
+import { getBackendBaseUrl } from '../utils/url';
 
-const BACKEND_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000';
+const BACKEND_URL = getBackendBaseUrl();
 
 const FEATURES = [
   { icon: BookOpen,    label: 'Open Source',   desc: 'Free & transparent' },

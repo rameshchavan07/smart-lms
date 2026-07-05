@@ -5,6 +5,7 @@ import { Save, User, Shield, Loader2 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
+import { getMediaUrl } from '../../utils/url';
 
 const StudentSettings: React.FC = () => {
   const { user, refreshUser } = useAuth();
@@ -77,7 +78,7 @@ const StudentSettings: React.FC = () => {
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center font-bold text-[20px] overflow-hidden shrink-0 relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
                 {avatarPreview ? (
-                  <img src={avatarPreview.startsWith('http') || avatarPreview.startsWith('blob:') ? avatarPreview : `http://localhost:5000${avatarPreview}`} alt="Profile" className="w-full h-full object-cover" />
+                  <img src={getMediaUrl(avatarPreview)} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   user?.firstName?.[0] || 'U'
                 )}

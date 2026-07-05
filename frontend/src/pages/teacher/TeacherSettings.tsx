@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useMutation } from '@tanstack/react-query';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
+import { getMediaUrl } from '../../utils/url';
 
 const TeacherSettings: React.FC = () => {
   const { user, refreshUser } = useAuth();
@@ -92,7 +93,7 @@ const TeacherSettings: React.FC = () => {
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-500 text-[32px] font-bold overflow-hidden shrink-0 relative group cursor-pointer" onClick={() => document.getElementById('teacher-avatar')?.click()}>
                   {avatarPreview ? (
-                    <img src={avatarPreview.startsWith('http') || avatarPreview.startsWith('blob:') ? avatarPreview : `http://localhost:5000${avatarPreview}`} className="w-full h-full object-cover" />
+                    <img src={getMediaUrl(avatarPreview)} className="w-full h-full object-cover" />
                   ) : (
                     user?.firstName?.[0] || 'T'
                   )}

@@ -3,6 +3,7 @@ import {
   Play, Pause, Volume2, VolumeX, Maximize, Minimize,
   SkipBack, SkipForward, Settings, AlertTriangle, ExternalLink
 } from 'lucide-react';
+import { getBackendBaseUrl } from '../utils/url';
 
 interface Chapter {
   time: number;   // seconds
@@ -31,8 +32,8 @@ const LectureRecordingPlayer: React.FC<LectureRecordingPlayerProps> = ({ url, ch
   if (url.includes('drive.google.com')) {
     const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-      playableUrl = `${baseUrl}/media/drive/${match[1]}`;
+      const baseUrl = getBackendBaseUrl();
+      playableUrl = `${baseUrl}/api/media/drive/${match[1]}`;
     }
   }
 

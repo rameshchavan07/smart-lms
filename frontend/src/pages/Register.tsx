@@ -5,8 +5,9 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Mail, Lock, User } from 'lucide-react';
 import { Logo } from '../components';
+import { getBackendBaseUrl } from '../utils/url';
 
-const BACKEND_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000';
+const BACKEND_URL = getBackendBaseUrl();
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({

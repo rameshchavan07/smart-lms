@@ -6,6 +6,7 @@ import { Skeleton } from '../../components/Skeleton';
 import { useAuth } from '../../contexts/AuthContext';
 import { io, Socket } from 'socket.io-client';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
+import { getMediaUrl, getSocketUrl } from '../../utils/url';
 import toast from 'react-hot-toast';
 
 interface ChatUser {
@@ -114,7 +115,7 @@ const TeacherCommunication: React.FC = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const newSocket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000', {
+    const newSocket = io(getSocketUrl(), {
       auth: { token }
     });
 
@@ -317,7 +318,7 @@ const TeacherCommunication: React.FC = () => {
                         className={`w-full text-left p-4 border-b transition-colors flex gap-3 ${selectedChat?.id === c.id ? 'bg-brand-500/10' : 'hover:bg-black/5 dark:hover:bg-surface/5'}`} style={{ borderColor: 'var(--border)' }}
                       >
                         <div className="w-10 h-10 rounded-full bg-brand-500/10 text-brand-500 flex items-center justify-center font-bold text-[13px] flex-shrink-0 overflow-hidden">
-                          {c.profileImage ? <img src={c.profileImage.startsWith('http') ? c.profileImage : `http://localhost:5000${c.profileImage}`} className="w-full h-full object-cover" /> : c.firstName?.[0] || 'U'}
+                          {c.profileImage ? <img src={getMediaUrl(c.profileImage)} className="w-full h-full object-cover" /> : c.firstName?.[0] || 'U'}
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
                           <p className="text-[13px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{c.firstName} {c.lastName}</p>
@@ -378,7 +379,7 @@ const TeacherCommunication: React.FC = () => {
                     </div>
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold text-[13px] overflow-hidden">
-                      {selectedChat.profileImage ? <img src={selectedChat.profileImage.startsWith('http') ? selectedChat.profileImage : `http://localhost:5000${selectedChat.profileImage}`} className="w-full h-full object-cover" /> : selectedChat.firstName?.[0] || 'U'}
+                      {selectedChat.profileImage ? <img src={getMediaUrl(selectedChat.profileImage)} className="w-full h-full object-cover" /> : selectedChat.firstName?.[0] || 'U'}
                     </div>
                   )}
                   <div className="flex-1">
@@ -429,7 +430,7 @@ const TeacherCommunication: React.FC = () => {
                             {(!isSentByMe || selectedChat.name) && (
                               <div className="w-8 h-8 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden shadow-sm">
                                 {m.sender?.profileImage ? (
-                                  <img src={m.sender.profileImage.startsWith('http') ? m.sender.profileImage : `http://localhost:5000${m.sender.profileImage}`} className="w-full h-full object-cover" />
+                                  <img src={getMediaUrl(m.sender.profileImage)} className="w-full h-full object-cover" />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center bg-brand-500/10 text-brand-500 text-[12px] font-bold">
                                     {m.sender?.firstName?.[0] || 'U'}
@@ -455,8 +456,8 @@ const TeacherCommunication: React.FC = () => {
                                 {m.fileUrl && (
                                   <div className="mb-2">
                                     {m.fileType?.startsWith('image/') ? (
-                                      <a href={`http://localhost:5000${m.fileUrl}`} target="_blank" rel="noopener noreferrer">
-                                        <img src={`http://localhost:5000${m.fileUrl}`} alt={m.fileName} className="max-w-[200px] max-h-[200px] rounded object-cover cursor-pointer hover:opacity-90 transition-opacity" />
+                                      <a href={getMediaUrl(m.fileUrl)} target="_blank" rel="noopener noreferrer">
+                                        <img src={getMediaUrl(m.fileUrl)} alt={m.fileName} className="max-w-[200px] max-h-[200px] rounded object-cover cursor-pointer hover:opacity-90 transition-opacity" />
                                       </a>
                                     ) : (
                                       <div className={`flex items-center gap-3 p-2 rounded ${isSentByMe ? 'bg-black/5 dark:bg-black/20' : 'bg-black/5 dark:bg-surface/5'}`}>
@@ -467,7 +468,7 @@ const TeacherCommunication: React.FC = () => {
                                           <p className="text-[12px] font-medium truncate leading-tight">{m.fileName}</p>
                                           <p className="text-[10px] opacity-70 truncate">{m.fileType || 'Document'}</p>
                                         </div>
-                                        <a href={`http://localhost:5000${m.fileUrl}`} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-surface/10 transition-colors" download>
+                                        <a href={getMediaUrl(m.fileUrl)} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-surface/10 transition-colors" download>
                                           <Download size={16} />
                                         </a>
                                       </div>

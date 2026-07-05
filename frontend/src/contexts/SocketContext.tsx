@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { getSocketUrl } from '../utils/url';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -24,7 +25,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return;
     }
 
-    const socketInstance = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000', {
+    const socketInstance = io(getSocketUrl(), {
       auth: { token },
       transports: ['websocket'],
     });
