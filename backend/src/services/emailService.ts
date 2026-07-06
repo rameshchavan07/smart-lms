@@ -1,12 +1,15 @@
 import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  family: 4, // Force IPv4 to avoid ENETUNREACH IPv6 connection issues
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS, // This must be an App Password, not regular password
   },
-});
+} as any);
 
 const FROM_EMAIL = process.env.GMAIL_USER || 'noreply@openlearnx.org';
 const APP_NAME = 'OpenLearnX';
