@@ -19,8 +19,22 @@ export const initSocket = (server: HttpServer) => {
     const pubClient = new Redis(REDIS_URL, { maxRetriesPerRequest: null });
     const subClient = pubClient.duplicate();
 
-    pubClient.on('error', (err) => console.warn('[Socket.io Redis Pub] Error:', err.message));
-    subClient.on('error', (err) => console.warn('[Socket.io Redis Sub] Error:', err.message));
+    let pubErrorLogged = false;
+    let subErrorLogged = false;
+
+    pubClient.on('error', (err) => {
+      if (!pubErrorLogged) {
+        console.warn('[Socket.io Redis Pub] Connection error (suppressing further logs):', err.message);
+        pubErrorLogged = true;
+      }
+    });
+
+    subClient.on('error', (err) => {
+      if (!subErrorLogged) {
+        console.warn('[Socket.io Redis Sub] Connection error (suppressing further logs):', err.message);
+        subErrorLogged = true;
+      }
+    });
 
     io.adapter(createAdapter(pubClient, subClient));
     console.log('[Socket.io] Redis adapter configured successfully.');

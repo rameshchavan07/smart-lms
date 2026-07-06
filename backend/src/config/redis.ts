@@ -18,9 +18,14 @@ redis.on('connect', () => {
   console.log('[Redis] ✅ Connected successfully');
 });
 
+let redisErrorLogged = false;
+
 redis.on('error', (err: Error) => {
   // Log but don't crash — the app works without Redis (just slower)
-  console.warn(`[Redis] ⚠️  Connection error: ${err.message}`);
+  if (!redisErrorLogged) {
+    console.warn(`[Redis] ⚠️  Connection error (suppressing further logs): ${err.message}`);
+    redisErrorLogged = true;
+  }
 });
 
 export default redis;
