@@ -34,7 +34,7 @@ Built using a high-performance **Monorepo** structure, it combines a secure, str
 - **Horizontal Scalability:** Configured with `@socket.io/redis-adapter` for multi-node WebSocket broadcasting and `ioredis` for API-level database caching.
 - **Structured APM Logging:** Integrated `pino` and `pino-http` for lightweight, JSON-formatted request logging.
 - **Frontend Optimization:** Granular Vite bundle chunking ensures fast shell loading and aggressive caching of heavy dependencies (Jitsi, Framer).
-- **Notifications & Certificates:** Web-push notifications, email alerts (Resend), and dynamic PDF certificate generation (PDFKit) upon course completion.
+- **Notifications & Certificates:** Web-push notifications, email alerts (Nodemailer), and dynamic PDF certificate generation (PDFKit) upon course completion.
 - **Responsive UI/UX:** Built with Tailwind CSS v4 featuring dark mode, animated skeleton loaders, and modern design tokens.
 - **Comprehensive Testing:** End-to-end and unit testing powered by Vitest and React Testing Library in a Strict TypeScript environment.
 

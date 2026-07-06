@@ -80,8 +80,8 @@ Now that you have your databases, let's deploy the Node.js API.
 | `GOOGLE_LOGIN_CLIENT_ID` | Your Google Login Client ID |
 | `GOOGLE_LOGIN_CLIENT_SECRET`| Your Google Login Client Secret |
 | `GOOGLE_CALLBACK_URL` | `https://smart-lms-api.onrender.com/api/auth/google/callback` *(Change 'smart-lms-api' to whatever you named your Render app)* |
-| `RESEND_API_KEY` | Your Resend API Key |
-| `FROM_EMAIL` | `onboarding@resend.dev` (or your verified domain) |
+| `GMAIL_USER` | Your Gmail address (e.g., your-lms@gmail.com) |
+| `GMAIL_PASS` | Your 16-character Gmail App Password |
 
 1. Click **Create Web Service**.
 2. Render will now build and deploy your app. Wait for it to say **Live** (this takes about 5 minutes).
@@ -147,7 +147,7 @@ Before your app can work, you need to create the tables in your new Neon databas
 Go to your Vercel URL and check the following to ensure everything is perfect:
 
 - [ ] Does the page load without errors?
-- [ ] Try creating an account (Verifies Database and Resend Email).
+- [ ] Try creating an account (Verifies Database and Gmail OTP Delivery).
 - [ ] Try logging in with Google (Verifies Google OAuth setup).
 - [ ] Go to settings and upload a Profile Image (Verifies Google Drive API & your new `getMediaUrl` fix).
 - [ ] Open the Messages tab and send a chat (Verifies Upstash Redis & WebSockets).
