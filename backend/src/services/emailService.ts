@@ -88,9 +88,9 @@ export const sendEmailVerificationOtp = async (email: string, firstName: string,
     }
 
     await transporter.sendMail({
-      from: \`"\${APP_NAME}" <\${FROM_EMAIL}>\`,
+      from: `"${APP_NAME}" <${FROM_EMAIL}>`,
       to: email,
-      subject: \`\${otp} — Verify your \${APP_NAME} account\`,
+      subject: `${otp} — Verify your ${APP_NAME} account`,
       html,
     });
   } catch (err) {
@@ -121,9 +121,9 @@ export const sendPasswordResetOtp = async (email: string, firstName: string, otp
     }
 
     await transporter.sendMail({
-      from: \`"\${APP_NAME}" <\${FROM_EMAIL}>\`,
+      from: `"${APP_NAME}" <${FROM_EMAIL}>`,
       to: email,
-      subject: \`\${otp} — Reset your \${APP_NAME} password\`,
+      subject: `${otp} — Reset your ${APP_NAME} password`,
       html,
     });
   } catch (err) {
@@ -149,14 +149,14 @@ export const sendWelcomeEmail = async (email: string, firstName: string): Promis
 
   try {
     if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
-      console.log(\`[DEV FALLBACK] Welcome email to \${email} simulated successfully.\`);
+      console.log(`[DEV FALLBACK] Welcome email to ${email} simulated successfully.`);
       return;
     }
 
     await transporter.sendMail({
-      from: \`"\${APP_NAME}" <\${FROM_EMAIL}>\`,
+      from: `"${APP_NAME}" <${FROM_EMAIL}>`,
       to: email,
-      subject: \`Welcome to \${APP_NAME} — You're all set!\`,
+      subject: `Welcome to ${APP_NAME} — You're all set!`,
       html,
     });
   } catch (err) {
