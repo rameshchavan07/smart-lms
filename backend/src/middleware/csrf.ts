@@ -10,7 +10,7 @@ export const {
   getSecret: (req?: Request) => process.env.SESSION_SECRET || 'open-learn-x-session-secret',
   cookieName: 'x-csrf-token',
   cookieOptions: {
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     path: '/',
     secure: process.env.NODE_ENV === 'production',
   },

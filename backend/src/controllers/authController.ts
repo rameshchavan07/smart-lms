@@ -22,13 +22,13 @@ export const setAuthCookies = (res: Response, token: string, refreshToken: strin
   res.cookie('token', token, {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'strict',
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'strict',
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };
@@ -269,7 +269,7 @@ export const refresh = catchAsync(async (req: Request, res: Response) => {
   res.cookie('token', newToken, {
     httpOnly: true,
     secure: isProd,
-    sameSite: 'strict',
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 15 * 60 * 1000,
   });
   res.json({ message: 'Token refreshed successfully' });
