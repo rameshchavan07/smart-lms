@@ -8,12 +8,19 @@ const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true,
-  family: 4, // Keep this as a fallback
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS, // This must be an App Password, not regular password
   },
-} as any);
+  tls: {
+    // Force IPv4 to prevent ENETUNREACH issues on environments with broken IPv6
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    lookup: (hostname, options, callback) => {
+      dns.lookup(hostname, { family: 4 }, callback);
+    }
+  }
+});
 
 const FROM_EMAIL = process.env.GMAIL_USER || 'noreply@openlearnx.org';
 const APP_NAME = 'OpenLearnX';
