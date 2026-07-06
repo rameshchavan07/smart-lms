@@ -1,10 +1,14 @@
 import nodemailer from 'nodemailer';
+import dns from 'dns';
+
+// Force DNS resolution to IPv4 first to avoid ENETUNREACH IPv6 issues on platforms like Vercel/Render
+dns.setDefaultResultOrder('ipv4first');
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true,
-  family: 4, // Force IPv4 to avoid ENETUNREACH IPv6 connection issues
+  family: 4, // Keep this as a fallback
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS, // This must be an App Password, not regular password
