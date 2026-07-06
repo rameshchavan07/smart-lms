@@ -20,14 +20,16 @@ To deploy this application completely for free without any expiring databases, w
 Before deploying your code, you need a live database and a Redis instance to connect to.
 
 ### A. Create PostgreSQL Database (Neon)
+
 1. Go to [Neon.tech](https://neon.tech) and click **Sign Up** (using GitHub is easiest).
-2. Once logged in, click **Create Project**.
+2. Once logged in, click **Create Project**.7JK3AlZF\nWgXBUZ1s+Q97uzHqiMTwp9O/SqK00v1dhp7eFZlPubZDB5uHEV2EqEw+H27TSHyp\n8P5WNjp8gWlHkdzt+bn7m6qITMg+ESEtg/sj/XxhHjx0jy5XB6/RPk6OX0ahrFzd\nbrcPqTEXVUECgYA+G7O0YErlcD61edmOPa9UAvgjoyNhBk6/MNuQ8bpIYW4ob/+e\naTMMjxals9nHpBn6z+hYkGL6mYAWcWMMxsY5HnSvhfp29uhWZT1NjWvsL9oYfvSJ\nIKm1iFalBLga3cT1TSVBExAe1vEFh0mpJeFPoVal9DfXEWpxmkHYvNu/cQKBgEo5\nEg5NAn+1MvfLHUFm1JQ9ZaWzNV4v0Ou6udyMZj4wPDeWXBZ30ll+EK4osjBYEVst\nQUUdIomy6KS5PesbR32wo0j43eomLFyhdwiofiCo8k3A4y5LfgHwUrv7w3kh1j6J\np3MEa33rrv8B5u1BpVVDzujX/rEwakrzStYYt/gBAoGBANyhM/OuQliBRqOmo5Kj\n1Shmu3rHf7ekmvWj+iqtml9YP7cknrYtZ7bHNomx9vL7Ul8NI0+bqhyKUH0KHcmF\nCqKI/yQNnsgDQPEfWtepZ6Dm2uEEdfyIjZMEUAC4xxWevHVkJlhZMMcR7ieeqEF5\nLBaepUc/DZbkPOxqbE2nD2HV\n-----END PRIVATE KEY-----"
 3. Name your project (e.g., `smart-lms-db`), leave the Postgres version as default (v15/v16), select a region close to you, and click **Create Project**.
 4. You will immediately be shown a connection string. It will look something like this:
    `postgresql://user:password@ep-cool-butterfly-123456.us-east-2.aws.neon.tech/neondb?sslmode=require`
 5. **Copy this string and save it somewhere safe.** This is your `DATABASE_URL`.
 
 ### B. Create Redis Instance (Upstash)
+
 1. Go to [Upstash.com](https://upstash.com) and click **Login** (Sign in with GitHub).
 2. On the dashboard, click **Create Database** under the Redis section.
 3. Name your database (e.g., `smart-lms-redis`), select the `Global` or `Primary` region that matches your Neon database region, and click **Create**.
@@ -81,19 +83,23 @@ Now that you have your databases, let's deploy the Node.js API.
 | `RESEND_API_KEY` | Your Resend API Key |
 | `FROM_EMAIL` | `onboarding@resend.dev` (or your verified domain) |
 
-7. Click **Create Web Service**. 
-8. Render will now build and deploy your app. Wait for it to say **Live** (this takes about 5 minutes).
+1. Click **Create Web Service**.
+2. Render will now build and deploy your app. Wait for it to say **Live** (this takes about 5 minutes).
 
 ### Crucial: Run Database Migrations
+
 Before your app can work, you need to create the tables in your new Neon database.
+
 1. Open your local VS Code terminal.
 2. Open your local `backend/.env` file.
 3. Temporarily change your local `DATABASE_URL` to the Neon `DATABASE_URL`.
 4. In your terminal, run:
+
    ```bash
    cd backend
    npx prisma db push
    ```
+
 5. You should see a message saying the database is now in sync. (You can change your local `DATABASE_URL` back to localhost afterwards).
 
 ---
@@ -115,7 +121,7 @@ Before your app can work, you need to create the tables in your new Neon databas
 | `VITE_API_URL` | `https://smart-lms-api.onrender.com/api` *(Replace with your actual Render URL)* |
 | `VITE_API_BASE_URL` | `https://smart-lms-api.onrender.com/api` *(Replace with your actual Render URL)* |
 
-6. Click **Deploy**. Vercel will build your frontend. Wait for the confetti screen!
+1. Click **Deploy**. Vercel will build your frontend. Wait for the confetti screen!
 
 ---
 
