@@ -1,7 +1,14 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS, // This must be an App Password, not regular password
+  },
+});
+
+const FROM_EMAIL = process.env.GMAIL_USER || 'noreply@openlearnx.org';
 const APP_NAME = 'OpenLearnX';
 
 // ─── HTML Templates ───────────────────────────────────────────────────────────
@@ -73,31 +80,21 @@ export const sendEmailVerificationOtp = async (email: string, firstName: string,
   `);
 
   try {
-    const { error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: `${otp} — Verify your ${APP_NAME} account`,
-      html,
-    });
-
-    if (error) {
-      console.error('Resend sendEmailVerificationOtp error:', error);
-      if (process.env.NODE_ENV !== 'production' || !process.env.RESEND_API_KEY) {
-        console.log('\n==================================================');
-        console.log(`[DEV FALLBACK] Verification OTP for ${email}: ${otp}`);
-        console.log('==================================================\n');
-        return;
-      }
-      throw new Error(`Email delivery failed: ${error.message}`);
-    }
-  } catch (err) {
-    console.error('Resend sendEmailVerificationOtp exception:', err);
-    if (process.env.NODE_ENV !== 'production' || !process.env.RESEND_API_KEY) {
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
       console.log('\n==================================================');
       console.log(`[DEV FALLBACK] Verification OTP for ${email}: ${otp}`);
       console.log('==================================================\n');
       return;
     }
+
+    await transporter.sendMail({
+      from: \`"\${APP_NAME}" <\${FROM_EMAIL}>\`,
+      to: email,
+      subject: \`\${otp} — Verify your \${APP_NAME} account\`,
+      html,
+    });
+  } catch (err) {
+    console.error('Nodemailer sendEmailVerificationOtp exception:', err);
     throw err;
   }
 };
@@ -116,31 +113,21 @@ export const sendPasswordResetOtp = async (email: string, firstName: string, otp
   `);
 
   try {
-    const { error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: `${otp} — Reset your ${APP_NAME} password`,
-      html,
-    });
-
-    if (error) {
-      console.error('Resend sendPasswordResetOtp error:', error);
-      if (process.env.NODE_ENV !== 'production' || !process.env.RESEND_API_KEY) {
-        console.log('\n==================================================');
-        console.log(`[DEV FALLBACK] Password Reset OTP for ${email}: ${otp}`);
-        console.log('==================================================\n');
-        return;
-      }
-      throw new Error(`Email delivery failed: ${error.message}`);
-    }
-  } catch (err) {
-    console.error('Resend sendPasswordResetOtp exception:', err);
-    if (process.env.NODE_ENV !== 'production' || !process.env.RESEND_API_KEY) {
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
       console.log('\n==================================================');
       console.log(`[DEV FALLBACK] Password Reset OTP for ${email}: ${otp}`);
       console.log('==================================================\n');
       return;
     }
+
+    await transporter.sendMail({
+      from: \`"\${APP_NAME}" <\${FROM_EMAIL}>\`,
+      to: email,
+      subject: \`\${otp} — Reset your \${APP_NAME} password\`,
+      html,
+    });
+  } catch (err) {
+    console.error('Nodemailer sendPasswordResetOtp exception:', err);
     throw err;
   }
 };
@@ -161,28 +148,19 @@ export const sendWelcomeEmail = async (email: string, firstName: string): Promis
   `);
 
   try {
-    const { error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: `Welcome to ${APP_NAME} — You're all set!`,
-      html,
-    });
-
-    if (error) {
-      console.error('Resend sendWelcomeEmail error:', error);
-      if (process.env.NODE_ENV !== 'production' || !process.env.RESEND_API_KEY) {
-        console.log(`[DEV FALLBACK] Welcome email to ${email} simulated successfully.`);
-        return;
-      }
-      throw new Error(`Email delivery failed: ${error.message}`);
-    }
-  } catch (err) {
-    console.error('Resend sendWelcomeEmail exception:', err);
-    if (process.env.NODE_ENV !== 'production' || !process.env.RESEND_API_KEY) {
-      console.log(`[DEV FALLBACK] Welcome email to ${email} simulated successfully.`);
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+      console.log(\`[DEV FALLBACK] Welcome email to \${email} simulated successfully.\`);
       return;
     }
+
+    await transporter.sendMail({
+      from: \`"\${APP_NAME}" <\${FROM_EMAIL}>\`,
+      to: email,
+      subject: \`Welcome to \${APP_NAME} — You're all set!\`,
+      html,
+    });
+  } catch (err) {
+    console.error('Nodemailer sendWelcomeEmail exception:', err);
     throw err;
   }
 };
-
