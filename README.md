@@ -63,7 +63,9 @@ Built using a high-performance **Monorepo** structure, it combines a secure, str
 
 ```mermaid
 graph TD
-    A[Admin Portal] -->|Manages| B(Users, Courses, Quizzes & Institutes)
+    SA[Super Admin Portal] -->|Manages| I(Institutes & System Settings)
+    SA -->|Onboards| A[Admin Portal]
+    A -->|Manages Institute| B(Users, Courses & Quizzes)
     C[Teacher Portal] -->|Schedules & Records| D(Jitsi Live Classes)
     C -->|Uploads| E(Drive Study Materials)
     F[Student Portal] -->|Attends| D
