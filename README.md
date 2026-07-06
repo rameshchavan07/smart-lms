@@ -209,23 +209,42 @@ npm run dev
 
 The app will be running at `http://localhost:5173` and the API at `http://localhost:5000`.
 
-### Production Deployment
+### Production Deployment (100% Free Modern Stack)
 
-To build for production:
+This project is architected to be deployed completely for free without any expiring databases using a modern, decoupled stack.
 
-**Backend:**
-```bash
-cd backend
-npm run build
-npm run start
-```
+#### 1. The Deployment Stack
+- **Database (PostgreSQL):** [Neon.tech](https://neon.tech) (Serverless Postgres)
+- **Redis (Caching & WebSockets):** [Upstash](https://upstash.com) (Serverless Redis)
+- **Backend API:** [Render](https://render.com) (Web Service)
+- **Frontend:** [Vercel](https://vercel.com) (Static Edge Network)
 
-**Frontend:**
-```bash
-cd frontend
-npm run build
-# Serve the dist/ directory using Nginx, Apache, or a static host like Vercel/Netlify.
-```
+#### 2. Provision Databases
+1. **PostgreSQL (Neon):** Create a project on Neon.tech. Select your region, and copy the provided Connection String (`DATABASE_URL`).
+2. **Redis (Upstash):** Create a database on Upstash. Under the Node.js connect tab, switch to `ioredis` and copy the URL (`REDIS_URL`).
+
+#### 3. Deploy the Backend (Render)
+1. In Render, create a new **Web Service** connected to your repository.
+2. **Settings:** 
+   - Root Directory: `backend`
+   - Build Command: `npm install && npx prisma generate && npm run build`
+   - Start Command: `npm run start`
+3. **Environment Variables:** Add your `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, Google Drive credentials, Jitsi keys, etc.
+4. **Database Migration:** Before testing the API, open your local terminal, temporarily point your `.env` `DATABASE_URL` to your Neon database, and run `npx prisma db push` to initialize the database tables remotely.
+
+#### 4. Deploy the Frontend (Vercel)
+1. Import your repository as a new Project in Vercel.
+2. **Settings:**
+   - Framework Preset: `Vite`
+   - Root Directory: `frontend`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+3. **Environment Variables:** Add `VITE_API_URL` and `VITE_API_BASE_URL` and point them to your live Render backend URL (e.g., `https://smart-lms-api.onrender.com/api`).
+4. Click **Deploy**.
+
+#### 5. Final Glue & Configuration
+- **Update Render CORS:** Once Vercel deploys, copy your live frontend URL and add it to Render as the `FRONTEND_URL` environment variable.
+- **Update Google OAuth:** Add your Vercel URL to the **Authorized JavaScript origins** and your Render callback URL to the **Authorized redirect URIs** in your Google Cloud Console to allow Google Login to function in production.
 
 ---
 
@@ -253,12 +272,20 @@ Smart LMS relies on a highly secure **JWT + HTTPOnly Cookie** architecture:
 
 ---
 
-## 🎭 Role-Based Access Control (RBAC)
+## 🎭 Role-Based Access Control (RBAC) & Super Admin Architecture
 
-The system strictly enforces permissions at both the UI routing level (React Router) and the API level (Express Middleware).
+The platform operates on a robust Multi-Tenant architecture designed for high scalability across multiple educational organizations. At the core of this system is the Role Hierarchy and the Super Admin entity.
 
-- **Super Admin:** Global oversight. Can create and manage Institutes, Admin users, and system-wide settings.
-- **Admin:** Institute-level management. They create Courses, enroll Students, manage Teacher accounts, and oversee analytics for their specific institute.
+### Multi-Tenant Super Admin Architecture
+- **Global Unrestricted Access:** Unlike regular Admins, Teachers, or Students, a `SUPER_ADMIN` is not bound to any specific `instituteId`. This allows them to bypass tenant-level restrictions and view data across the entire platform.
+- **Institute Management:** Super Admins are responsible for onboarding new organizations. They create `Institute` records and assign an `ADMIN` role to a user, inherently linking that new Admin to the specific `Institute`.
+- **Hierarchical Privilege:** The system enforces a strict role hierarchy (`SUPER_ADMIN` > `ADMIN` > `TEACHER` > `STUDENT`). A Super Admin can promote, demote, edit, or delete any user in the system. Regular Admins can only manage users within their assigned Institute and cannot affect users of higher or equal rank globally.
+- **API and UI Protection:** 
+  - **Backend:** Express middleware strictly protects global routes (like Institute creation) via `authorize('SUPER_ADMIN')`. It intelligently permits access for endpoints where `ADMIN` is required but a `SUPER_ADMIN` is making the request.
+  - **Frontend:** Protected layouts dynamically conditionally render sidebar links (like 'Institutes') and management actions based on the `currentUser.role`. Modals for creating/editing users dynamically expose or hide role assignments depending on the highest authority of the logged-in user.
+
+### Standard Roles
+- **Admin:** Institute-level management. They create Courses, enroll Students, manage Teacher accounts, and oversee analytics for their specific institute only.
 - **Teacher:** Course-level management. They can schedule live Jitsi classes, upload study materials to Google Drive, build interactive quizzes, grade assignments, and moderate course discussions.
 - **Student:** Consumer-level access. They can attend live classes, download materials, take quizzes, submit assignments, and communicate with peers and teachers.
 
