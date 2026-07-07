@@ -3,15 +3,18 @@ import prisma from '../config/db';
 async function main() {
   // 1. Check if the default institute already exists
   let defaultInstitute = await prisma.institute.findFirst({
-    where: { name: 'Default Institute' }
+    where: { name: 'Global Institute' }
   });
 
   // 2. Create if it doesn't exist
   if (!defaultInstitute) {
     defaultInstitute = await prisma.institute.create({
       data: {
-        name: 'Default Institute',
-        address: 'Default Address',
+        name: 'Global Institute',
+        slug: 'global',
+        email: 'global@example.com',
+        status: 'APPROVED',
+        address: 'System Default Address',
       }
     });
     console.log('Created Default Institute:', defaultInstitute.id);

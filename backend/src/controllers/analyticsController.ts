@@ -8,17 +8,22 @@ import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
 // Admin Dashboard Analytics
 export const getAdminStats = catchAsync(async (req: AuthRequest, res: Response) => {
-    const cacheKey = CACHE_KEYS.ADMIN_STATS;
+    const cacheKey = CACHE_KEYS.ADMIN_STATS + (req.user!.instituteId || 'global');
     const cached = await getCache<object>(cacheKey);
     if (cached) return res.json(cached);
 
-    const totalUsers = await prisma.user.count();
-    const totalTeachers = await prisma.user.count({ where: { role: 'TEACHER' } });
-    const totalStudents = await prisma.user.count({ where: { role: 'STUDENT' } });
-    const totalCourses = await prisma.course.count();
-    const totalEnrollments = await prisma.enrollment.count();
+    const instituteId = req.user!.role !== 'SUPER_ADMIN' ? req.user!.instituteId : undefined;
+    const whereInstitute = instituteId ? { instituteId } : {};
+    const whereCourseInstitute = instituteId ? { course: { instituteId } } : {};
+
+    const totalUsers = await prisma.user.count({ where: whereInstitute });
+    const totalTeachers = await prisma.user.count({ where: { role: 'TEACHER', ...whereInstitute } });
+    const totalStudents = await prisma.user.count({ where: { role: 'STUDENT', ...whereInstitute } });
+    const totalCourses = await prisma.course.count({ where: whereInstitute });
+    const totalEnrollments = await prisma.enrollment.count({ where: whereCourseInstitute });
 
     const recentCourses = await prisma.course.findMany({
+      where: whereInstitute,
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -28,6 +33,7 @@ export const getAdminStats = catchAsync(async (req: AuthRequest, res: Response) 
     });
 
     const recentActivities = await prisma.auditLog.findMany({
+      where: instituteId ? { user: { instituteId } } : {},
       take: 10,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -228,12 +234,18 @@ export const getTeacherReports = catchAsync(async (req: AuthRequest, res: Respon
 });
 
 export const getAdminReports = catchAsync(async (req: AuthRequest, res: Response) => {
-    const totalStudents = await prisma.student.count();
-    const totalTeachers = await prisma.teacher.count();
-    const totalCourses = await prisma.course.count();
-    const enrollments = await prisma.enrollment.count();
+    const instituteId = req.user!.role !== 'SUPER_ADMIN' ? req.user!.instituteId : undefined;
+    const whereInstituteUser = instituteId ? { user: { instituteId } } : {};
+    const whereCourse = instituteId ? { instituteId } : {};
+    const whereEnrollment = instituteId ? { course: { instituteId } } : {};
+
+    const totalStudents = await prisma.student.count({ where: whereInstituteUser });
+    const totalTeachers = await prisma.teacher.count({ where: whereInstituteUser });
+    const totalCourses = await prisma.course.count({ where: whereCourse });
+    const enrollments = await prisma.enrollment.count({ where: whereEnrollment });
 
     const courses = await prisma.course.findMany({
+      where: whereCourse,
       include: {
         _count: { select: { enrollments: true } }
       },

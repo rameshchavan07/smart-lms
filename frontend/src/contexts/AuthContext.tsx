@@ -11,6 +11,8 @@ interface User {
   role: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'SUPER_ADMIN';
   profileImage?: string;
   profile?: { bio?: string };
+  instituteId?: string | null;
+  instituteSlug?: string | null;
 }
 
 export interface LoginData {
@@ -23,6 +25,7 @@ export interface LoginData {
   email?: string;
   profileImage?: string;
   profile?: { bio?: string };
+  instituteSlug?: string | null;
 }
 
 interface AuthContextType {
@@ -66,6 +69,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await checkAuth();
   }, [checkAuth]);
 
+  const getRedirectPath = useCallback((role: string, instituteSlug?: string | null): string => {
+    if (role === 'SUPER_ADMIN') {
+      return '/super-admin';
+    }
+
+    if (!instituteSlug) {
+      // Fallback for users without an institute
+      return '/dashboard';
+    }
+
+    switch (role) {
+      case 'ADMIN':
+        return `/i/${instituteSlug}/admin`;
+      case 'TEACHER':
+        return `/i/${instituteSlug}/teacher/courses`;
+      case 'STUDENT':
+        return `/i/${instituteSlug}/student/courses`;
+      default:
+        return '/dashboard';
+    }
+  }, []);
+
   const login = useCallback(async (data: LoginData) => {
     let userData: LoginData = { ...data };
     
@@ -88,20 +113,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       role: userData.role,
       profileImage: userData.profileImage,
       profile: userData.profile,
+      instituteSlug: userData.instituteSlug,
     });
     
     subscribeToPushNotifications();
 
-    if (userData.role === 'ADMIN' || userData.role === 'SUPER_ADMIN') {
-      navigate('/admin/users');
-    } else if (userData.role === 'TEACHER') {
-      navigate('/teacher/courses');
-    } else if (userData.role === 'STUDENT') {
-      navigate('/student/courses');
-    } else {
-      navigate('/dashboard');
-    }
-  }, [navigate]);
+    const redirectPath = getRedirectPath(userData.role, userData.instituteSlug);
+    navigate(redirectPath);
+  }, [navigate, getRedirectPath]);
 
   const register = useCallback((data: LoginData) => {
     login(data); // Auto login after register
@@ -132,4 +151,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

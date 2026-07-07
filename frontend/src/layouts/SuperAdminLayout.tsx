@@ -1,40 +1,33 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useInstitute } from '../contexts/InstituteContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { BottomNav } from '../components/BottomNav';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NotificationBell } from '../components/NotificationBell';
 import { 
-  LayoutDashboard, BookOpen, Users, ClipboardList, 
-  BarChart3, MessageSquare, Settings, HelpCircle, 
-  LogOut, Menu, X, Search, Moon, Sun, Mail,
-  ChevronRight, GraduationCap, Plus, Globe
+  LayoutDashboard, Users, Building, 
+  Settings, HelpCircle, 
+  LogOut, Menu, X, Search, Moon, Sun,
+  ChevronRight, Globe
 } from 'lucide-react';
 
 interface NavItem {
   label: string;
-  path: string; // Relative to /i/:slug/admin
+  href: string;
   icon: React.ElementType;
   badge?: string | number;
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard',     path: '',               icon: LayoutDashboard },
-  { label: 'Courses',       path: '/courses',       icon: BookOpen },
-  { label: 'Users',         path: '/users',         icon: Users },
-  { label: 'Enrollments',   path: '/enrollments',   icon: GraduationCap },
-  { label: 'Assessments',   path: '/assessments',   icon: ClipboardList },
-  { label: 'Reports',       path: '/reports',       icon: BarChart3 },
-  { label: 'Communication', path: '/communication', icon: MessageSquare },
-  { label: 'Integrations',  path: '/integrations',  icon: Globe },
-  { label: 'Settings',      path: '/settings',      icon: Settings },
+  { label: 'Dashboard',     href: '/super-admin',               icon: LayoutDashboard },
+  { label: 'Institutes',    href: '/super-admin/institutes',    icon: Building },
+  { label: 'All Users',     href: '/super-admin/users',         icon: Users },
+  { label: 'Settings',      href: '/super-admin/settings',      icon: Settings },
 ];
 
-const AdminLayout: React.FC = () => {
+const SuperAdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
-  const { institute } = useInstitute();
   const { isDark, toggleDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -42,24 +35,13 @@ const AdminLayout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const getHref = (path: string) => {
-    if (!institute) return '#';
-    return `/i/${institute.slug}/admin${path}`;
-  };
-
-  const isActive = (href: string) => {
-    if (href === '#') return false;
-    // Exact match for dashboard, prefix match for others
-    if (href.endsWith('/admin') || href.endsWith('/admin/')) {
-      return location.pathname === href || location.pathname === href + '/';
-    }
-    return location.pathname.startsWith(href);
-  };
+  const isActive = (href: string) =>
+    href === '/super-admin' ? location.pathname === href : location.pathname.startsWith(href) && href !== '#';
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
-  const initials = `${user?.firstName?.[0] || 'A'}${user?.lastName?.[0] || 'D'}`;
-  const fullName = `${user?.firstName || 'Admin'} ${user?.lastName || ''}`;
+  const initials = `${user?.firstName?.[0] || 'S'}${user?.lastName?.[0] || 'A'}`;
+  const fullName = `${user?.firstName || 'System'} ${user?.lastName || 'Admin'}`;
 
   return (
     <div className={`flex h-screen overflow-hidden ${isDark ? 'dark' : ''}`} style={{ background: 'var(--bg)', color: 'var(--text-primary)' }}>
@@ -75,17 +57,13 @@ const AdminLayout: React.FC = () => {
       <aside className={`sidebar ${isMobileOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5">
-          {institute?.logoUrl ? (
-            <img src={institute.logoUrl} alt="Logo" className="w-9 h-9 rounded-xl object-cover flex-shrink-0 mx-auto bg-white" />
-          ) : (
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-brand flex-shrink-0 mx-auto" style={{ background: 'var(--brand-500)' }}>
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
-          )}
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-brand flex-shrink-0 mx-auto" style={{ background: 'var(--brand-500)' }}>
+            <Globe className="w-5 h-5 text-white" />
+          </div>
           {!isCollapsed && (
-            <div className="min-w-0">
-              <p className="text-white font-bold text-[15px] leading-none truncate">{institute?.name || 'Loading...'}</p>
-              <p className="text-white/40 text-[11px] mt-0.5 truncate">Institute Admin</p>
+            <div>
+              <p className="text-white font-bold text-[15px] leading-none">OpenLearnX</p>
+              <p className="text-white/40 text-[11px] mt-0.5">Super Admin</p>
             </div>
           )}
           <button 
@@ -99,14 +77,13 @@ const AdminLayout: React.FC = () => {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto hide-scrollbar py-3">
-          {!isCollapsed && <p className="text-white/25 text-[10px] font-semibold uppercase tracking-widest px-5 mb-2">Management</p>}
+          {!isCollapsed && <p className="text-white/25 text-[10px] font-semibold uppercase tracking-widest px-5 mb-2">Platform Management</p>}
           {navItems.map((item) => {
-            const href = getHref(item.path);
-            const active = isActive(href);
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.label}
-                to={href}
+                to={item.href}
                 onClick={() => setIsMobileOpen(false)}
                 className={`sidebar-link ${active ? 'active' : ''}`}
                 aria-current={active ? 'page' : undefined}
@@ -122,13 +99,6 @@ const AdminLayout: React.FC = () => {
               </Link>
             );
           })}
-
-          <div className="mx-3 mt-4">
-            <Link to={getHref('/courses')} className={`w-full btn btn-primary btn-sm ${isCollapsed ? 'justify-center p-2' : 'justify-start gap-2'} text-center flex items-center`}>
-              <Plus className="w-4 h-4 shrink-0" />
-              {!isCollapsed && <span>Add New Course</span>}
-            </Link>
-          </div>
         </nav>
 
         {/* Bottom */}
@@ -146,15 +116,11 @@ const AdminLayout: React.FC = () => {
         {/* User Card */}
         <div className="p-4 border-t border-white/5">
           <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 ${isCollapsed ? 'justify-center px-0' : ''}`}>
-            {user?.profileImage ? (
-              <img src={user.profileImage} alt="Profile" className="w-8 h-8 rounded-full object-cover shrink-0" />
-            ) : (
-              <div className="avatar avatar-sm text-white shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }}>{initials}</div>
-            )}
+            <div className="avatar avatar-sm text-white shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }}>{initials}</div>
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-white text-[13px] font-semibold leading-none truncate">{fullName}</p>
-                <p className="text-white/40 text-[11px] mt-0.5 truncate">{user?.email}</p>
+                <p className="text-white/40 text-[11px] mt-0.5">Super Admin</p>
               </div>
             )}
           </div>
@@ -178,10 +144,10 @@ const AdminLayout: React.FC = () => {
 
           {/* Breadcrumb on desktop */}
           <div className="hidden lg:flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-            <span>Admin</span>
+            <span>Super Admin</span>
             <ChevronRight className="w-4 h-4" />
             <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {navItems.find(n => isActive(getHref(n.path)))?.label || 'Dashboard'}
+              {navItems.find(n => isActive(n.href))?.label || 'Dashboard'}
             </span>
           </div>
 
@@ -203,21 +169,14 @@ const AdminLayout: React.FC = () => {
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
             <NotificationBell />
-            <button className="btn btn-ghost p-2 rounded-xl hidden sm:flex" aria-label="Messages">
-              <Mail className="w-5 h-5" />
-            </button>
             <div className="w-px h-6 mx-1 hidden sm:block" style={{ background: 'var(--border)' }} />
             <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="User profile">
-              {user?.profileImage ? (
-                <img src={user.profileImage} alt="Profile" className="w-8 h-8 rounded-full object-cover shrink-0" />
-              ) : (
-                <div className="avatar avatar-sm font-bold" style={{ background: 'rgba(67,97,240,0.1)', color: 'var(--brand-500)' }}>
-                  {initials}
-                </div>
-              )}
+              <div className="avatar avatar-sm font-bold" style={{ background: 'rgba(67,97,240,0.1)', color: 'var(--brand-500)' }}>
+                {initials}
+              </div>
               <div className="hidden md:block text-left">
                 <p className="text-[13px] font-semibold leading-none" style={{ color: 'var(--text-primary)' }}>{fullName}</p>
-                <p className="text-[11px] mt-0.5 truncate w-24" style={{ color: 'var(--text-muted)' }}>Admin</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Super Admin</p>
               </div>
             </button>
           </div>
@@ -241,9 +200,9 @@ const AdminLayout: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <BottomNav items={navItems.slice(0, 4).map(item => ({ ...item, href: getHref(item.path) }))} />
+      <BottomNav items={navItems.slice(0, 4)} />
     </div>
   );
 };
 
-export default AdminLayout;
+export default SuperAdminLayout;

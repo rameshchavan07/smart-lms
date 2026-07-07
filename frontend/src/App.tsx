@@ -1,7 +1,8 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
+import { InstituteProvider } from './contexts/InstituteContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { SocketProvider } from './contexts/SocketContext';
@@ -16,23 +17,32 @@ import ForgotPassword from './pages/ForgotPassword';
 import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
 
+import RegisterInstitute from './pages/RegisterInstitute';
+import InstitutePendingPage from './pages/InstitutePendingPage';
+import InstituteUnavailablePage from './pages/InstituteUnavailablePage';
+import InstituteLanding from './pages/institute/InstituteLanding';
+import InstituteLogin from './pages/institute/InstituteLogin';
+import InstituteRegister from './pages/institute/InstituteRegister';
+
 // ─── Code-split layouts ───────────────────────────────────────────────────
+const SuperAdminLayout = React.lazy(() => import('./layouts/SuperAdminLayout'));
 const AdminLayout      = React.lazy(() => import('./layouts/AdminLayout'));
 const TeacherLayout    = React.lazy(() => import('./layouts/TeacherLayout'));
 const StudentLayout    = React.lazy(() => import('./layouts/StudentLayout'));
 
 // ─── Code-split pages ─────────────────────────────────────────────────────
-const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
-const InstitutesManagement = React.lazy(() => import('./pages/admin/InstitutesManagement'));
-const InstituteDetails = React.lazy(() => import('./pages/admin/InstituteDetails'));
+const SuperAdminDashboard = React.lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
+const SuperAdminInstitutes = React.lazy(() => import('./pages/superadmin/InstitutesManagement'));
 const UserManagement = React.lazy(() => import('./pages/admin/UserManagement'));
+const AdminSettings = React.lazy(() => import('./pages/admin/AdminSettings'));
+
+const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
 const CourseManagement = React.lazy(() => import('./pages/admin/CourseManagement'));
 const EnrollmentManagement = React.lazy(() => import('./pages/admin/EnrollmentManagement'));
 const AdminAssessments = React.lazy(() => import('./pages/admin/AdminAssessments'));
 const AdminReports = React.lazy(() => import('./pages/admin/AdminReports'));
 const AdminCommunication = React.lazy(() => import('./pages/admin/AdminCommunication'));
 const AdminIntegrations = React.lazy(() => import('./pages/admin/AdminIntegrations'));
-const AdminSettings = React.lazy(() => import('./pages/admin/AdminSettings'));
 
 const TeacherDashboard   = React.lazy(() => import('./pages/teacher/TeacherDashboard'));
 const TeacherCourses     = React.lazy(() => import('./pages/teacher/TeacherCourses'));
@@ -72,7 +82,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes cache to reduce API calls
+      staleTime: 5 * 60 * 1000,
     },
   },
 });
@@ -85,103 +95,130 @@ function App() {
           <AuthProvider>
             <SocketProvider>
               {/* Skip to main content link (accessibility) */}
-            <a
-              href="#main-content"
-              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold focus:text-white"
-              style={{ background: 'var(--brand-500)' }}
-            >
-              Skip to main content
-            </a>
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold focus:text-white"
+                style={{ background: 'var(--brand-500)' }}
+              >
+                Skip to main content
+              </a>
 
-            <Routes>
-              {/* ── Live classroom (eager — needed quickly) ── */}
-              <Route path="/live/:id" element={
-                <ProtectedRoute allowedRoles={['TEACHER', 'STUDENT']}>
-                  <Suspense fallback={<PageLoader />}>
-                    <LiveClassRoom />
-                  </Suspense>
-                </ProtectedRoute>
-              } />
+              <Routes>
+                {/* ── Public & Global routes ── */}
+                <Route path="/"               element={<LandingPage />} />
+                <Route path="/login"          element={<Login />} />
+                <Route path="/register"       element={<Register />} />
+                <Route path="/verify-email"   element={<VerifyOtp />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/auth/callback"  element={<AuthCallback />} />
+                <Route path="/register-institute" element={<RegisterInstitute />} />
+                <Route path="/pending-approval" element={<InstitutePendingPage />} />
 
-              {/* ── Public routes ── */}
-              <Route path="/"               element={<LandingPage />} />
-              <Route path="/login"          element={<Login />} />
-              <Route path="/register"       element={<Register />} />
-              <Route path="/verify-email"   element={<VerifyOtp />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/auth/callback"  element={<AuthCallback />} />
+                {/* ── Generic dashboard redirect ── */}
+                <Route path="/dashboard" element={
+                  <ProtectedRoute><Dashboard /></ProtectedRoute>
+                } />
 
-              {/* ── Generic dashboard redirect ── */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute><Dashboard /></ProtectedRoute>
-              } />
+                {/* ── Super Admin Portal ── */}
+                <Route path="/super-admin" element={
+                  <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                    <Suspense fallback={<PageLoader />}>
+                      <SuperAdminLayout />
+                    </Suspense>
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<Suspense fallback={<PageLoader />}><SuperAdminDashboard /></Suspense>} />
+                  <Route path="institutes" element={<Suspense fallback={<PageLoader />}><SuperAdminInstitutes /></Suspense>} />
+                  <Route path="users" element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
+                  <Route path="settings" element={<Suspense fallback={<PageLoader />}><AdminSettings /></Suspense>} />
+                </Route>
 
-              {/* ── Admin Portal ── */}
-              <Route path="/admin" element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
-                  <Suspense fallback={<PageLoader />}>
-                    <AdminLayout />
-                  </Suspense>
-                </ProtectedRoute>
-              }>
-                <Route index element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
-                <Route path="institutes"  element={<Suspense fallback={<PageLoader />}><InstitutesManagement /></Suspense>} />
-                <Route path="institutes/:id" element={<Suspense fallback={<PageLoader />}><InstituteDetails /></Suspense>} />
-                <Route path="users"       element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
-                <Route path="courses"     element={<Suspense fallback={<PageLoader />}><CourseManagement /></Suspense>} />
-                <Route path="enrollments" element={<Suspense fallback={<PageLoader />}><EnrollmentManagement /></Suspense>} />
-                <Route path="assessments" element={<Suspense fallback={<PageLoader />}><AdminAssessments /></Suspense>} />
-                <Route path="reports" element={<Suspense fallback={<PageLoader />}><AdminReports /></Suspense>} />
-                <Route path="communication" element={<Suspense fallback={<PageLoader />}><AdminCommunication /></Suspense>} />
-                <Route path="integrations" element={<Suspense fallback={<PageLoader />}><AdminIntegrations /></Suspense>} />
-                <Route path="settings"    element={<Suspense fallback={<PageLoader />}><AdminSettings /></Suspense>} />
-              </Route>
+                {/* ── Institute Scoped Routes ── */}
+                <Route path="/i/:slug" element={
+                  <InstituteProvider>
+                    <Outlet />
+                  </InstituteProvider>
+                }>
+                  {/* Public Institute Routes */}
+                  <Route index element={<InstituteLanding />} />
+                  <Route path="login" element={<InstituteLogin />} />
+                  <Route path="register" element={<InstituteRegister />} />
+                  <Route path="unavailable" element={<InstituteUnavailablePage />} />
+                  
+                  {/* Institute Live classroom */}
+                  <Route path="live/:id" element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'STUDENT']}>
+                      <Suspense fallback={<PageLoader />}>
+                        <LiveClassRoom />
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
 
-              {/* ── Teacher Portal ── */}
-              <Route path="/teacher" element={
-                <ProtectedRoute allowedRoles={['TEACHER']}>
-                  <Suspense fallback={<PageLoader />}>
-                    <TeacherLayout />
-                  </Suspense>
-                </ProtectedRoute>
-              }>
-                <Route index element={<Suspense fallback={<PageLoader />}><TeacherDashboard /></Suspense>} />
-                <Route path="courses" element={<Suspense fallback={<PageLoader />}><TeacherCourses /></Suspense>} />
-                <Route path="courses/:id" element={<Suspense fallback={<PageLoader />}><CourseDetails /></Suspense>} />
-                <Route path="courses/:id/quizzes/new" element={<Suspense fallback={<PageLoader />}><QuizBuilder /></Suspense>} />
-                <Route path="courses/:id/quizzes/:quizId" element={<Suspense fallback={<PageLoader />}><QuizView /></Suspense>} />
-                <Route path="students" element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
-                <Route path="enrollments" element={<Suspense fallback={<PageLoader />}><TeacherEnrollments /></Suspense>} />
-                <Route path="assessments" element={<Suspense fallback={<PageLoader />}><TeacherAssessments /></Suspense>} />
-                <Route path="reports" element={<Suspense fallback={<PageLoader />}><TeacherReports /></Suspense>} />
-                <Route path="communication" element={<Suspense fallback={<PageLoader />}><TeacherCommunication /></Suspense>} />
-                <Route path="settings" element={<Suspense fallback={<PageLoader />}><TeacherSettings /></Suspense>} />
-                <Route path="recorder" element={<Suspense fallback={<PageLoader />}><RecordingStudioPage /></Suspense>} />
-              </Route>
+                  {/* Institute Admin Portal */}
+                  <Route path="admin" element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                      <Suspense fallback={<PageLoader />}>
+                        <AdminLayout />
+                      </Suspense>
+                    </ProtectedRoute>
+                  }>
+                    <Route index element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
+                    <Route path="users"       element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
+                    <Route path="courses"     element={<Suspense fallback={<PageLoader />}><CourseManagement /></Suspense>} />
+                    <Route path="enrollments" element={<Suspense fallback={<PageLoader />}><EnrollmentManagement /></Suspense>} />
+                    <Route path="assessments" element={<Suspense fallback={<PageLoader />}><AdminAssessments /></Suspense>} />
+                    <Route path="reports" element={<Suspense fallback={<PageLoader />}><AdminReports /></Suspense>} />
+                    <Route path="communication" element={<Suspense fallback={<PageLoader />}><AdminCommunication /></Suspense>} />
+                    <Route path="integrations" element={<Suspense fallback={<PageLoader />}><AdminIntegrations /></Suspense>} />
+                    <Route path="settings"    element={<Suspense fallback={<PageLoader />}><AdminSettings /></Suspense>} />
+                  </Route>
 
-              {/* ── Student Portal ── */}
-              <Route path="/student" element={
-                <ProtectedRoute allowedRoles={['STUDENT']}>
-                  <Suspense fallback={<PageLoader />}>
-                    <StudentLayout />
-                  </Suspense>
-                </ProtectedRoute>
-              }>
-                <Route index element={<Suspense fallback={<PageLoader />}><StudentDashboard /></Suspense>} />
-                <Route path="courses" element={<Suspense fallback={<PageLoader />}><StudentCourses /></Suspense>} />
-                <Route path="courses/:id" element={<Suspense fallback={<PageLoader />}><CourseDetails /></Suspense>} />
-                <Route path="courses/:id/quizzes/:quizId" element={<Suspense fallback={<PageLoader />}><QuizView /></Suspense>} />
-                <Route path="assignments" element={<Suspense fallback={<PageLoader />}><StudentAssignments /></Suspense>} />
-                <Route path="grades" element={<Suspense fallback={<PageLoader />}><StudentGrades /></Suspense>} />
-                <Route path="community" element={<Suspense fallback={<PageLoader />}><StudentCommunity /></Suspense>} />
-                <Route path="messages" element={<Suspense fallback={<PageLoader />}><StudentMessages /></Suspense>} />
-                <Route path="reports" element={<Suspense fallback={<PageLoader />}><StudentReports /></Suspense>} />
-                <Route path="settings" element={<Suspense fallback={<PageLoader />}><StudentSettings /></Suspense>} />
-              </Route>
+                  {/* Institute Teacher Portal */}
+                  <Route path="teacher" element={
+                    <ProtectedRoute allowedRoles={['TEACHER']}>
+                      <Suspense fallback={<PageLoader />}>
+                        <TeacherLayout />
+                      </Suspense>
+                    </ProtectedRoute>
+                  }>
+                    <Route index element={<Suspense fallback={<PageLoader />}><TeacherDashboard /></Suspense>} />
+                    <Route path="courses" element={<Suspense fallback={<PageLoader />}><TeacherCourses /></Suspense>} />
+                    <Route path="courses/:id" element={<Suspense fallback={<PageLoader />}><CourseDetails /></Suspense>} />
+                    <Route path="courses/:id/quizzes/new" element={<Suspense fallback={<PageLoader />}><QuizBuilder /></Suspense>} />
+                    <Route path="courses/:id/quizzes/:quizId" element={<Suspense fallback={<PageLoader />}><QuizView /></Suspense>} />
+                    <Route path="students" element={<Suspense fallback={<PageLoader />}><UserManagement /></Suspense>} />
+                    <Route path="enrollments" element={<Suspense fallback={<PageLoader />}><TeacherEnrollments /></Suspense>} />
+                    <Route path="assessments" element={<Suspense fallback={<PageLoader />}><TeacherAssessments /></Suspense>} />
+                    <Route path="reports" element={<Suspense fallback={<PageLoader />}><TeacherReports /></Suspense>} />
+                    <Route path="communication" element={<Suspense fallback={<PageLoader />}><TeacherCommunication /></Suspense>} />
+                    <Route path="settings" element={<Suspense fallback={<PageLoader />}><TeacherSettings /></Suspense>} />
+                    <Route path="recorder" element={<Suspense fallback={<PageLoader />}><RecordingStudioPage /></Suspense>} />
+                  </Route>
 
-              {/* ── Catch-all ── */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
+                  {/* Institute Student Portal */}
+                  <Route path="student" element={
+                    <ProtectedRoute allowedRoles={['STUDENT']}>
+                      <Suspense fallback={<PageLoader />}>
+                        <StudentLayout />
+                      </Suspense>
+                    </ProtectedRoute>
+                  }>
+                    <Route index element={<Suspense fallback={<PageLoader />}><StudentDashboard /></Suspense>} />
+                    <Route path="courses" element={<Suspense fallback={<PageLoader />}><StudentCourses /></Suspense>} />
+                    <Route path="courses/:id" element={<Suspense fallback={<PageLoader />}><CourseDetails /></Suspense>} />
+                    <Route path="courses/:id/quizzes/:quizId" element={<Suspense fallback={<PageLoader />}><QuizView /></Suspense>} />
+                    <Route path="assignments" element={<Suspense fallback={<PageLoader />}><StudentAssignments /></Suspense>} />
+                    <Route path="grades" element={<Suspense fallback={<PageLoader />}><StudentGrades /></Suspense>} />
+                    <Route path="community" element={<Suspense fallback={<PageLoader />}><StudentCommunity /></Suspense>} />
+                    <Route path="messages" element={<Suspense fallback={<PageLoader />}><StudentMessages /></Suspense>} />
+                    <Route path="reports" element={<Suspense fallback={<PageLoader />}><StudentReports /></Suspense>} />
+                    <Route path="settings" element={<Suspense fallback={<PageLoader />}><StudentSettings /></Suspense>} />
+                  </Route>
+                </Route>
+
+                {/* ── Catch-all ── */}
+                <Route path="*" element={<Navigate to="/login" replace />} />
+              </Routes>
             </SocketProvider>
           </AuthProvider>
         </Router>

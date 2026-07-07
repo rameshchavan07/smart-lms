@@ -12,20 +12,23 @@ import prisma from '../config/db';
 export const enrollStudent = catchAsync(async (req: AuthRequest, res: Response) => {
   const { studentId, courseId } = req.body;
 
-  // Verify student exists
+  // Verify student exists and belongs to institute
   const student = await prisma.student.findUnique({
-    where: { id: studentId }
+    where: { id: studentId },
+    include: { user: true }
   });
-  if (!student) {
-    throw new NotFoundError('Student not found');
+  if (!student) throw new NotFoundError('Student not found');
+  if (req.user!.role !== 'SUPER_ADMIN' && student.user.instituteId !== req.user!.instituteId) {
+    throw new ForbiddenError('Permission denied');
   }
 
   // Verify course exists
   const course = await prisma.course.findUnique({
     where: { id: courseId }
   });
-  if (!course) {
-    throw new NotFoundError('Course not found');
+  if (!course) throw new NotFoundError('Course not found');
+  if (req.user!.role !== 'SUPER_ADMIN' && course.instituteId !== req.user!.instituteId) {
+    throw new ForbiddenError('Permission denied');
   }
 
   // Teacher authorization check
@@ -74,8 +77,9 @@ export const unenrollStudent = catchAsync(async (req: AuthRequest, res: Response
   const course = await prisma.course.findUnique({
     where: { id: courseId as string }
   });
-  if (!course) {
-    throw new NotFoundError('Course not found');
+  if (!course) throw new NotFoundError('Course not found');
+  if (req.user!.role !== 'SUPER_ADMIN' && course.instituteId !== req.user!.instituteId) {
+    throw new ForbiddenError('Permission denied');
   }
 
   // Teacher authorization check
@@ -111,6 +115,12 @@ export const unenrollStudent = catchAsync(async (req: AuthRequest, res: Response
 // Get students enrolled in a specific course
 export const getCourseStudents = catchAsync(async (req: AuthRequest, res: Response) => {
   const { courseId } = req.params;
+
+  const course = await prisma.course.findUnique({ where: { id: courseId as string } });
+  if (!course) throw new NotFoundError('Course not found');
+  if (req.user!.role !== 'SUPER_ADMIN' && course.instituteId !== req.user!.instituteId) {
+    throw new ForbiddenError('Permission denied');
+  }
 
   const enrollments = await prisma.enrollment.findMany({
     where: { courseId: courseId as string },

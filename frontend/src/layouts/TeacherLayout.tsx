@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useInstitute } from '../contexts/InstituteContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { BottomNav } from '../components/BottomNav';
 import { motion, AnimatePresence } from 'framer-motion';
-import { NotificationBell } from '../components/NotificationBell';import { 
+import { NotificationBell } from '../components/NotificationBell';
+import { 
   LayoutDashboard, BookOpen, Users, ClipboardList, 
   BarChart3, MessageSquare, Settings, HelpCircle, 
   LogOut, Menu, X, Search, Moon, Sun, Mail,
@@ -13,32 +15,43 @@ import { NotificationBell } from '../components/NotificationBell';import {
 
 interface NavItem {
   label: string;
-  href: string;
+  path: string;
   icon: React.ElementType;
   badge?: string | number;
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard',     href: '/teacher',               icon: LayoutDashboard },
-  { label: 'Courses',       href: '/teacher/courses',       icon: BookOpen },
-  { label: 'Students',      href: '/teacher/students',      icon: Users },
-  { label: 'Enrollments',   href: '/teacher/enrollments',   icon: GraduationCap },
-  { label: 'Assessments',   href: '/teacher/assessments',   icon: ClipboardList },
-  { label: 'Reports',       href: '/teacher/reports',       icon: BarChart3 },
-  { label: 'Communication', href: '/teacher/communication', icon: MessageSquare, badge: 3 },
-  { label: 'Settings',      href: '/teacher/settings',      icon: Settings },
+  { label: 'Dashboard',     path: '',               icon: LayoutDashboard },
+  { label: 'Courses',       path: '/courses',       icon: BookOpen },
+  { label: 'Students',      path: '/students',      icon: Users },
+  { label: 'Enrollments',   path: '/enrollments',   icon: GraduationCap },
+  { label: 'Assessments',   path: '/assessments',   icon: ClipboardList },
+  { label: 'Reports',       path: '/reports',       icon: BarChart3 },
+  { label: 'Communication', path: '/communication', icon: MessageSquare, badge: 3 },
+  { label: 'Settings',      path: '/settings',      icon: Settings },
 ];
 
 const TeacherLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const { institute } = useInstitute();
   const { isDark, toggleDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const isActive = (href: string) =>
-    href === '/teacher' ? location.pathname === href : location.pathname.startsWith(href) && href !== '#';
+  const getHref = (path: string) => {
+    if (!institute) return '#';
+    return `/i/${institute.slug}/teacher${path}`;
+  };
+
+  const isActive = (href: string) => {
+    if (href === '#') return false;
+    if (href.endsWith('/teacher') || href.endsWith('/teacher/')) {
+      return location.pathname === href || location.pathname === href + '/';
+    }
+    return location.pathname.startsWith(href);
+  };
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -59,13 +72,17 @@ const TeacherLayout: React.FC = () => {
       <aside className={`sidebar ${isMobileOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5">
-          <div className="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center shadow-brand flex-shrink-0 mx-auto" style={{ background: 'var(--brand-500)' }}>
-            <GraduationCap className="w-5 h-5 text-white" />
-          </div>
+          {institute?.logoUrl ? (
+            <img src={institute.logoUrl} alt="Logo" className="w-9 h-9 rounded-xl object-cover flex-shrink-0 mx-auto bg-white" />
+          ) : (
+            <div className="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center shadow-brand flex-shrink-0 mx-auto" style={{ background: 'var(--brand-500)' }}>
+              <GraduationCap className="w-5 h-5 text-white" />
+            </div>
+          )}
           {!isCollapsed && (
-            <div>
-              <p className="text-white font-bold text-[15px] leading-none">OpenLearnX</p>
-              <p className="text-white/40 text-[11px] mt-0.5">Teacher Portal</p>
+            <div className="min-w-0">
+              <p className="text-white font-bold text-[15px] leading-none truncate">{institute?.name || 'Loading...'}</p>
+              <p className="text-white/40 text-[11px] mt-0.5 truncate">Teacher Portal</p>
             </div>
           )}
           <button 
@@ -81,11 +98,12 @@ const TeacherLayout: React.FC = () => {
         <nav className="flex-1 overflow-y-auto hide-scrollbar py-3">
           {!isCollapsed && <p className="text-white/25 text-[10px] font-semibold uppercase tracking-widest px-5 mb-2">Menu</p>}
           {navItems.map((item) => {
-            const active = isActive(item.href);
+            const href = getHref(item.path);
+            const active = isActive(href);
             return (
               <Link
                 key={item.label}
-                to={item.href}
+                to={href}
                 onClick={() => setIsMobileOpen(false)}
                 className={`sidebar-link ${active ? 'active' : ''}`}
                 aria-current={active ? 'page' : undefined}
@@ -101,8 +119,6 @@ const TeacherLayout: React.FC = () => {
               </Link>
             );
           })}
-
-          {/* Removed Add New Course button for teachers as they don't create courses */}
         </nav>
 
         {/* Bottom */}
@@ -120,11 +136,15 @@ const TeacherLayout: React.FC = () => {
         {/* User Card */}
         <div className="p-4 border-t border-white/5">
           <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 ${isCollapsed ? 'justify-center px-0' : ''}`}>
-            <div className="avatar avatar-sm text-white shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }}>{initials}</div>
+            {user?.profileImage ? (
+              <img src={user.profileImage} alt="Profile" className="w-8 h-8 rounded-full object-cover shrink-0" />
+            ) : (
+              <div className="avatar avatar-sm text-white shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }}>{initials}</div>
+            )}
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-white text-[13px] font-semibold leading-none truncate">{fullName}</p>
-                <p className="text-white/40 text-[11px] mt-0.5">Teacher</p>
+                <p className="text-white/40 text-[11px] mt-0.5 truncate">{user?.email}</p>
               </div>
             )}
           </div>
@@ -167,12 +187,16 @@ const TeacherLayout: React.FC = () => {
             </button>
             <div className="w-px h-6 mx-1 hidden sm:block" style={{ background: 'var(--border)' }} />
             <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="User profile">
-              <div className="avatar avatar-sm font-bold" style={{ background: 'rgba(67,97,240,0.1)', color: 'var(--brand-500)' }}>
-                {initials}
-              </div>
+              {user?.profileImage ? (
+                <img src={user.profileImage} alt="Profile" className="w-8 h-8 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="avatar avatar-sm font-bold" style={{ background: 'rgba(67,97,240,0.1)', color: 'var(--brand-500)' }}>
+                  {initials}
+                </div>
+              )}
               <div className="hidden md:block text-left">
                 <p className="text-[13px] font-semibold leading-none" style={{ color: 'var(--text-primary)' }}>{fullName}</p>
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Teacher</p>
+                <p className="text-[11px] mt-0.5 truncate w-24" style={{ color: 'var(--text-muted)' }}>Teacher</p>
               </div>
             </button>
           </div>
@@ -196,7 +220,7 @@ const TeacherLayout: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <BottomNav items={navItems.slice(0, 4)} />
+      <BottomNav items={navItems.slice(0, 4).map(item => ({ ...item, href: getHref(item.path) }))} />
     </div>
   );
 };

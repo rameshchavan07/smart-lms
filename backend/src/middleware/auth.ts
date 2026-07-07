@@ -88,3 +88,56 @@ export const authorize = (...roles: string[]) => {
     next();
   };
 };
+
+/**
+ * Middleware: Looks up institute by :slug param, verifies it's APPROVED,
+ * and attaches it to req.institute.
+ */
+export const requireApprovedInstitute = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  const slug = req.params.slug as string;
+  if (!slug) {
+    res.status(400).json({ message: 'Institute slug is required' });
+    return;
+  }
+
+  const institute = await prisma.institute.findUnique({ where: { slug } });
+  if (!institute) {
+    res.status(404).json({ message: 'Institute not found' });
+    return;
+  }
+
+  if (institute.status !== 'APPROVED') {
+    res.status(403).json({
+      message: 'This institute is not currently active',
+      status: institute.status,
+    });
+    return;
+  }
+
+  (req as any).institute = institute;
+  next();
+};
+
+/**
+ * Middleware: Verifies the authenticated user belongs to the same institute
+ * that was resolved by requireApprovedInstitute. SUPER_ADMINs bypass this check.
+ */
+export const requireSameInstitute = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (req.user?.role === 'SUPER_ADMIN') {
+    next();
+    return;
+  }
+
+  const institute = (req as any).institute;
+  if (!institute) {
+    res.status(500).json({ message: 'Institute context not found. Use requireApprovedInstitute first.' });
+    return;
+  }
+
+  if (req.user?.instituteId !== institute.id) {
+    res.status(403).json({ message: 'You do not belong to this institute' });
+    return;
+  }
+
+  next();
+};

@@ -17,8 +17,12 @@ import attendanceRoutes from './attendanceRoutes';
 import progressRoutes from './progressRoutes';
 import certificateRoutes from './certificateRoutes';
 import instituteRoutes from './instituteRoutes';
+import instituteAuthRoutes from './instituteAuthRoutes';
 
 const router = Router();
+
+// Institute auth routes (public — must be before CSRF protection in app.ts if needed)
+router.use('/institutes', instituteAuthRoutes);
 
 // Define your routes here
 router.use('/auth', authRoutes);

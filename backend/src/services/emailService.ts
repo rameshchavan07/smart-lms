@@ -16,18 +16,91 @@ const transporter = nodemailer.createTransport({
     // Force IPv4 to prevent ENETUNREACH issues on environments with broken IPv6
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    lookup: (hostname, options, callback) => {
-      dns.lookup(hostname, { family: 4 }, callback);
+    lookup: (hostname: string, options: unknown, callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
+      dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+        callback(err, address as string, family);
+      });
     }
   }
 });
 
+// Verify SMTP connection on startup
+transporter.verify()
+  .then(() => console.log('✅ SMTP connection verified'))
+  .catch((err) => console.error('❌ SMTP connection failed:', err instanceof Error ? err.message : String(err)));
+
 const FROM_EMAIL = process.env.GMAIL_USER || 'noreply@openlearnx.org';
 const APP_NAME = 'OpenLearnX';
 
+// ─── Resend API Fallback ──────────────────────────────────────────────────────
+
+const sendViaResend = async (to: string, subject: string, html: string): Promise<void> => {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY is not configured — cannot send via fallback.');
+  }
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ from: fromEmail, to, subject, html }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Resend API failed (${res.status}): ${body}`);
+  }
+};
+
+// ─── Core Send With Retry + Fallback ──────────────────────────────────────────
+
+const sendWithRetry = async (
+  mailOptions: { from: string; to: string; subject: string; html: string },
+  retries = 3
+): Promise<void> => {
+  // Dev fallback: if SMTP credentials are not set, log to console
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+    console.log(`\n[DEV FALLBACK] Email to ${mailOptions.to}: ${mailOptions.subject}\n`);
+    return;
+  }
+
+  // Try Gmail SMTP with retries
+  let lastError: Error | undefined;
+  for (let i = 0; i < retries; i++) {
+    try {
+      await transporter.sendMail(mailOptions);
+      return; // Success
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.error(`SMTP attempt ${i + 1}/${retries} failed:`, lastError.message);
+      if (i < retries - 1) {
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i))); // exponential backoff
+      }
+    }
+  }
+
+  // All SMTP retries failed — try Resend fallback
+  console.warn('All SMTP retries failed. Attempting Resend API fallback...');
+  try {
+    await sendViaResend(mailOptions.to, mailOptions.subject, mailOptions.html);
+    console.log('✅ Email sent via Resend fallback');
+    return;
+  } catch (resendErr) {
+    console.error('Resend fallback also failed:', resendErr instanceof Error ? resendErr.message : String(resendErr));
+  }
+
+  // Both failed — throw the original SMTP error
+  throw lastError || new Error('Email delivery failed via all providers');
+};
+
 // ─── HTML Templates ───────────────────────────────────────────────────────────
 
-const baseTemplate = (content: string) => `
+export const baseTemplate = (content: string) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -78,10 +151,26 @@ const otpBlock = (otp: string) => `
   </div>
 `;
 
+// ─── Reusable Send Helper (used by instituteEmailService) ─────────────────────
+
+/**
+ * Send an email using the base template with retry + Resend fallback.
+ * Content should be the inner HTML body (NOT wrapped in baseTemplate).
+ */
+export const sendEmail = async (to: string, subject: string, content: string): Promise<void> => {
+  const html = baseTemplate(content);
+  await sendWithRetry({
+    from: `"${APP_NAME}" <${FROM_EMAIL}>`,
+    to,
+    subject,
+    html,
+  });
+};
+
 // ─── Email Senders ────────────────────────────────────────────────────────────
 
 export const sendEmailVerificationOtp = async (email: string, firstName: string, otp: string): Promise<void> => {
-  const html = baseTemplate(`
+  const content = `
     <h2 style="margin:0 0 8px 0;color:#0f172a;font-size:22px;font-weight:700;">Verify your email</h2>
     <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.6;">
       Hi <strong>${firstName}</strong>, welcome to ${APP_NAME}! 🎉<br/>
@@ -91,30 +180,13 @@ export const sendEmailVerificationOtp = async (email: string, firstName: string,
     <p style="margin:0;color:#94a3b8;font-size:13px;">
       Never share this OTP with anyone. The ${APP_NAME} team will never ask for your OTP.
     </p>
-  `);
+  `;
 
-  try {
-    if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
-      console.log('\n==================================================');
-      console.log(`[DEV FALLBACK] Verification OTP for ${email}: ${otp}`);
-      console.log('==================================================\n');
-      return;
-    }
-
-    await transporter.sendMail({
-      from: `"${APP_NAME}" <${FROM_EMAIL}>`,
-      to: email,
-      subject: `${otp} — Verify your ${APP_NAME} account`,
-      html,
-    });
-  } catch (err) {
-    console.error('Nodemailer sendEmailVerificationOtp exception:', err);
-    throw err;
-  }
+  await sendEmail(email, `${otp} — Verify your ${APP_NAME} account`, content);
 };
 
 export const sendPasswordResetOtp = async (email: string, firstName: string, otp: string): Promise<void> => {
-  const html = baseTemplate(`
+  const content = `
     <h2 style="margin:0 0 8px 0;color:#0f172a;font-size:22px;font-weight:700;">Reset your password</h2>
     <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.6;">
       Hi <strong>${firstName}</strong>, we received a request to reset your password.<br/>
@@ -124,30 +196,13 @@ export const sendPasswordResetOtp = async (email: string, firstName: string, otp
     <p style="margin:0;color:#94a3b8;font-size:13px;">
       For your security, never share this OTP with anyone.
     </p>
-  `);
+  `;
 
-  try {
-    if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
-      console.log('\n==================================================');
-      console.log(`[DEV FALLBACK] Password Reset OTP for ${email}: ${otp}`);
-      console.log('==================================================\n');
-      return;
-    }
-
-    await transporter.sendMail({
-      from: `"${APP_NAME}" <${FROM_EMAIL}>`,
-      to: email,
-      subject: `${otp} — Reset your ${APP_NAME} password`,
-      html,
-    });
-  } catch (err) {
-    console.error('Nodemailer sendPasswordResetOtp exception:', err);
-    throw err;
-  }
+  await sendEmail(email, `${otp} — Reset your ${APP_NAME} password`, content);
 };
 
 export const sendWelcomeEmail = async (email: string, firstName: string): Promise<void> => {
-  const html = baseTemplate(`
+  const content = `
     <h2 style="margin:0 0 8px 0;color:#0f172a;font-size:22px;font-weight:700;">Welcome to ${APP_NAME}! 🎓</h2>
     <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.6;">
       Hi <strong>${firstName}</strong>, your account has been verified and is ready to use.<br/>
@@ -159,22 +214,7 @@ export const sendWelcomeEmail = async (email: string, firstName: string): Promis
         Go to Dashboard →
       </a>
     </div>
-  `);
+  `;
 
-  try {
-    if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
-      console.log(`[DEV FALLBACK] Welcome email to ${email} simulated successfully.`);
-      return;
-    }
-
-    await transporter.sendMail({
-      from: `"${APP_NAME}" <${FROM_EMAIL}>`,
-      to: email,
-      subject: `Welcome to ${APP_NAME} — You're all set!`,
-      html,
-    });
-  } catch (err) {
-    console.error('Nodemailer sendWelcomeEmail exception:', err);
-    throw err;
-  }
+  await sendEmail(email, `Welcome to ${APP_NAME} — You're all set!`, content);
 };

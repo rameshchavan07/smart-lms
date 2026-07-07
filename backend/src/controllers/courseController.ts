@@ -69,12 +69,14 @@ export const getCourses = catchAsync(async (req: AuthRequest, res: Response) => 
 export const createCourse = catchAsync(async (req: AuthRequest, res: Response) => {
   const { title, description, teacherId } = req.body;
 
+  const targetInstituteId = req.user?.role === 'SUPER_ADMIN' ? (req.body.instituteId || null) : req.user?.instituteId;
+
   const course = await prisma.course.create({
     data: {
       title,
       description,
       teacherId: teacherId || null,
-      instituteId: req.body.instituteId || req.user?.instituteId || null,
+      instituteId: targetInstituteId,
     },
     include: {
       teacher: {
@@ -123,6 +125,13 @@ export const updateCourse = catchAsync(async (req: AuthRequest, res: Response) =
   const { id } = req.params;
   const { title, description, teacherId } = req.body;
 
+  const existingCourse = await prisma.course.findUnique({ where: { id: id as string } });
+  if (!existingCourse) throw new NotFoundError('Course not found');
+
+  if (req.user?.role !== 'SUPER_ADMIN' && existingCourse.instituteId !== req.user?.instituteId) {
+    throw new ForbiddenError('Permission denied');
+  }
+
   const course = await prisma.course.update({
     where: { id: id as string },
     data: {
@@ -142,6 +151,13 @@ export const deleteCourse = catchAsync(async (req: AuthRequest, res: Response) =
   const { id } = req.params;
 
   const courseId = id as string;
+
+  const existingCourse = await prisma.course.findUnique({ where: { id: courseId } });
+  if (!existingCourse) throw new NotFoundError('Course not found');
+
+  if (req.user?.role !== 'SUPER_ADMIN' && existingCourse.instituteId !== req.user?.instituteId) {
+    throw new ForbiddenError('Permission denied');
+  }
 
   // Fetch related IDs for nested deletion
   const lectures = await prisma.lecture.findMany({ where: { courseId }, select: { id: true } });
@@ -224,6 +240,13 @@ export const uploadCourseThumbnail = catchAsync(async (req: AuthRequest, res: Re
       fs.unlinkSync(req.file.path);
     }
     throw new NotFoundError('Course not found');
+  }
+
+  if (req.user?.role !== 'SUPER_ADMIN' && course.instituteId !== req.user?.instituteId) {
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    throw new ForbiddenError('Permission denied');
   }
 
   const instName = course.institute?.name || 'Global';

@@ -107,7 +107,10 @@ export const resendOtp = catchAsync(async (req: Request, res: Response) => {
 export const loginUser = catchAsync(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { institute: { select: { slug: true, status: true } } },
+  });
 
   if (!user || !user.passwordHash) {
     throw new UnauthorizedError('Invalid email or password.');
@@ -117,10 +120,24 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
     throw new ForbiddenError('Your account has been disabled. Please contact support.');
   }
 
+  // Check if the user's institute is active (if they belong to one)
+  if (user.institute) {
+    if (user.institute.status === 'SUSPENDED') {
+      throw new ForbiddenError('Your institute has been temporarily deactivated. Please contact the platform administrator.');
+    }
+    if (user.institute.status === 'REJECTED') {
+      throw new ForbiddenError('Your institute registration was not approved.');
+    }
+  }
+
   if (!user.isEmailVerified) {
-    // Re-send OTP so they can complete verification
-    const otp = await createOtp(email, OtpType.EMAIL_VERIFICATION);
-    await sendEmailVerificationOtp(email, user.firstName, otp);
+    // Re-send OTP so they can complete verification — wrapped in try/catch to prevent email failures from blocking the error response
+    try {
+      const otp = await createOtp(email, OtpType.EMAIL_VERIFICATION);
+      await sendEmailVerificationOtp(email, user.firstName, otp);
+    } catch (emailErr) {
+      console.error('Failed to send verification OTP during login:', emailErr);
+    }
     throw new ForbiddenError('Your email is not verified. A new verification code has been sent to your email.');
   }
 
@@ -134,7 +151,10 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
   const authData = await buildAuthResponse(user);
   setAuthCookies(res, authData.token, authData.refreshToken);
   const { token, refreshToken, ...userData } = authData;
-  res.json(userData);
+  res.json({
+    ...userData,
+    instituteSlug: user.institute?.slug || null,
+  });
 });
 
 // ─── FORGOT PASSWORD ──────────────────────────────────────────────────────────
@@ -244,7 +264,17 @@ export const googleCallback = catchAsync(async (req: Request, res: Response) => 
 // ─── EXISTING ENDPOINTS (unchanged) ──────────────────────────────────────────
 
 export const getMe = catchAsync(async (req: AuthRequest, res: Response) => {
-  res.json(req.user);
+  // Fetch institute slug if user belongs to an institute
+  let instituteSlug: string | null = null;
+  if (req.user?.instituteId) {
+    const institute = await prisma.institute.findUnique({
+      where: { id: req.user.instituteId },
+      select: { slug: true },
+    });
+    instituteSlug = institute?.slug || null;
+  }
+
+  res.json({ ...req.user, instituteSlug });
 });
 
 export const refresh = catchAsync(async (req: Request, res: Response) => {

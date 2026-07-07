@@ -36,6 +36,10 @@ export const getUsers = catchAsync(async (req: AuthRequest, res: Response) => {
   const skip = (page - 1) * limit;
 
   const whereClause: Prisma.UserWhereInput = {};
+  if (req.user!.role !== 'SUPER_ADMIN') {
+    whereClause.instituteId = req.user!.instituteId;
+  }
+  
   if (role) whereClause.role = role as UserRole;
   if (search) {
     whereClause.OR = [
@@ -91,6 +95,8 @@ export const createTeacher = catchAsync(async (req: AuthRequest, res: Response) 
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(password, salt);
 
+  const targetInstituteId = req.user!.role === 'SUPER_ADMIN' ? req.body.instituteId : req.user!.instituteId;
+
   const user = await prisma.user.create({
     data: {
       firstName,
@@ -98,6 +104,7 @@ export const createTeacher = catchAsync(async (req: AuthRequest, res: Response) 
       email,
       passwordHash,
       role: 'TEACHER',
+      instituteId: targetInstituteId,
       teacher: {
         create: {
           employeeCode: employeeCode || `EMP-${Date.now()}`,
@@ -159,6 +166,8 @@ export const createStudent = catchAsync(async (req: AuthRequest, res: Response) 
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(password, salt);
 
+  const targetInstituteId = req.user!.role === 'SUPER_ADMIN' ? req.body.instituteId : req.user!.instituteId;
+
   const user = await prisma.user.create({
     data: {
       firstName,
@@ -168,6 +177,7 @@ export const createStudent = catchAsync(async (req: AuthRequest, res: Response) 
       address,
       passwordHash,
       role: 'STUDENT',
+      instituteId: targetInstituteId,
       student: {
         create: {
           enrollmentNumber: enrollmentNumber || `ENR-${Date.now()}`,
@@ -192,6 +202,10 @@ export const updateUserStatus = catchAsync(async (req: AuthRequest, res: Respons
   const targetUser = await prisma.user.findUnique({ where: { id: id as string } });
   if (!targetUser) {
     throw new NotFoundError('User not found');
+  }
+
+  if (req.user!.role !== 'SUPER_ADMIN' && targetUser.instituteId !== req.user!.instituteId) {
+    throw new ForbiddenError('Permission denied: User belongs to a different institute.');
   }
 
   if (!canModifyUser(req.user!.role, targetUser.role) && req.user!.id !== id) {
@@ -220,6 +234,10 @@ export const updateUser = catchAsync(async (req: AuthRequest, res: Response) => 
 
   if (!user) {
     throw new NotFoundError('User not found');
+  }
+
+  if (req.user!.role !== 'SUPER_ADMIN' && user.instituteId !== req.user!.instituteId) {
+    throw new ForbiddenError('Permission denied: User belongs to a different institute.');
   }
 
   if (!canModifyUser(req.user!.role, user.role) && req.user!.id !== id) {
@@ -288,6 +306,10 @@ export const deleteUser = catchAsync(async (req: AuthRequest, res: Response) => 
 
   if (!user) {
     throw new NotFoundError('User not found');
+  }
+
+  if (req.user!.role !== 'SUPER_ADMIN' && user.instituteId !== req.user!.instituteId) {
+    throw new ForbiddenError('Permission denied: User belongs to a different institute.');
   }
 
   if (!canModifyUser(req.user!.role, user.role)) {
