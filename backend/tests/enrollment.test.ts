@@ -41,7 +41,7 @@ function buildApp(role: string, userId = 'user-admin-1') {
   app.use(express.json());
   app.use(cookieParser());
   app.use((req: express.Request & { user?: unknown }, _res, next) => {
-    req.user = { id: userId, role: role as any, firstName: 'Test', lastName: 'User', email: 'test@lms.com' } as any;
+    req.user = { id: userId, role: role as any, firstName: 'Test', lastName: 'User', email: 'test@lms.com', instituteId: 'inst-1' } as any;
     next();
   });
   app.post('/api/enrollments', enrollStudent);
@@ -55,8 +55,8 @@ function buildApp(role: string, userId = 'user-admin-1') {
 }
 
 // ─── Shared data ──────────────────────────────────────────────────────────────
-const STUDENT = { id: 'student-1', userId: 'user-student-1' };
-const COURSE  = { id: 'course-1', title: 'Math 101', teacherId: 'teacher-1' };
+const STUDENT = { id: 'student-1', userId: 'user-student-1', user: { instituteId: 'inst-1' } };
+const COURSE  = { id: 'course-1', title: 'Math 101', teacherId: 'teacher-1', instituteId: 'inst-1' };
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
