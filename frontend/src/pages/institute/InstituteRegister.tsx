@@ -5,6 +5,7 @@ import { Button, Card } from '../../components';
 import { Link, Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { AxiosError } from 'axios';
 import { Loader2 } from 'lucide-react';
 
 export default function InstituteRegister() {
@@ -49,8 +50,10 @@ export default function InstituteRegister() {
         instituteSlug: data.instituteSlug
       });
       toast.success('Registration successful! Please check your email to verify your account.');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message?: string }>;
+      const msg = axiosError.response?.data?.message || 'Registration failed. Please try again.';
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

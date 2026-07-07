@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import api from '../services/api';
+import { AxiosError } from 'axios';
 import { Button, Card } from '../components';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
@@ -22,8 +23,9 @@ export default function RegisterInstitute() {
       toast.success('Registration request submitted successfully!');
       navigate('/pending-approval');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to submit registration');
+    onError: (err: AxiosError<{ message?: string }>) => {
+      const errorMsg = err.response?.data?.message || 'Failed to submit registration';
+      toast.error(errorMsg);
     }
   });
 

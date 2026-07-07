@@ -20,18 +20,18 @@ interface InstituteContextType {
   error: string | null;
 }
 
+import { AxiosError } from 'axios';
+
 const InstituteContext = createContext<InstituteContextType | undefined>(undefined);
 
 export const InstituteProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { slug } = useParams<{ slug: string }>();
   const [institute, setInstitute] = useState<Institute | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!!slug);
+  const [error, setError] = useState<string | null>(slug ? null : 'No institute specified');
 
   useEffect(() => {
     if (!slug) {
-      setIsLoading(false);
-      setError('No institute specified');
       return;
     }
 
@@ -41,8 +41,9 @@ export const InstituteProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setError(null);
         const { data } = await api.get(`/institutes/by-slug/${slug}`);
         setInstitute(data.institute);
-      } catch (err: any) {
-        const msg = err?.response?.data?.message || 'Institute not found';
+      } catch (err) {
+        const axiosError = err as AxiosError<{ message?: string }>;
+        const msg = axiosError.response?.data?.message || 'Institute not found';
         setError(msg);
         setInstitute(null);
       } finally {

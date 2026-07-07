@@ -5,6 +5,7 @@ import { Button, Card } from '../../components';
 import { Link, Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { AxiosError } from 'axios';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function InstituteLogin() {
@@ -39,8 +40,10 @@ export default function InstituteLogin() {
         instituteSlug: data.instituteSlug
       });
       toast.success('Logged in successfully');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Login failed');
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message?: string }>;
+      const msg = axiosError.response?.data?.message || 'Login failed. Please try again.';
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

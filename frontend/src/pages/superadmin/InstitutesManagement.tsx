@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { Button, Card, EmptyState } from '../../components';
@@ -50,8 +51,9 @@ export default function InstitutesManagement() {
       toast.success('Institute status updated');
       queryClient.invalidateQueries({ queryKey: ['institutes'] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update status');
+    onError: (err) => {
+      const axiosError = err as AxiosError<{ message?: string }>;
+      toast.error(axiosError.response?.data?.message || 'Failed to update status');
     }
   });
 
@@ -61,8 +63,9 @@ export default function InstitutesManagement() {
       toast.success('Institute deleted');
       queryClient.invalidateQueries({ queryKey: ['institutes'] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to delete institute');
+    onError: (err) => {
+      const axiosError = err as AxiosError<{ message?: string }>;
+      toast.error(axiosError.response?.data?.message || 'Failed to delete institute');
     }
   });
 
@@ -122,7 +125,7 @@ export default function InstitutesManagement() {
         {tabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED')}
             className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
               activeTab === tab.id 
                 ? 'border-brand-500 text-brand-500' 
