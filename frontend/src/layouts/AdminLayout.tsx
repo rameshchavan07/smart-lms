@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { BottomNav } from '../components/BottomNav';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NotificationBell } from '../components/NotificationBell';
+import { DashboardTour } from '../components/Onboarding/DashboardTour';
 import { 
   LayoutDashboard, BookOpen, Users, ClipboardList, 
   BarChart3, MessageSquare, Settings, HelpCircle, 
@@ -13,7 +14,6 @@ import {
   ChevronRight, GraduationCap, Plus, Globe
 } from 'lucide-react';
 import { AIBotOnboarding } from '../components/Onboarding/AIBotOnboarding';
-import { DashboardTour } from '../components/Onboarding/DashboardTour';
 
 interface NavItem {
   label: string;
@@ -45,10 +45,12 @@ const AdminLayout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Onboarding state
-  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
-  const showOnboarding = user?.hasCompletedOnboarding === false && !onboardingDismissed;
-  const [showTour, setShowTour] = useState(false);
+  // Onboarding & Tour state
+  const [dismissedOnboarding, setDismissedOnboarding] = useState(false);
+  const [dismissedTour, setDismissedTour] = useState(false);
+
+  const showOnboarding = (user?.hasCompletedOnboarding === false) && !dismissedOnboarding;
+  const showTour = (user?.hasCompletedOnboarding !== false) && (user?.tourCompleted === false) && !dismissedTour;
 
   const getHref = (path: string) => {
     if (!institute) return '#';
@@ -194,7 +196,7 @@ const AdminLayout: React.FC = () => {
           </div>
 
           {/* Search */}
-          <div className="relative max-w-xs hidden md:block ml-4">
+          <div className="relative max-w-xs hidden md:block ml-4 tour-search">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
             <input
               type="text"
@@ -210,7 +212,9 @@ const AdminLayout: React.FC = () => {
             <button onClick={toggleDark} className="btn btn-ghost p-2 rounded-xl" aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"} title="Toggle theme">
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <NotificationBell />
+            <div className="tour-notifications flex">
+              <NotificationBell />
+            </div>
             <button className="btn btn-ghost p-2 rounded-xl hidden sm:flex" aria-label="Messages">
               <Mail className="w-5 h-5" />
             </button>
@@ -254,14 +258,13 @@ const AdminLayout: React.FC = () => {
       {/* Onboarding Components */}
       {showOnboarding && (
         <AIBotOnboarding onComplete={() => {
-          setOnboardingDismissed(true);
-          setShowTour(true);
+          setDismissedOnboarding(true);
         }} />
       )}
       
       <DashboardTour 
         run={showTour} 
-        onFinish={() => setShowTour(false)} 
+        onFinish={() => setDismissedTour(true)} 
       />
     </div>
   );

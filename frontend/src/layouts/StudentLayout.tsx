@@ -42,16 +42,12 @@ const StudentLayout: React.FC = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Onboarding state
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showTour, setShowTour] = useState(false);
+  // Onboarding & Tour state
+  const [dismissedOnboarding, setDismissedOnboarding] = useState(false);
+  const [dismissedTour, setDismissedTour] = useState(false);
 
-  // Check onboarding status on mount
-  React.useEffect(() => {
-    if (user && user.hasCompletedOnboarding === false) {
-      setShowOnboarding(true);
-    }
-  }, [user]);
+  const showOnboarding = (user?.hasCompletedOnboarding === false) && !dismissedOnboarding;
+  const showTour = (user?.hasCompletedOnboarding !== false) && (user?.tourCompleted === false) && !dismissedTour;
 
   const getHref = (path: string) => {
     if (!institute) return '#';
@@ -187,7 +183,7 @@ const StudentLayout: React.FC = () => {
           </button>
 
           {/* Search */}
-          <div className="relative flex-1 max-w-sm hidden md:block">
+          <div className="relative flex-1 max-w-sm hidden md:block tour-search">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
             <input
               type="text"
@@ -201,7 +197,9 @@ const StudentLayout: React.FC = () => {
             <button onClick={toggleDark} className="btn btn-ghost p-2 rounded-xl" aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"} title="Toggle theme">
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <NotificationBell />
+            <div className="tour-notifications flex">
+              <NotificationBell />
+            </div>
             <button className="btn btn-ghost p-2 rounded-xl hidden sm:flex" aria-label="Messages">
               <Mail className="w-5 h-5" />
             </button>
@@ -245,14 +243,13 @@ const StudentLayout: React.FC = () => {
       {/* Onboarding Components */}
       {showOnboarding && (
         <AIBotOnboarding onComplete={() => {
-          setShowOnboarding(false);
-          setShowTour(true);
+          setDismissedOnboarding(true);
         }} />
       )}
       
       <DashboardTour 
         run={showTour} 
-        onFinish={() => setShowTour(false)} 
+        onFinish={() => setDismissedTour(true)} 
       />
     </div>
   );

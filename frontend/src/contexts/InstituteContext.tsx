@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
+import { getMediaUrl } from '../utils/url';
 
 interface Institute {
   id: string;
@@ -41,13 +42,24 @@ export const InstituteProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isLoading, setIsLoading] = useState(!!slug);
   const [error, setError] = useState<string | null>(slug ? null : 'No institute specified');
 
-  const fetchInstitute = async () => {
+  const fetchInstitute = useCallback(async () => {
     if (!slug) return;
     try {
       setIsLoading(true);
       setError(null);
       const { data } = await api.get(`/institutes/by-slug/${slug}`);
-      setInstitute(data.institute);
+      const fetchedInstitute = data.institute;
+      
+      if (fetchedInstitute) {
+        if (fetchedInstitute.logoUrl) {
+          fetchedInstitute.logoUrl = getMediaUrl(fetchedInstitute.logoUrl);
+        }
+        if (fetchedInstitute.coverImageUrl) {
+          fetchedInstitute.coverImageUrl = getMediaUrl(fetchedInstitute.coverImageUrl);
+        }
+      }
+      
+      setInstitute(fetchedInstitute);
     } catch (err) {
       const axiosError = err as AxiosError<{ message?: string }>;
       const msg = axiosError.response?.data?.message || 'Institute not found';
@@ -56,11 +68,12 @@ export const InstituteProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [slug]);
 
   useEffect(() => {
-    fetchInstitute();
-  }, [slug]);
+    // Avoid synchronous setState warning in effect by deferring
+    void Promise.resolve().then(() => fetchInstitute());
+  }, [fetchInstitute]);
 
   const refreshInstitute = async () => {
     await fetchInstitute();

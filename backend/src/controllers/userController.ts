@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, clearUserCache } from '../middleware/auth';
 import { logActivity } from '../utils/auditLogger';
 import { catchAsync } from '../utils/catchAsync';
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/AppError';
@@ -218,6 +218,7 @@ export const updateUserStatus = catchAsync(async (req: AuthRequest, res: Respons
     select: { id: true, email: true, isActive: true }
   });
 
+  clearUserCache(user.id);
   await logActivity(req.user!.id, `${isActive ? 'Activated' : 'Deactivated'} user account: ${user.email}`, 'User', user.id);
   await invalidateCacheByPattern(CACHE_KEYS.USERS_PATTERN);
   res.json({ message: 'User status updated', user });
@@ -291,6 +292,7 @@ export const updateUser = catchAsync(async (req: AuthRequest, res: Response) => 
     }
   });
 
+  clearUserCache(id as string);
   await logActivity(req.user!.id, `Updated profile details for user: ${email}`, 'User', id as string);
   await invalidateCacheByPattern(CACHE_KEYS.USERS_PATTERN);
   res.json({ message: 'User updated successfully' });
@@ -344,6 +346,7 @@ export const deleteUser = catchAsync(async (req: AuthRequest, res: Response) => 
     prisma.user.delete({ where: { id: id as string } })
   ]);
 
+  clearUserCache(id as string);
   await logActivity(req.user!.id, `Deleted user profile: ${user.email}`, 'User', id as string);
   await invalidateCacheByPattern(CACHE_KEYS.USERS_PATTERN);
   res.json({ message: 'User deleted successfully' });
@@ -360,6 +363,8 @@ export const updateProfile = catchAsync(async (req: AuthRequest, res: Response) 
     where: { id: userId },
     data: updateData
   });
+  
+  clearUserCache(userId);
   res.json({ message: 'Profile updated', user });
 });
 
@@ -376,6 +381,7 @@ export const uploadAvatar = catchAsync(async (req: AuthRequest, res: Response) =
     data: { profileImage: fileUrl }
   });
   
+  clearUserCache(userId);
   res.json({ message: 'Avatar updated successfully', profileImage: fileUrl });
 });
 
@@ -383,18 +389,52 @@ export const uploadAvatar = catchAsync(async (req: AuthRequest, res: Response) =
 export const completeOnboarding = catchAsync(async (req: AuthRequest, res: Response) => {
   const userId = req.user!.id;
   
+  const { learningGoal, experienceLevel, studyTime, dashboardPreferences, theme, notificationsEnabled, tourCompleted } = req.body;
+  
   const updatedUser = await prisma.user.update({
     where: { id: userId },
-    data: { hasCompletedOnboarding: true }
+    data: { 
+      hasCompletedOnboarding: true,
+      learningGoal,
+      experienceLevel,
+      studyTime,
+      dashboardPreferences: dashboardPreferences ? dashboardPreferences : undefined,
+      theme,
+      notificationsEnabled: notificationsEnabled !== undefined ? notificationsEnabled : undefined,
+      tourCompleted: tourCompleted !== undefined ? tourCompleted : undefined,
+    }
   });
 
+  clearUserCache(userId);
   await logActivity(userId, 'Completed AI Onboarding', 'User', userId);
 
   res.json({
     message: 'Onboarding completed',
     user: {
       id: updatedUser.id,
-      hasCompletedOnboarding: updatedUser.hasCompletedOnboarding
+      hasCompletedOnboarding: updatedUser.hasCompletedOnboarding,
+      tourCompleted: updatedUser.tourCompleted
+    }
+  });
+});
+
+// Complete Tour
+export const completeTour = catchAsync(async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.id;
+  
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { tourCompleted: true }
+  });
+
+  clearUserCache(userId);
+  await logActivity(userId, 'Completed Product Tour', 'User', userId);
+
+  res.json({
+    message: 'Tour completed',
+    user: {
+      id: updatedUser.id,
+      tourCompleted: updatedUser.tourCompleted
     }
   });
 });

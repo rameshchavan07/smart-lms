@@ -33,7 +33,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   }
 
   // If we're in an institute route, verify the user belongs to this institute
-  if (slug && user.instituteSlug && user.instituteSlug !== slug) {
+  if (slug && user.instituteSlug && decodeURIComponent(user.instituteSlug) !== decodeURIComponent(slug)) {
     // Redirect to the user's correct institute
     const rolePath = user.role === 'ADMIN' ? 'admin' : user.role === 'TEACHER' ? 'teacher' : 'student';
     return <Navigate to={`/i/${user.instituteSlug}/${rolePath}`} replace />;

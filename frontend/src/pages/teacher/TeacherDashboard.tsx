@@ -134,7 +134,7 @@ const TeacherDashboard: React.FC = () => {
           <Link to="/teacher/recorder" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-surface hover:bg-bg-subtle dark:hover:bg-slate-700">
             <Clapperboard size={14} /> Recording Studio
           </Link>
-          <Link to="courses" className="btn btn-primary btn-sm gap-2 text-sm shadow-sm">
+          <Link to="courses" className="btn btn-primary btn-sm gap-2 text-sm shadow-sm tour-courses">
             <BookOpen size={14} /> My Courses
           </Link>
         </div>
@@ -143,7 +143,7 @@ const TeacherDashboard: React.FC = () => {
       {/* ── Recording Studio Banner ── */}
       <Link
         to="/teacher/recorder"
-        className="flex items-center gap-4 p-4 rounded-2xl border transition-all hover:scale-[1.01] cursor-pointer group"
+        className="flex items-center gap-4 p-4 rounded-2xl border transition-all hover:scale-[1.01] cursor-pointer group tour-continue"
         style={{
           background: 'linear-gradient(135deg, rgba(67,97,240,0.08), rgba(139,92,246,0.08))',
           border: '1px solid rgba(67,97,240,0.2)',

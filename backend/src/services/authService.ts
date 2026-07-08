@@ -39,6 +39,8 @@ export const buildAuthResponse = async (user: User) => {
     lastName: user.lastName,
     email: user.email,
     role: user.role,
+    hasCompletedOnboarding: user.hasCompletedOnboarding,
+    tourCompleted: user.tourCompleted,
     token,
     refreshToken,
   };

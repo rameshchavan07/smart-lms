@@ -54,6 +54,13 @@ model User {
   isEmailVerified   Boolean            @default(false)
   isApproved        Boolean            @default(true)
   hasCompletedOnboarding Boolean       @default(false)
+  tourCompleted     Boolean            @default(false)
+  learningGoal      String?            @db.VarChar(100)
+  experienceLevel   String?            @db.VarChar(50)
+  studyTime         String?            @db.VarChar(50)
+  dashboardPreferences Json?
+  theme             String?            @default("system")
+  notificationsEnabled Boolean         @default(true)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   instituteId       String?

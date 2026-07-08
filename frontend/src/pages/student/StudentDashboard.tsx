@@ -172,7 +172,7 @@ const StudentDashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/student/courses" className="btn btn-primary btn-sm gap-2">
+          <Link to="/student/courses" className="btn btn-primary btn-sm gap-2 tour-courses">
             <BookOpen size={14} /> Browse Courses
           </Link>
         </div>
@@ -210,7 +210,7 @@ const StudentDashboard: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
 
           {/* Continue Learning */}
-          <div className="card">
+          <div className="card tour-continue">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Continue Learning</h2>
               <Link to="/student/courses" className="text-[12px] font-semibold flex items-center gap-1" style={{ color: 'var(--brand-500)' }}>

@@ -33,10 +33,12 @@ app.use(pinoHttp({ logger, serializers: { req: (req) => ({ method: req.method, u
 // Serve static uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+const isProd = process.env.NODE_ENV === 'production';
+
 // Rate Limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per `window`
+  max: isProd ? 200 : 10000, // Limit each IP to 200 requests per `window` in prod, 10000 in dev
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests from this IP, please try again later.' }
@@ -46,7 +48,7 @@ app.use('/api', apiLimiter);
 // Strict limiter for auth routes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: isProd ? 10 : 10000, // 10 in prod, 10000 in dev
   message: { message: 'Too many login attempts from this IP, please try again after 15 minutes' }
 });
 app.use('/api/auth/login', authLimiter);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useInstitute } from '../contexts/InstituteContext';
@@ -7,6 +7,7 @@ import { BottomNav } from '../components/BottomNav';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NotificationBell } from '../components/NotificationBell';
 import { AIBotOnboarding } from '../components/Onboarding/AIBotOnboarding';
+import { DashboardTour } from '../components/Onboarding/DashboardTour';
 import { 
   LayoutDashboard, BookOpen, Users, ClipboardList, 
   BarChart3, MessageSquare, Settings, HelpCircle, 
@@ -41,14 +42,12 @@ const TeacherLayout: React.FC = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Onboarding state
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  // Onboarding & Tour state
+  const [dismissedOnboarding, setDismissedOnboarding] = useState(false);
+  const [dismissedTour, setDismissedTour] = useState(false);
 
-  useEffect(() => {
-    if (user && user.hasCompletedOnboarding === false) {
-      setShowOnboarding(true);
-    }
-  }, [user]);
+  const showOnboarding = (user?.hasCompletedOnboarding === false) && !dismissedOnboarding;
+  const showTour = (user?.hasCompletedOnboarding !== false) && (user?.tourCompleted === false) && !dismissedTour;
 
   const getHref = (path: string) => {
     if (!institute) return '#';
@@ -177,7 +176,7 @@ const TeacherLayout: React.FC = () => {
           </button>
 
           {/* Search */}
-          <div className="relative flex-1 max-w-sm hidden md:block">
+          <div className="relative flex-1 max-w-sm hidden md:block tour-search">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
             <input
               type="text"
@@ -191,12 +190,14 @@ const TeacherLayout: React.FC = () => {
             <button onClick={toggleDark} className="btn btn-ghost p-2 rounded-xl" aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"} title="Toggle theme">
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <NotificationBell />
+            <div className="tour-notifications flex">
+              <NotificationBell />
+            </div>
             <button className="btn btn-ghost p-2 rounded-xl hidden sm:flex" aria-label="Messages">
               <Mail className="w-5 h-5" />
             </button>
             <div className="w-px h-6 mx-1 hidden sm:block" style={{ background: 'var(--border)' }} />
-            <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="User profile">
+            <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors tour-profile" aria-label="User profile">
               {user?.profileImage ? (
                 <img src={user.profileImage} alt="Profile" className="w-8 h-8 rounded-full object-cover shrink-0" />
               ) : (
@@ -232,7 +233,8 @@ const TeacherLayout: React.FC = () => {
       {/* Mobile Bottom Navigation */}
       <BottomNav items={navItems.slice(0, 4).map(item => ({ ...item, href: getHref(item.path) }))} />
 
-      {showOnboarding && <AIBotOnboarding onComplete={() => setShowOnboarding(false)} />}
+      {showOnboarding && <AIBotOnboarding onComplete={() => setDismissedOnboarding(true)} />}
+      <DashboardTour run={showTour} onFinish={() => setDismissedTour(true)} />
     </div>
   );
 };

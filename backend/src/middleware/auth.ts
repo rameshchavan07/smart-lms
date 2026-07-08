@@ -13,6 +13,8 @@ export interface AuthUser {
   isActive: boolean;
   profileImage: string | null;
   instituteId: string | null;
+  hasCompletedOnboarding: boolean;
+  tourCompleted: boolean;
 }
 
 declare global {
@@ -33,6 +35,10 @@ export interface AuthRequest extends Request {
 const userCache = new Map<string, { user: AuthUser; expiresAt: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+export const clearUserCache = (userId: string) => {
+  userCache.delete(userId);
+};
+
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   let token = req.cookies?.token;
 
@@ -51,7 +57,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
       } else {
         const user = await prisma.user.findUnique({
           where: { id: decoded.id },
-          select: { id: true, email: true, role: true, firstName: true, lastName: true, isActive: true, profileImage: true, instituteId: true },
+          select: { id: true, email: true, role: true, firstName: true, lastName: true, isActive: true, profileImage: true, instituteId: true, hasCompletedOnboarding: true, tourCompleted: true },
         });
         req.user = user || undefined;
         

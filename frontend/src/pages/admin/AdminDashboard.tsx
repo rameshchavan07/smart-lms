@@ -210,7 +210,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card tour-courses">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Top Courses</h2>
             <Link to="courses" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>View all</Link>
@@ -305,7 +305,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* Quick Actions + Recent Activity */}
         <div className="space-y-5">
-          <div className="card">
+          <div className="card tour-continue">
             <h2 className="text-[16px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Quick Actions</h2>
             <div className="grid grid-cols-2 gap-2">
               {[

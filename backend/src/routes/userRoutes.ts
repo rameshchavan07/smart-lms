@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getUsers, createTeacher, createStudent, createAdmin, updateUserStatus, updateUser, deleteUser, updateProfile, uploadAvatar, completeOnboarding } from '../controllers/userController';
+import { getUsers, createTeacher, createStudent, createAdmin, updateUserStatus, updateUser, deleteUser, updateProfile, uploadAvatar, completeOnboarding, completeTour } from '../controllers/userController';
 import { protect, authorize } from '../middleware/auth';
 import { upload } from '../middleware/upload';
 
@@ -14,6 +14,7 @@ router.post('/teacher', authorize('ADMIN'), createTeacher);
 router.post('/student', authorize('ADMIN', 'TEACHER'), createStudent);
 router.put('/profile', updateProfile);
 router.patch('/me/onboarding', completeOnboarding);
+router.patch('/me/tour', completeTour);
 router.post('/profile-image', upload.single('avatar'), uploadAvatar);
 router.patch('/:id/status', authorize('ADMIN'), updateUserStatus);
 router.put('/:id', authorize('ADMIN'), updateUser);

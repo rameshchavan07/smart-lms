@@ -14,6 +14,13 @@ interface User {
   instituteId?: string | null;
   instituteSlug?: string | null;
   hasCompletedOnboarding?: boolean;
+  tourCompleted?: boolean;
+  learningGoal?: string | null;
+  experienceLevel?: string | null;
+  studyTime?: string | null;
+  dashboardPreferences?: string[];
+  theme?: string | null;
+  notificationsEnabled?: boolean;
 }
 
 export interface LoginData {
@@ -28,6 +35,13 @@ export interface LoginData {
   profile?: { bio?: string };
   instituteSlug?: string | null;
   hasCompletedOnboarding?: boolean;
+  tourCompleted?: boolean;
+  learningGoal?: string | null;
+  experienceLevel?: string | null;
+  studyTime?: string | null;
+  dashboardPreferences?: string[];
+  theme?: string | null;
+  notificationsEnabled?: boolean;
 }
 
 interface AuthContextType {
@@ -116,6 +130,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       profileImage: userData.profileImage,
       profile: userData.profile,
       instituteSlug: userData.instituteSlug,
+      hasCompletedOnboarding: userData.hasCompletedOnboarding,
+      tourCompleted: userData.tourCompleted,
+      learningGoal: userData.learningGoal,
+      experienceLevel: userData.experienceLevel,
+      studyTime: userData.studyTime,
+      dashboardPreferences: userData.dashboardPreferences,
+      theme: userData.theme,
+      notificationsEnabled: userData.notificationsEnabled,
     });
     
     subscribeToPushNotifications();
