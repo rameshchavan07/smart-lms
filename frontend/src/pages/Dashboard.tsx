@@ -11,7 +11,8 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (user && user.hasCompletedOnboarding === false) {
-      setShowOnboarding(true);
+      const timer = setTimeout(() => setShowOnboarding(true), 0);
+      return () => clearTimeout(timer);
     }
   }, [user]);
 

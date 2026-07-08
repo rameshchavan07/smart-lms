@@ -1,63 +1,56 @@
-# 🎓 Smart LMS — Modern Learning Management System
-
 <div align="center">
+  <br />
+  <h1>🎓 Smart LMS (OpenLearnX)</h1>
+  <p>
+    <strong>A high-performance, multi-tenant virtual classroom platform designed for educational institutes, coaching centers, and independent educators.</strong>
+  </p>
+  
+  <p>
+    [![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-emerald.svg?style=for-the-badge&logo=node.js)](https://nodejs.org)
+    [![React Version](https://img.shields.io/badge/react-19.0.0-blue.svg?style=for-the-badge&logo=react)](https://react.dev)
+    [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue.svg?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
+    [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg?style=for-the-badge&logo=postgresql)](https://www.postgresql.org)
+    [![Prisma ORM](https://img.shields.io/badge/Prisma-7.0-indigo.svg?style=for-the-badge&logo=prisma)](https://www.prisma.io)
+    [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4.0-38bdf8.svg?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
+  </p>
 
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-emerald.svg?style=for-the-badge&logo=node.js)](https://nodejs.org)
-[![React Version](https://img.shields.io/badge/react-19.0.0-blue.svg?style=for-the-badge&logo=react)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue.svg?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg?style=for-the-badge&logo=postgresql)](https://www.postgresql.org)
-[![Prisma ORM](https://img.shields.io/badge/Prisma-6.0-indigo.svg?style=for-the-badge&logo=prisma)](https://www.prisma.io)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4.0-38bdf8.svg?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
-
-**A high-performance, responsive virtual classroom platform designed for schools, colleges, coaching institutes, and independent online educators.**
-
-[Explore Docs](./docs) • [Report Bug](https://github.com/rameshchavan07/smart-lms/issues) • [Request Feature](https://github.com/rameshchavan07/smart-lms/issues)
-
+  <p>
+    <a href="#-project-overview">Overview</a> •
+    <a href="#-key-features">Features</a> •
+    <a href="#-system-architecture">Architecture</a> •
+    <a href="#-getting-started">Getting Started</a> •
+    <a href="#-deployment">Deployment</a>
+  </p>
 </div>
 
 ---
 
 ## 📖 Project Overview
 
-Smart LMS is a feature-rich virtual learning portal. It delivers **real-time classrooms**, **centralized document storage (Google Drive integration)**, **flexible user administration**, and **dynamic student dashboards** in a fast, beautiful interface. 
+Smart LMS (OpenLearnX) is a feature-rich, **multi-tenant virtual learning portal**. It delivers real-time classrooms, centralized document storage via Google Drive, highly flexible user administration, and dynamic student dashboards wrapped in a stunning, performant UI.
 
-Built using a high-performance **Monorepo** structure, it combines a secure, strongly-typed **Express/TypeScript REST API** with a pixel-perfect, responsive **React 19/Tailwind CSS v4** single-page application.
+Built on a robust **Monorepo-style structure**, it marries a secure, strongly-typed **Express/TypeScript REST API** with a pixel-perfect, responsive **React 19 & Tailwind CSS v4** frontend application.
 
 ## ✨ Key Features
 
-- **Role-Based Portals:** Dedicated dashboards for Admins, Teachers, and Students, complete with Multi-Institute data isolation.
-- **Live Classrooms & Recording Studio:** Integrated Jitsi Meet for seamless, low-latency virtual lectures and a built-in recording studio.
-- **Interactive Quiz Builder & Assessments:** Dynamic quiz creation tools for teachers with automated grading and student analytics.
-- **Real-Time Communication:** Integrated WebSockets (Socket.io) powering Chat Groups, Discussion Boards, and instant messaging.
-- **Cloud Storage Integration:** Automated Google Drive folder creation and secure, direct link proxying for study materials.
-- **Enterprise-Grade Security:** JWT-based auth via strict HTTPOnly cookies, Double CSRF Token validation, and strict API rate limiting.
-- **Horizontal Scalability:** Configured with `@socket.io/redis-adapter` for multi-node WebSocket broadcasting and `ioredis` for API-level database caching.
-- **Structured APM Logging:** Integrated `pino` and `pino-http` for lightweight, JSON-formatted request logging.
-- **Frontend Optimization:** Granular Vite bundle chunking ensures fast shell loading and aggressive caching of heavy dependencies (Jitsi, Framer).
-- **Notifications & Certificates:** Web-push notifications, email alerts (Nodemailer), and dynamic PDF certificate generation (PDFKit) upon course completion.
-- **Responsive UI/UX:** Built with Tailwind CSS v4 featuring dark mode, animated skeleton loaders, and modern design tokens.
-- **Comprehensive Testing:** End-to-end and unit testing powered by Vitest and React Testing Library in a Strict TypeScript environment.
+- **🏢 Multi-Tenant Institute System**: Fully isolated data per institute. Each institute gets its own customized portal, themes, and branding (`/i/[slug]`).
+- **🔐 Comprehensive RBAC**: Dedicated portals and permissions for **Super Admins** (global), **Admins** (institute-level), **Teachers**, and **Students**.
+- **📹 Live Classrooms & Recording**: Integrated WebRTC (Jitsi Meet) for seamless, low-latency virtual lectures, complete with a built-in recording studio.
+- **📝 Interactive Assessments**: Dynamic quiz creation tools for teachers featuring automated grading and comprehensive student analytics.
+- **💬 Real-Time Communication**: Integrated WebSockets (`Socket.IO`) powering Chat Groups, Discussion Boards, and instant messaging between peers.
+- **☁️ Cloud Storage Integration**: Automated Google Drive folder creation and secure, direct link proxying for study materials, saving server bandwidth.
+- **🛡️ Enterprise-Grade Security**: JWT-based auth via strict `HttpOnly` cookies, Double CSRF Token validation, and API rate limiting.
+- **📈 Horizontal Scalability**: Ready for scale with `@socket.io/redis-adapter` for multi-node WebSocket broadcasting and query caching.
 
-## 💻 Technologies and Frameworks Used
+## 💻 Tech Stack
 
-### Frontend Application
-*   **Engine**: React 19 (Vite bundler) + TypeScript
-*   **Styling**: Tailwind CSS v4 + Lucide Icons + HSL tailored dark-mode palettes
-*   **State Management**: React Context API (Auth status) + React Query (cache synchronization)
-*   **Integrations**: Jitsi Meet React SDK for virtual classes
-*   **Testing**: Vitest + React Testing Library
-
-### Backend Services
-*   **Engine**: Node.js + Express.js + Strict TypeScript
-*   **ORM**: Prisma Client v6
-*   **Database**: PostgreSQL
-*   **Caching & Pub/Sub**: Redis (via `ioredis`) for Socket.io adapter and query caching
-*   **File Engine**: Google Drive API v3 (for secure, scalable cloud storage)
-*   **Logging**: Pino & Pino-HTTP for structured JSON logging
-*   **Security**: JSON Web Tokens (JWT) via HTTPOnly Cookies + BCrypt hashing + Double CSRF
-*   **Testing**: Vitest + Supertest
-
----
+| Frontend | Backend | Infrastructure / DevOps |
+| :--- | :--- | :--- |
+| **React 19** (Vite) | **Node.js** + **Express 5** | **PostgreSQL** |
+| **TypeScript** | **TypeScript** | **Prisma ORM** |
+| **Tailwind CSS v4** | **Socket.IO** (Real-time) | **Redis** (Caching/PubSub) |
+| **TanStack Query v5** | **Passport.js** (Auth) | **Husky** (Git Hooks) |
+| **Framer Motion** | **Pino** (Logging) | **Vitest** (Testing) |
 
 ## 🏗️ System Architecture
 
@@ -66,48 +59,41 @@ graph TD
     SA[Super Admin Portal] -->|Manages| I(Institutes & System Settings)
     SA -->|Onboards| A[Admin Portal]
     A -->|Manages Institute| B(Users, Courses & Quizzes)
-    C[Teacher Portal] -->|Schedules & Records| D(Jitsi Live Classes)
+    C[Teacher Portal] -->|Schedules & Records| D(Live Classes)
     C -->|Uploads| E(Drive Study Materials)
     F[Student Portal] -->|Attends| D
     F -->|Downloads| E
     F -->|Takes| G(Assessments & Quizzes)
     C -->|Grades| G
-    H[WebSocket Server] -->|Real-time| F
-    H -->|Real-time| C
+    H[WebSocket Server] -->|Real-time Events| F
+    H -->|Real-time Events| C
 ```
 
-Smart LMS follows a decoupled client-server architecture. 
-- The **Frontend** communicates with the backend via a secure RESTful API and WebSocket connections for real-time features.
-- The **Backend** handles complex business logic (including notifications, PDF generation, and assessment grading) and communicates with a PostgreSQL database via Prisma ORM v6.
-- **Google Drive API** acts as the decentralized CDN for large files. The backend orchestrates upload permissions, caching, and returns direct Google Drive `webViewLink`s, completely offloading bandwidth from the Node server.
-
----
-
-## 📂 Project Folder Structure
+<details>
+<summary><b>📂 View Project Directory Structure</b></summary>
 
 ```text
 smart-lms/
 ├── backend/                  # Node.js REST API
-│   ├── prisma/               # Database Schema & Seed Engine
+│   ├── prisma/               # Database Schema (schema.prisma) & Seed Scripts
 │   ├── src/
-│   │   ├── controllers/      # API Controllers (Auth, Course, Lectures, Study Materials)
-│   │   ├── middleware/       # Express Route Protections (Cookie auth)
-│   │   ├── routes/           # REST endpoints mapping
-│   │   ├── services/         # Integrations (Google Drive, Jitsi Meet tokens)
-│   │   └── tests/            # Vitest backend tests
-│   └── vitest.config.ts      # Backend testing configuration
-├── frontend/                 # React Single Page App
+│   │   ├── controllers/      # API Request Handlers
+│   │   ├── middleware/       # Express Route Protections (Auth, CSRF, Rate limits)
+│   │   ├── routes/           # REST endpoint mapping
+│   │   ├── services/         # Integrations (Google Drive, Passport)
+│   │   └── utils/            # Helpers & Loggers (Pino)
+│   └── package.json
+├── frontend/                 # React SPA
 │   ├── src/
-│   │   ├── components/       # Reusable UI widgets (e.g. Skeletons)
-│   │   ├── contexts/         # React Contexts (AuthContext)
-│   │   ├── layouts/          # Workspace Frames (Admin, Teacher, Student)
-│   │   ├── pages/            # View dashboards and Classroom tabs
-│   │   ├── services/         # API Client configuration (Axios)
-│   │   └── tests/            # Vitest frontend tests
-│   └── vite.config.ts        # Vite + Vitest frontend configuration
-├── docs/                     # Full technical guidelines & roadmap status
-└── package.json              # Monorepo root config (Husky, lint-staged)
+│   │   ├── components/       # Reusable UI widgets
+│   │   ├── contexts/         # React Contexts (Auth, Theme, Institute, Socket)
+│   │   ├── layouts/          # Workspace Frames (Admin, Teacher, Student, SuperAdmin)
+│   │   ├── pages/            # Role-based dashboard views
+│   │   └── services/         # API Client configuration (Axios)
+│   └── package.json
+└── README.md
 ```
+</details>
 
 ---
 
@@ -115,10 +101,9 @@ smart-lms/
 
 ### 📋 Prerequisites
 
-Ensure you have the following installed on your local machine:
-*   [Node.js](https://nodejs.org) (v18.0.0 or higher)
-*   [PostgreSQL](https://www.postgresql.org/) (Running locally on default port `5432` or via Docker)
-*   Git
+- **Node.js**: v18.0.0 or higher
+- **PostgreSQL**: Running locally or remotely (e.g., Neon.tech)
+- **Redis** (Optional but recommended for full Socket.io features)
 
 ### 📥 Installation Steps
 
@@ -128,257 +113,116 @@ Ensure you have the following installed on your local machine:
    cd smart-lms
    ```
 
-2. **Install Root Dependencies (Husky):**
+2. **Install Dependencies:**
    ```bash
+   # Root hooks
    npm install
+
+   # Backend
+   cd backend && npm install
+
+   # Frontend
+   cd ../frontend && npm install
    ```
 
-3. **Install Backend Dependencies:**
+3. **Configure Environment Variables:**
+   Create `.env` files in both `backend/` and `frontend/` directories (see Configuration below).
+
+4. **Initialize Database:**
    ```bash
    cd backend
-   npm install
+   npx prisma generate
+   npx prisma db push
+   npx prisma db seed
    ```
 
-4. **Install Frontend Dependencies:**
+5. **Start Development Servers:**
+   Open two terminals:
    ```bash
-   cd ../frontend
-   npm install
+   # Terminal 1: Backend
+   cd backend
+   npm run dev
+
+   # Terminal 2: Frontend
+   cd frontend
+   npm run dev
    ```
 
 ---
 
-## ⚙️ Environment Variable Configuration (.env)
+## ⚙️ Configuration
 
-You need to create a `.env` file in both the `backend` and `frontend` directories.
+<details>
+<summary><b>Backend <code>.env</code> template</b></summary>
 
-**Backend (`backend/.env`):**
 ```env
 # Server
 PORT=5000
 NODE_ENV=development
-
-# Database
-DATABASE_URL="postgresql://postgres:password@localhost:5432/smart_lms?schema=public"
-
-# Authentication
-JWT_SECRET="your_super_secret_jwt_key_here"
-JWT_REFRESH_SECRET="your_super_secret_refresh_key_here"
 FRONTEND_URL="http://localhost:5173"
 
-# Google Drive API
-GOOGLE_DRIVE_FOLDER_ID="your_master_folder_id"
-# Provide credentials via getGoogleToken.js setup
-```
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/smart_lms?schema=public"
 
-**Frontend (`frontend/.env`):**
+# Authentication Secrets
+SESSION_SECRET="your_session_secret"
+JWT_SECRET="your_jwt_secret"
+JWT_REFRESH_SECRET="your_refresh_secret"
+
+# Redis (Optional)
+REDIS_URL="redis://localhost:6379"
+```
+</details>
+
+<details>
+<summary><b>Frontend <code>.env</code> template</b></summary>
+
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
+</details>
 
 ---
 
-## 🗄️ Database Setup and Migrations
+## 🔒 Authentication Flow
 
-From the `backend` directory, run the Prisma migration and seed scripts:
-
-```bash
-cd backend
-npx prisma migrate dev --name init
-npx prisma db push
-npx prisma db seed
-```
-*(The seed script automatically populates your database with a default Admin, Teacher, and Student user.)*
+Smart LMS ensures robust security utilizing a **JWT + HttpOnly Cookie** architecture:
+1. Client authenticates via `/api/auth/login`.
+2. Server validates and sets strict `HttpOnly`, `Secure`, `SameSite=Strict` cookies.
+3. Tokens are inherently protected from XSS attacks (no `localStorage`).
+4. Double CSRF tokens prevent Cross-Site Request Forgery on state-changing API endpoints.
+5. React Context verifies session automatically on load.
 
 ---
 
-## 🏃 Running the Project
+## 🌐 Deployment
 
-### Development Environment
+Smart LMS is built to be deployed on modern serverless or containerized cloud providers.
 
-Open two separate terminal windows.
+- **Database**: Use Serverless Postgres (e.g., Neon, Supabase)
+- **Cache/WebSockets**: Serverless Redis (e.g., Upstash)
+- **API Server**: Render, Railway, or Heroku
+- **Frontend App**: Vercel, Netlify, or Cloudflare Pages
 
-**Terminal 1 (Backend):**
-```bash
-cd backend
-npm run dev
-```
-
-**Terminal 2 (Frontend):**
-```bash
-cd frontend
-npm run dev
-```
-
-The app will be running at `http://localhost:5173` and the API at `http://localhost:5000`.
-
-### Production Deployment (100% Free Modern Stack)
-
-This project is architected to be deployed completely for free without any expiring databases using a modern, decoupled stack.
-
-#### 1. The Deployment Stack
-- **Database (PostgreSQL):** [Neon.tech](https://neon.tech) (Serverless Postgres)
-- **Redis (Caching & WebSockets):** [Upstash](https://upstash.com) (Serverless Redis)
-- **Backend API:** [Render](https://render.com) (Web Service)
-- **Frontend:** [Vercel](https://vercel.com) (Static Edge Network)
-
-#### 2. Provision Databases
-1. **PostgreSQL (Neon):** Create a project on Neon.tech. Select your region, and copy the provided Connection String (`DATABASE_URL`).
-2. **Redis (Upstash):** Create a database on Upstash. Under the Node.js connect tab, switch to `ioredis` and copy the URL (`REDIS_URL`).
-
-#### 3. Deploy the Backend (Render)
-1. In Render, create a new **Web Service** connected to your repository.
-2. **Settings:** 
-   - Root Directory: `backend`
-   - Build Command: `npm install && npx prisma generate && npm run build`
-   - Start Command: `npm run start`
-3. **Environment Variables:** Add your `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, Google Drive credentials, Jitsi keys, etc.
-4. **Database Migration:** Before testing the API, open your local terminal, temporarily point your `.env` `DATABASE_URL` to your Neon database, and run `npx prisma db push` to initialize the database tables remotely.
-
-#### 4. Deploy the Frontend (Vercel)
-1. Import your repository as a new Project in Vercel.
-2. **Settings:**
-   - Framework Preset: `Vite`
-   - Root Directory: `frontend`
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-3. **Environment Variables:** Add `VITE_API_URL` and `VITE_API_BASE_URL` and point them to your live Render backend URL (e.g., `https://smart-lms-api.onrender.com/api`).
-4. Click **Deploy**.
-
-#### 5. Final Glue & Configuration
-- **Update Render CORS:** Once Vercel deploys, copy your live frontend URL and add it to Render as the `FRONTEND_URL` environment variable.
-- **Update Google OAuth:** Add your Vercel URL to the **Authorized JavaScript origins** and your Render callback URL to the **Authorized redirect URIs** in your Google Cloud Console to allow Google Login to function in production.
+> **Important Deployment Note**: Ensure your `FRONTEND_URL` in the backend environment matches your production frontend URL to avoid CORS errors. Additionally, `withCredentials: true` must remain active in the Axios setup.
 
 ---
 
-## 🔌 API Documentation
+## 🤝 Contributing
 
-| Endpoint | Method | Description | Auth Required |
-| --- | --- | --- | --- |
-| `/api/auth/login` | POST | Authenticates user, sets `HttpOnly` cookie | No |
-| `/api/auth/logout`| POST | Clears `HttpOnly` token cookies | Yes |
-| `/api/auth/me`    | GET  | Fetches active user data from cookie session| Yes |
-| `/api/courses`    | GET  | Returns list of active courses | Yes |
-| `/api/lectures`   | POST | Schedules a new Jitsi lecture (Teacher only)| Yes |
+Contributions, issues, and feature requests are welcome!
 
----
-
-## 🔒 Authentication and Authorization Flow
-
-Smart LMS relies on a highly secure **JWT + HTTPOnly Cookie** architecture:
-1. User logs in.
-2. Backend validates credentials and signs an Access Token (15m) and Refresh Token (7d).
-3. Tokens are returned to the browser in `Set-Cookie` headers with `HttpOnly`, `Secure`, and `SameSite=Strict` flags, hiding them from JavaScript and preventing XSS.
-4. The React app (`AuthContext.tsx`) verifies the session state via `/api/auth/me`.
-5. For all API requests, Axios (`withCredentials: true`) automatically attaches the cookies.
-6. Backend Express middleware (`cookie-parser`) verifies the JWT from the cookie on protected routes.
-
----
-
-## 🎭 Role-Based Access Control (RBAC) & Super Admin Architecture
-
-The platform operates on a robust Multi-Tenant architecture designed for high scalability across multiple educational organizations. At the core of this system is the Role Hierarchy and the Super Admin entity.
-
-### Multi-Tenant Super Admin Architecture
-- **Global Unrestricted Access:** Unlike regular Admins, Teachers, or Students, a `SUPER_ADMIN` is not bound to any specific `instituteId`. This allows them to bypass tenant-level restrictions and view data across the entire platform.
-- **Institute Management:** Super Admins are responsible for onboarding new organizations. They create `Institute` records and assign an `ADMIN` role to a user, inherently linking that new Admin to the specific `Institute`.
-- **Hierarchical Privilege:** The system enforces a strict role hierarchy (`SUPER_ADMIN` > `ADMIN` > `TEACHER` > `STUDENT`). A Super Admin can promote, demote, edit, or delete any user in the system. Regular Admins can only manage users within their assigned Institute and cannot affect users of higher or equal rank globally.
-- **API and UI Protection:** 
-  - **Backend:** Express middleware strictly protects global routes (like Institute creation) via `authorize('SUPER_ADMIN')`. It intelligently permits access for endpoints where `ADMIN` is required but a `SUPER_ADMIN` is making the request.
-  - **Frontend:** Protected layouts dynamically conditionally render sidebar links (like 'Institutes') and management actions based on the `currentUser.role`. Modals for creating/editing users dynamically expose or hide role assignments depending on the highest authority of the logged-in user.
-
-### Standard Roles
-- **Admin:** Institute-level management. They create Courses, enroll Students, manage Teacher accounts, and oversee analytics for their specific institute only.
-- **Teacher:** Course-level management. They can schedule live Jitsi classes, upload study materials to Google Drive, build interactive quizzes, grade assignments, and moderate course discussions.
-- **Student:** Consumer-level access. They can attend live classes, download materials, take quizzes, submit assignments, and communicate with peers and teachers.
-
-The frontend uses a `ProtectedRoute` component to prevent unauthorized access to specific dashboard layouts (`AdminLayout`, `TeacherLayout`, `StudentLayout`), ensuring users only see UI elements meant for their role.
-
----
-
-## 🎨 Screenshots & UI Previews
-
-*(Screenshots to be added here. E.g., `![Admin Dashboard](./docs/screenshots/admin.png)`)*
-
----
-
-## 🛠️ Usage Guide
-
-1. Log in to the application using the seeded Admin credentials (or sign up).
-2. Create users (Teachers/Students) in the Admin panel.
-3. Create a Course and assign a Teacher.
-4. Log in as a Teacher to manage the course roster, upload Google Drive materials, and start live Jitsi lectures.
-5. Log in as a Student to consume materials and attend lectures.
-
----
-
-## 🔗 Third-Party Services and Integrations
-
-- **Google Drive API v3:** Handles dynamic folder creation (`courses/courseId/Teachers/teacherId`) and generates direct `webViewLink` permissions for scalable file sharing.
-- **Jitsi Meet React SDK:** Imbeds a real-time classroom directly into the frontend React DOM for seamless lectures.
-
----
-
-## 🐛 Error Handling and Troubleshooting
-
-- **CORS Issues on Login:** Ensure `FRONTEND_URL` in `backend/.env` exactly matches your Vite server URL (e.g., `http://localhost:5173`).
-- **Database Connection Refused:** Verify your PostgreSQL server is running and the `DATABASE_URL` credentials are correct.
-- **Unauthorized / Session Drops:** Clear your browser cookies for `localhost`. Ensure `withCredentials: true` is not stripped in your frontend API configuration.
-
----
-
-## 🧪 Testing Instructions
-
-Both the frontend and backend are thoroughly tested using Vitest.
-
-**Run Backend Tests:**
-```bash
-cd backend
-npm run test
-```
-*Tests Auth endpoints and HttpOnly cookie generation via Supertest.*
-
-**Run Frontend Tests:**
-```bash
-cd frontend
-npm run test
-```
-*Tests component rendering and React Context logic using Testing Library.*
-
----
-
-## ⚡ Performance and Security Considerations
-
-- **Security:** Tokens are invisible to client-side JS (`localStorage` is entirely avoided).
-- **Bandwidth:** Backend server does not buffer files. Direct Google Drive proxying saves Node.js event-loop blocking and reduces bandwidth costs drastically.
-- **UI Performance:** React Query handles aggressive caching of API responses. Skeleton loaders mask network latency during data fetching.
-
----
-
-## 🔮 Future Enhancements
-
-- **Phase 5 Implementation:** Integrated Stripe payment gateway for premium course subscriptions.
-- **Push Notifications:** Real-time websockets or Service Workers for new assignments.
-- **Advanced Analytics:** AI-powered student retention and performance tracking metrics.
-
----
-
-## 🤝 Contributing Guidelines
-
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Commit your changes. Husky pre-commit hooks will automatically lint and format your code using Prettier.
-4. Push to the branch: `git push origin feature/your-feature-name`
-5. Open a Pull Request for review.
-
----
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-Distributed under the ISC License. See `LICENSE` for more information.
+This project is distributed under the **ISC License**. See the `LICENSE` file for more information.
 
----
-
-## 📬 Contact Information
-
-**Maintainer:** Ramesh Chavan  
-**Project Link:** [https://github.com/rameshchavan07/smart-lms](https://github.com/rameshchavan07/smart-lms)
+<div align="center">
+  <br />
+  <i>Designed and developed by <a href="https://github.com/rameshchavan07">Ramesh Chavan</a></i>
+</div>
