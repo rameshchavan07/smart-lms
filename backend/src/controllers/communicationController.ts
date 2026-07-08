@@ -127,7 +127,7 @@ export const sendMessage = catchAsync(async (req: AuthRequest, res: Response) =>
     let fileName: string | undefined;
 
     if (req.file) {
-      fileUrl = `/uploads/${req.file.filename}`;
+      fileUrl = req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`;
       fileType = req.file.mimetype;
       fileName = req.file.originalname;
     }

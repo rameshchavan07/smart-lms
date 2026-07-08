@@ -374,7 +374,7 @@ export const uploadAvatar = catchAsync(async (req: AuthRequest, res: Response) =
   }
   
   const userId = req.user!.id;
-  const fileUrl = `/uploads/${req.file.filename}`;
+  const fileUrl = req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`;
   
   await prisma.user.update({
     where: { id: userId },

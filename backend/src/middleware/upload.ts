@@ -1,6 +1,8 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 const uploadDirectory = path.join(process.cwd(), 'uploads');
 
@@ -9,7 +11,8 @@ if (!fs.existsSync(uploadDirectory)) {
   fs.mkdirSync(uploadDirectory, { recursive: true });
 }
 
-const storage = multer.diskStorage({
+// Local Storage Fallback
+const localStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDirectory);
   },
@@ -23,15 +26,36 @@ const storage = multer.diskStorage({
   }
 });
 
+let imageStorage: multer.StorageEngine = localStorage;
+
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+  
+  imageStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: 'smart_lms',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+    } as any
+  });
+  console.log('[Cloudinary] Configured for image uploads.');
+} else {
+  console.log('[Uploads] Cloudinary not configured. Falling back to local ephemeral disk storage.');
+}
+
 export const upload = multer({
-  storage,
+  storage: imageStorage,
   limits: {
     fileSize: 100 * 1024 * 1024 // 100MB limit for study materials
   }
 });
 
 export const uploadThumbnail = multer({
-  storage,
+  storage: imageStorage,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit for thumbnails
   },
@@ -46,7 +70,7 @@ export const uploadThumbnail = multer({
 });
 
 export const uploadRecording = multer({
-  storage,
+  storage: localStorage, // Keep recordings on local storage before GDrive proxy
   limits: {
     fileSize: 2 * 1024 * 1024 * 1024 // 2GB limit for video recordings
   },

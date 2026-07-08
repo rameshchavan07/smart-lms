@@ -533,7 +533,7 @@ export const uploadMyInstituteLogo = catchAsync(async (req: AuthRequest, res: Re
     throw new ValidationError('No file uploaded');
   }
 
-  const logoUrl = `/uploads/${req.file.filename}`;
+  const logoUrl = req.file.path.startsWith('http') ? req.file.path : `/uploads/${req.file.filename}`;
 
   const institute = await prisma.institute.update({
     where: { id: instituteId },
