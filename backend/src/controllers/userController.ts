@@ -254,7 +254,7 @@ export const updateUser = catchAsync(async (req: AuthRequest, res: Response) => 
         phoneNumber,
         address,
         role,
-        ...(instituteId !== undefined && { instituteId: instituteId === '' ? null : instituteId })
+        ...(req.user!.role === 'SUPER_ADMIN' && instituteId !== undefined && { instituteId: instituteId === '' ? null : instituteId })
       }
     });
 
@@ -377,4 +377,24 @@ export const uploadAvatar = catchAsync(async (req: AuthRequest, res: Response) =
   });
   
   res.json({ message: 'Avatar updated successfully', profileImage: fileUrl });
+});
+
+// Complete Onboarding
+export const completeOnboarding = catchAsync(async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.id;
+  
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { hasCompletedOnboarding: true }
+  });
+
+  await logActivity(userId, 'Completed AI Onboarding', 'User', userId);
+
+  res.json({
+    message: 'Onboarding completed',
+    user: {
+      id: updatedUser.id,
+      hasCompletedOnboarding: updatedUser.hasCompletedOnboarding
+    }
+  });
 });

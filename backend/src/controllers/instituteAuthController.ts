@@ -102,6 +102,13 @@ export const registerStudentForInstitute = catchAsync(async (req: Request, res: 
     throw new ForbiddenError('This institute is not yet active. Please contact the institute administrator.');
   }
 
+  if (institute.allowedEmailDomain) {
+    const emailDomain = email.split('@')[1];
+    if (emailDomain !== institute.allowedEmailDomain) {
+      throw new ValidationError(`This institute only allows registration with @${institute.allowedEmailDomain} email addresses.`);
+    }
+  }
+
   // Check if email already exists
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
@@ -122,6 +129,7 @@ export const registerStudentForInstitute = catchAsync(async (req: Request, res: 
       role: 'STUDENT',
       instituteId: institute.id,
       isEmailVerified: false,
+      isApproved: !institute.isPrivate,
       student: {
         create: {
           enrollmentNumber: `STU-${Date.now()}`,
@@ -138,8 +146,12 @@ export const registerStudentForInstitute = catchAsync(async (req: Request, res: 
 
   await logActivity(user.id, `Registered as student for institute: ${institute.name}`, 'User', user.id);
 
+  const successMessage = institute.isPrivate 
+    ? 'Registration submitted! Please verify your email. Your application must be approved by an administrator before you can log in.'
+    : 'Registration successful. Please check your email for a 6-digit verification code.';
+
   res.status(201).json({
-    message: 'Registration successful. Please check your email for a 6-digit verification code.',
+    message: successMessage,
     email,
     instituteSlug: slug,
   });
@@ -175,6 +187,10 @@ export const loginForInstitute = catchAsync(async (req: Request, res: Response) 
 
   if (!user.isActive) {
     throw new ForbiddenError('Your account has been disabled. Please contact support.');
+  }
+
+  if (!user.isApproved && user.role !== 'ADMIN') {
+    throw new ForbiddenError('Your account is pending approval from the institute administrator.');
   }
 
   // Verify user belongs to this institute

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useInstitute } from '../contexts/InstituteContext';
@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { BottomNav } from '../components/BottomNav';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NotificationBell } from '../components/NotificationBell';
+import { AIBotOnboarding } from '../components/Onboarding/AIBotOnboarding';
 import { 
   LayoutDashboard, BookOpen, Users, ClipboardList, 
   BarChart3, MessageSquare, Settings, HelpCircle, 
@@ -39,6 +40,15 @@ const TeacherLayout: React.FC = () => {
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (user && user.hasCompletedOnboarding === false) {
+      setShowOnboarding(true);
+    }
+  }, [user]);
 
   const getHref = (path: string) => {
     if (!institute) return '#';
@@ -221,6 +231,8 @@ const TeacherLayout: React.FC = () => {
 
       {/* Mobile Bottom Navigation */}
       <BottomNav items={navItems.slice(0, 4).map(item => ({ ...item, href: getHref(item.path) }))} />
+
+      {showOnboarding && <AIBotOnboarding onComplete={() => setShowOnboarding(false)} />}
     </div>
   );
 };

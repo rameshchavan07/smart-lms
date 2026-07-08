@@ -43,6 +43,7 @@ const AdminAssessments = React.lazy(() => import('./pages/admin/AdminAssessments
 const AdminReports = React.lazy(() => import('./pages/admin/AdminReports'));
 const AdminCommunication = React.lazy(() => import('./pages/admin/AdminCommunication'));
 const AdminIntegrations = React.lazy(() => import('./pages/admin/AdminIntegrations'));
+const PendingApplications = React.lazy(() => import('./pages/admin/PendingApplications'));
 
 const TeacherDashboard   = React.lazy(() => import('./pages/teacher/TeacherDashboard'));
 const TeacherCourses     = React.lazy(() => import('./pages/teacher/TeacherCourses'));
@@ -170,6 +171,7 @@ function App() {
                     <Route path="reports" element={<Suspense fallback={<PageLoader />}><AdminReports /></Suspense>} />
                     <Route path="communication" element={<Suspense fallback={<PageLoader />}><AdminCommunication /></Suspense>} />
                     <Route path="integrations" element={<Suspense fallback={<PageLoader />}><AdminIntegrations /></Suspense>} />
+                    <Route path="applications" element={<Suspense fallback={<PageLoader />}><PendingApplications /></Suspense>} />
                     <Route path="settings"    element={<Suspense fallback={<PageLoader />}><AdminSettings /></Suspense>} />
                   </Route>
 

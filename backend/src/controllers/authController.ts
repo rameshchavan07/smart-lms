@@ -243,7 +243,7 @@ export const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
 // ─── GOOGLE OAUTH CALLBACK ────────────────────────────────────────────────────
 export const googleCallback = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user as User;
+  const user = req.user as User & { _oauthState?: { instituteSlug?: string; action?: string } };
   if (!user) {
     res.redirect(`${process.env.FRONTEND_URL}/login?error=google_failed`);
     return;
@@ -254,9 +254,16 @@ export const googleCallback = catchAsync(async (req: Request, res: Response) => 
 
   // Redirect to frontend without tokens in query params; cookies are now used.
   setAuthCookies(res, authData.token, authData.refreshToken);
-  const params = new URLSearchParams({
+  
+  const queryParams: Record<string, string> = {
     role: authData.role,
-  });
+  };
+
+  if (user._oauthState?.instituteSlug) {
+    queryParams.instituteSlug = user._oauthState.instituteSlug;
+  }
+
+  const params = new URLSearchParams(queryParams);
 
   res.redirect(`${process.env.FRONTEND_URL}/auth/callback?${params.toString()}`);
 });

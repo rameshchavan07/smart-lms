@@ -128,13 +128,13 @@ const TeacherDashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/teacher/courses" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-surface hover:bg-bg-subtle dark:hover:bg-slate-700">
+          <Link to="courses" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-surface hover:bg-bg-subtle dark:hover:bg-slate-700">
             <Calendar size={14} /> Schedule Class
           </Link>
           <Link to="/teacher/recorder" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-surface hover:bg-bg-subtle dark:hover:bg-slate-700">
             <Clapperboard size={14} /> Recording Studio
           </Link>
-          <Link to="/teacher/courses" className="btn btn-primary btn-sm gap-2 text-sm shadow-sm">
+          <Link to="courses" className="btn btn-primary btn-sm gap-2 text-sm shadow-sm">
             <BookOpen size={14} /> My Courses
           </Link>
         </div>
@@ -175,7 +175,7 @@ const TeacherDashboard: React.FC = () => {
             <StatCard
               title="My Courses" value={metrics?.totalCourses ?? 0}
               icon={BookOpen} color="#4361f0" bg="rgba(67,97,240,0.1)"
-              subtitle="Active courses" linkTo="/teacher/courses" linkLabel="View courses"
+              subtitle="Active courses" linkTo="courses" linkLabel="View courses"
             />
             <StatCard
               title="Total Students" value={metrics?.totalStudents ?? 0}
@@ -296,7 +296,7 @@ const TeacherDashboard: React.FC = () => {
         <div className="card">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Course Progress</h2>
-            <Link to="/teacher/courses" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>View all</Link>
+            <Link to="courses" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>View all</Link>
           </div>
           {courseProgress.length === 0 ? (
             <p className="text-[13px] text-center py-8" style={{ color: 'var(--text-muted)' }}>No course data available</p>

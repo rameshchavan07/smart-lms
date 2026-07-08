@@ -21,10 +21,13 @@ const AuthCallback: React.FC = () => {
       return;
     }
 
+    const instituteSlug = searchParams.get('instituteSlug');
+
     // Reconstruct a minimal user object for the AuthContext
     // The full user will be fetched on next /me call
     login({
       role: role as 'ADMIN' | 'TEACHER' | 'STUDENT',
+      instituteSlug: instituteSlug || undefined,
     });
   }, [searchParams, login, navigate]);
 

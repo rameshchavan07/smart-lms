@@ -91,7 +91,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, onSucces
         qualification: formData.qualification,
         enrollmentNumber: formData.enrollmentNumber,
         academicYear: formData.academicYear,
-        instituteId: formData.instituteId,
+        ...(currentUser?.role === 'SUPER_ADMIN' && { instituteId: formData.instituteId }),
       });
     },
     onSuccess: () => {

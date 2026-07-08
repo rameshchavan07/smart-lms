@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect, authorize } from '../middleware/auth';
+import { upload } from '../middleware/upload';
 import {
   getAssignmentsByCourse,
   createAssignment,
@@ -19,7 +20,7 @@ router.use(protect);
 router.get('/course/:courseId', getAssignmentsByCourse);
 
 // Student routes
-router.post('/:id/submit', authorize('STUDENT'), submitAssignment);
+router.post('/:id/submit', authorize('STUDENT'), upload.single('file'), submitAssignment);
 router.get('/my-submissions', authorize('STUDENT'), getMySubmissions);
 router.get('/student', authorize('STUDENT'), getStudentAssignments);
 

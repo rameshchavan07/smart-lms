@@ -79,7 +79,11 @@ const VerifyOtp: React.FC = () => {
       const { data } = await api.post('/auth/verify-email', { email, otp: code });
       setVerified(true);
       setTimeout(() => {
-        login(data);
+        if (location.state?.next) {
+          navigate(location.state.next);
+        } else {
+          login(data);
+        }
       }, 1200);
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };

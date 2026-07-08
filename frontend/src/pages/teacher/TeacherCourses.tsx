@@ -170,7 +170,7 @@ const TeacherCourses: React.FC = () => {
                   </p>
 
                   <Link
-                    to={`/teacher/courses/${course.id}`}
+                      to={`${course.id}`}
                     className="text-[13px] font-semibold text-brand-500 hover:text-brand-600 transition-colors inline-flex items-center gap-1 mb-4"
                   >
                     View Lectures <span className="group-hover:translate-x-0.5 transition-transform inline-block">→</span>
@@ -220,7 +220,7 @@ const TeacherCourses: React.FC = () => {
                       <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Lectures</p>
                     </div>
                     <Link
-                      to={`/teacher/courses/${course.id}`}
+                        to={`${course.id}`}
                       className="btn btn-secondary btn-sm"
                     >
                       View

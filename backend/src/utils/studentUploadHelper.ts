@@ -17,7 +17,8 @@ interface PathComponent {
  */
 export const getStudentAssignmentFolderId = async (
   courseId: string,
-  studentUserId: string
+  studentUserId: string,
+  assignmentTitle: string
 ): Promise<string> => {
   // 1. Fetch student info
   const student = await prisma.student.findUnique({
@@ -57,6 +58,7 @@ export const getStudentAssignmentFolderId = async (
     { path: `institutes/${instId}/courses/${cId}/Students`, name: 'Students' },
     { path: `institutes/${instId}/courses/${cId}/Students/${student.id}`, name: studentFolderName },
     { path: `institutes/${instId}/courses/${cId}/Students/${student.id}/Assignments`, name: 'Assignments' },
+    { path: `institutes/${instId}/courses/${cId}/Students/${student.id}/Assignments/${assignmentTitle}`, name: assignmentTitle },
   ];
 
   // 4. Resolve folder ID

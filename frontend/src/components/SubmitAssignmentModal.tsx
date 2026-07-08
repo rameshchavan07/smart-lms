@@ -15,11 +15,19 @@ interface SubmitAssignmentModalProps {
 
 const SubmitAssignmentModal: React.FC<SubmitAssignmentModalProps> = ({ isOpen, onClose, assignmentId, assignmentTitle, onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
-  const [fileUrl, setFileUrl] = useState('');
+  const [file, setFile] = useState<File | null>(null);
 
   const { mutate: submitAssignment, isPending: loading } = useMutation({
     mutationFn: async () => {
-      await api.post(API_ENDPOINTS.ASSIGNMENTS.SUBMIT(assignmentId), { fileUrl });
+      const formData = new FormData();
+      if (file) {
+        formData.append('file', file);
+      }
+      await api.post(API_ENDPOINTS.ASSIGNMENTS.SUBMIT(assignmentId), formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
     },
     onSuccess: () => {
       onSuccess();
@@ -35,8 +43,8 @@ const SubmitAssignmentModal: React.FC<SubmitAssignmentModalProps> = ({ isOpen, o
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fileUrl.trim()) {
-      setError('Please provide a URL to your submission');
+    if (!file) {
+      setError('Please upload a file for your submission');
       return;
     }
     setError(null);
@@ -68,15 +76,13 @@ const SubmitAssignmentModal: React.FC<SubmitAssignmentModalProps> = ({ isOpen, o
           )}
 
           <div>
-            <label className="block text-sm font-semibold text-primary mb-1">Submission URL</label>
-            <p className="text-xs text-secondary mb-2">Please paste a link to your work (e.g., Google Doc, GitHub repo, or Drive link).</p>
+            <label className="block text-sm font-semibold text-primary mb-1">Upload File</label>
+            <p className="text-xs text-secondary mb-2">Please upload your assignment file (e.g., PDF, Word Doc).</p>
             <input 
-              type="url" 
+              type="file" 
               required
-              placeholder="https://..."
-              value={fileUrl}
-              onChange={(e) => setFileUrl(e.target.value)}
-              className="w-full bg-bg border border-border rounded-lg px-4 py-2 text-sm text-primary focus:border-brand-500 outline-none"
+              onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+              className="w-full bg-bg border border-border rounded-lg px-4 py-2 text-sm text-primary focus:border-brand-500 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
             />
           </div>
 
@@ -90,7 +96,7 @@ const SubmitAssignmentModal: React.FC<SubmitAssignmentModalProps> = ({ isOpen, o
             </button>
             <button 
               type="submit" 
-              disabled={loading || !fileUrl.trim()}
+              disabled={loading || !file}
               className="px-5 py-2.5 text-sm font-semibold bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               {loading ? 'Submitting...' : <><Check size={16} /> Submit</>}

@@ -13,6 +13,7 @@ interface User {
   profile?: { bio?: string };
   instituteId?: string | null;
   instituteSlug?: string | null;
+  hasCompletedOnboarding?: boolean;
 }
 
 export interface LoginData {
@@ -26,6 +27,7 @@ export interface LoginData {
   profileImage?: string;
   profile?: { bio?: string };
   instituteSlug?: string | null;
+  hasCompletedOnboarding?: boolean;
 }
 
 interface AuthContextType {

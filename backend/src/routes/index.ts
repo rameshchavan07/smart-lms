@@ -18,6 +18,7 @@ import progressRoutes from './progressRoutes';
 import certificateRoutes from './certificateRoutes';
 import instituteRoutes from './instituteRoutes';
 import instituteAuthRoutes from './instituteAuthRoutes';
+import adminApplicationRoutes from './adminApplicationRoutes';
 
 const router = Router();
 
@@ -43,5 +44,6 @@ router.use('/attendance', attendanceRoutes);
 router.use('/progress', progressRoutes);
 router.use('/certificates', certificateRoutes);
 router.use('/institutes', instituteRoutes);
+router.use('/applications', adminApplicationRoutes);
 
 export default router;

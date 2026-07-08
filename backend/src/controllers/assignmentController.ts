@@ -7,8 +7,11 @@ import { AppError, NotFoundError, ValidationError, ForbiddenError } from '../uti
 import { getCache, setCache, invalidateCache } from '../utils/cache';
 import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
 
+import fs from 'fs';
 import prisma from '../config/db';
 import { sendNotification } from '../services/notifications.service';
+import { uploadFileToDrive } from '../services/googleDriveService';
+import { getStudentAssignmentFolderId } from '../utils/studentUploadHelper';
 
 const createAssignmentSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
@@ -95,10 +98,9 @@ export const createAssignment = catchAsync(async (req: AuthRequest, res: Respons
 export const submitAssignment = catchAsync(async (req: AuthRequest, res: Response) => {
   const { id } = req.params; // assignmentId
   const userId = req.user!.id;
-  const { fileUrl } = req.body;
 
-  if (!fileUrl) {
-    throw new ValidationError('File URL is required');
+  if (!req.file) {
+    throw new ValidationError('Assignment file is required');
   }
 
   const student = await prisma.student.findUnique({ where: { userId } });
@@ -106,11 +108,50 @@ export const submitAssignment = catchAsync(async (req: AuthRequest, res: Respons
     throw new NotFoundError('Student not found');
   }
 
+  const assignment = await prisma.assignment.findUnique({ where: { id: id as string } });
+  if (!assignment) {
+    throw new NotFoundError('Assignment not found');
+  }
+
+  let finalFileUrl = '';
+
+  try {
+    const folderId = await getStudentAssignmentFolderId(assignment.courseId, userId, assignment.title);
+    const result = await uploadFileToDrive(
+      req.file.path,
+      req.file.originalname,
+      req.file.mimetype,
+      folderId
+    );
+
+    await prisma.googleDriveFile.create({
+      data: {
+        driveFileId: result.fileId || '',
+        fileName: req.file.originalname,
+        fileUrl: result.webViewLink || '',
+        uploadedBy: userId,
+      }
+    });
+
+    finalFileUrl = result.webViewLink || '';
+
+    // Cleanup temp file after successful upload
+    if (req.file && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
+  } catch (error: unknown) {
+    // Cleanup temp file on error
+    if (req.file && fs.existsSync(req.file.path)) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
+    throw error;
+  }
+
   const submission = await prisma.assignmentSubmission.create({
     data: {
       assignmentId: id as string,
       studentId: student.id,
-      fileUrl,
+      fileUrl: finalFileUrl,
     },
   });
 

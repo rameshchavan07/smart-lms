@@ -10,12 +10,32 @@ export const configurePassport = () => {
         clientSecret: process.env.GOOGLE_LOGIN_CLIENT_SECRET!,
         callbackURL: process.env.GOOGLE_CALLBACK_URL!,
         scope: ['profile', 'email'],
+        passReqToCallback: true,
       },
-      async (_accessToken, _refreshToken, profile, done) => {
+      async (req, _accessToken, _refreshToken, profile, done) => {
         try {
           const email = profile.emails?.[0]?.value;
           if (!email) {
             return done(new Error('No email returned from Google'), undefined);
+          }
+
+          let stateData: { instituteSlug?: string; action?: string } | null = null;
+          if (req.query.state) {
+            try {
+              stateData = JSON.parse(decodeURIComponent(req.query.state as string));
+            } catch (err) {
+              console.warn('Failed to parse state in Google OAuth', err);
+            }
+          }
+
+          let targetInstituteId: string | undefined = undefined;
+          if (stateData?.instituteSlug) {
+            const institute = await prisma.institute.findUnique({
+              where: { slug: stateData.instituteSlug },
+            });
+            if (institute) {
+              targetInstituteId = institute.id;
+            }
           }
 
           const firstName = profile.name?.givenName || profile.displayName || 'User';
@@ -29,13 +49,31 @@ export const configurePassport = () => {
             user = await prisma.user.findUnique({ where: { email } });
 
             if (user) {
-              // Link Google to existing account
+              // If we are logging into a specific institute, optionally check/assign it.
+              // For now, just link Google account.
               user = await prisma.user.update({
                 where: { id: user.id },
-                data: { googleId: profile.id, isEmailVerified: true },
+                data: { 
+                  googleId: profile.id, 
+                  isEmailVerified: true,
+                  ...(targetInstituteId && !user.instituteId ? { instituteId: targetInstituteId } : {})
+                },
               });
+              
+              // If user didn't have a student profile but is joining an institute, create it.
+              if (targetInstituteId) {
+                const studentProfile = await prisma.student.findUnique({ where: { userId: user.id } });
+                if (!studentProfile) {
+                  await prisma.student.create({
+                    data: {
+                      userId: user.id,
+                      enrollmentNumber: `STU-${Date.now()}`,
+                    },
+                  });
+                }
+              }
             } else {
-              // Brand-new user — create User + Student
+              // Brand-new user
               user = await prisma.user.create({
                 data: {
                   firstName,
@@ -46,6 +84,7 @@ export const configurePassport = () => {
                   googleId: profile.id,
                   isEmailVerified: true,
                   profileImage: profile.photos?.[0]?.value,
+                  instituteId: targetInstituteId || null,
                 },
               });
 
@@ -56,7 +95,26 @@ export const configurePassport = () => {
                 },
               });
             }
+          } else if (targetInstituteId && !user.instituteId) {
+             // If user logged in before via Google (no institute), and now logs into an institute
+             user = await prisma.user.update({
+               where: { id: user.id },
+               data: { instituteId: targetInstituteId }
+             });
+             const studentProfile = await prisma.student.findUnique({ where: { userId: user.id } });
+             if (!studentProfile) {
+               await prisma.student.create({
+                 data: {
+                   userId: user.id,
+                   enrollmentNumber: `STU-${Date.now()}`,
+                 },
+               });
+             }
           }
+
+          // We pass stateData through to the next middleware via the user object temporarily
+          // so authController can read it.
+          (user as any)._oauthState = stateData;
 
           return done(null, user);
         } catch (error) {

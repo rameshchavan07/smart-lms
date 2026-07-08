@@ -43,7 +43,7 @@ const UserManagement: React.FC = () => {
     queryKey: ['users', filterRole],
     queryFn: async () => {
       const roleToFetch = currentUser?.role === 'TEACHER' ? 'STUDENT' : filterRole;
-      const { data } = await api.get(`${API_ENDPOINTS.USERS.BASE}${roleToFetch ? `?role=${roleToFetch}` : ''}`);
+      const { data } = await api.get(`${API_ENDPOINTS.USERS.BASE}?limit=1000${roleToFetch ? `&role=${roleToFetch}` : ''}`);
       return data.users;
     }
   });

@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { LogOut } from 'lucide-react';
 import { Button, Card } from '../components';
+import { AIBotOnboarding } from '../components/Onboarding/AIBotOnboarding';
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
+  
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (user && user.hasCompletedOnboarding === false) {
+      setShowOnboarding(true);
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-bg-subtle dark:bg-[#080d18] p-8">
@@ -39,6 +48,8 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </Card>
+
+      {showOnboarding && <AIBotOnboarding onComplete={() => setShowOnboarding(false)} />}
     </div>
   );
 };

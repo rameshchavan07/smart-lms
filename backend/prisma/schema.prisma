@@ -19,33 +19,45 @@ model Institute {
   rejectionReason String?         @db.Text
   approvedAt      DateTime?
   approvedBy      String?
+  themeColor      String?         @db.VarChar(50)
+  coverImageUrl   String?
+  description     String?         @db.Text
+  allowedEmailDomain String?      @db.VarChar(255)
+  isPrivate       Boolean         @default(false)
+  facebookUrl     String?         @db.VarChar(255)
+  linkedinUrl     String?         @db.VarChar(255)
+  twitterUrl      String?         @db.VarChar(255)
+  supportEmail    String?         @db.VarChar(255)
+  supportPhone    String?         @db.VarChar(20)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
-  users           User[]
-  courses         Course[]
+  users   User[]
+  courses Course[]
 
   @@index([slug])
   @@index([status])
 }
 
 model User {
-  id                String            @id @default(uuid())
-  firstName         String            @db.VarChar(100)
-  lastName          String            @db.VarChar(100)
-  email             String            @unique @db.VarChar(255)
-  phoneNumber       String?           @db.VarChar(20)
-  address           String?           @db.Text
+  id                String             @id @default(uuid())
+  firstName         String             @db.VarChar(100)
+  lastName          String             @db.VarChar(100)
+  email             String             @unique @db.VarChar(255)
+  phoneNumber       String?            @db.VarChar(20)
+  address           String?            @db.Text
   passwordHash      String?
   role              UserRole
   profileImage      String?
-  googleId          String?           @db.VarChar(255)
-  isActive          Boolean           @default(true)
-  isEmailVerified   Boolean           @default(false)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  googleId          String?            @db.VarChar(255)
+  isActive          Boolean            @default(true)
+  isEmailVerified   Boolean            @default(false)
+  isApproved        Boolean            @default(true)
+  hasCompletedOnboarding Boolean       @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   instituteId       String?
-  institute         Institute?        @relation(fields: [instituteId], references: [id])
+  institute         Institute?         @relation(fields: [instituteId], references: [id])
   auditLogs         AuditLog[]
   driveFiles        GoogleDriveFile[]
   notifications     Notification[]
@@ -55,25 +67,25 @@ model User {
   teacher           Teacher?
   discussions       Discussion[]
   discussionReplies DiscussionReply[]
-  sentMessages      Message[]         @relation("SentMessages")
-  receivedMessages  Message[]         @relation("ReceivedMessages")
+  sentMessages      Message[]          @relation("SentMessages")
+  receivedMessages  Message[]          @relation("ReceivedMessages")
   chatGroupMembers  ChatGroupMember[]
 
   @@index([email])
 }
 
 model Teacher {
-  id             String    @id @default(uuid())
-  userId         String    @unique
-  employeeCode   String    @unique @db.VarChar(50)
-  specialization String?   @db.VarChar(255)
-  qualification  String?   @db.VarChar(255)
-  joiningDate    DateTime? @db.Date
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id             String         @id @default(uuid())
+  userId         String         @unique
+  employeeCode   String         @unique @db.VarChar(50)
+  specialization String?        @db.VarChar(255)
+  qualification  String?        @db.VarChar(255)
+  joiningDate    DateTime?      @db.Date
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
   courses        Course[]
   announcements  Announcement[]
-  user           User      @relation(fields: [userId], references: [id])
+  user           User           @relation(fields: [userId], references: [id])
 
   @@index([employeeCode])
 }
@@ -135,22 +147,22 @@ model Enrollment {
 }
 
 model Lecture {
-  id           String       @id @default(uuid())
-  courseId     String
-  title        String       @db.VarChar(255)
-  description  String?
-  meetingUrl   String?
+  id                String       @id @default(uuid())
+  courseId          String
+  title             String       @db.VarChar(255)
+  description       String?
+  meetingUrl        String?
   recordingUrl      String?
   recordingDuration Int?
   recordingSize     Int?
   thumbnailUrl      String?
-  startTime    DateTime
-  endTime      DateTime
-  createdBy    String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  attendance   Attendance[]
-  course       Course       @relation(fields: [courseId], references: [id])
+  startTime         DateTime
+  endTime           DateTime
+  createdBy         String
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  attendance        Attendance[]
+  course            Course       @relation(fields: [courseId], references: [id])
 
   @@index([courseId])
 }
@@ -186,16 +198,16 @@ model Assignment {
 }
 
 model AssignmentSubmission {
-  id           String     @id @default(uuid())
-  assignmentId String
-  studentId    String
-  fileUrl      String
+  id               String     @id @default(uuid())
+  assignmentId     String
+  studentId        String
+  fileUrl          String
   marks            Int?
   feedback         String?
   rubricEvaluation Json?
   submittedAt      DateTime   @default(now())
-  assignment   Assignment @relation(fields: [assignmentId], references: [id])
-  student      Student    @relation(fields: [studentId], references: [id])
+  assignment       Assignment @relation(fields: [assignmentId], references: [id])
+  student          Student    @relation(fields: [studentId], references: [id])
 
   @@index([assignmentId])
   @@index([studentId])
@@ -431,22 +443,22 @@ model ChatGroup {
   courseId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  course    Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  members   ChatGroupMember[]
-  messages  Message[]
+
+  course   Course?           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  members  ChatGroupMember[]
+  messages Message[]
 
   @@index([courseId])
 }
 
 model ChatGroupMember {
-  id        String    @id @default(uuid())
-  groupId   String
-  userId    String
-  joinedAt  DateTime  @default(now())
-  
-  group     ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String   @id @default(uuid())
+  groupId  String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  group ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, userId])
   @@index([userId])
@@ -459,23 +471,23 @@ model Announcement {
   title     String   @db.VarChar(255)
   content   String   @db.Text
   createdAt DateTime @default(now())
-  
-  course    Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  course  Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
   @@index([teacherId])
 }
 
 model Integration {
-  id          String   @id @default(uuid())
-  provider    String   @unique @db.VarChar(100) // e.g. "Zoom", "GoogleDrive", "Stripe"
-  isActive    Boolean  @default(false)
-  apiKey      String?  @db.Text
-  apiSecret   String?  @db.Text
-  config      Json?    // Store any additional config
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  provider  String   @unique @db.VarChar(100) // e.g. "Zoom", "GoogleDrive", "Stripe"
+  isActive  Boolean  @default(false)
+  apiKey    String?  @db.Text
+  apiSecret String?  @db.Text
+  config    Json? // Store any additional config
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PushSubscription {
@@ -491,13 +503,13 @@ model PushSubscription {
 }
 
 model Certificate {
-  id          String   @id @default(uuid())
-  studentId   String
-  courseId    String
-  issueDate   DateTime @default(now())
+  id             String   @id @default(uuid())
+  studentId      String
+  courseId       String
+  issueDate      DateTime @default(now())
   certificateUrl String?
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, courseId])
   @@index([studentId])

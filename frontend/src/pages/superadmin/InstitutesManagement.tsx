@@ -45,7 +45,7 @@ export default function InstitutesManagement() {
       if (status === 'REJECTED') endpoint = `/institutes/${id}/reject`;
       if (status === 'SUSPENDED') endpoint = `/institutes/${id}/suspend`;
       if (status === 'REACTIVATE') endpoint = `/institutes/${id}/reactivate`;
-      return api.post(endpoint, { reason });
+      return api.patch(endpoint, { reason });
     },
     onSuccess: () => {
       toast.success('Institute status updated');

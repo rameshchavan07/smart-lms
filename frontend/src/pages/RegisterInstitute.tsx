@@ -12,16 +12,16 @@ export default function RegisterInstitute() {
     instituteName: '',
     email: '',
     phone: '',
-    adminFirstName: '',
-    adminLastName: '',
-    adminPassword: ''
+    firstName: '',
+    lastName: '',
+    password: ''
   });
 
   const registerMutation = useMutation({
     mutationFn: (data: typeof formData) => api.post('/institutes/register', data),
     onSuccess: () => {
       toast.success('Registration request submitted successfully!');
-      navigate('/pending-approval');
+      navigate('/verify-email', { state: { email: formData.email, next: '/pending-approval' } });
     },
     onError: (err: AxiosError<{ message?: string }>) => {
       const errorMsg = err.response?.data?.message || 'Failed to submit registration';
@@ -67,16 +67,16 @@ export default function RegisterInstitute() {
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium mb-1">First Name</label>
-                <input required name="adminFirstName" type="text" className="input w-full" value={formData.adminFirstName} onChange={handleChange} />
+                <input required name="firstName" type="text" className="input w-full" value={formData.firstName} onChange={handleChange} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Last Name</label>
-                <input required name="adminLastName" type="text" className="input w-full" value={formData.adminLastName} onChange={handleChange} />
+                <input required name="lastName" type="text" className="input w-full" value={formData.lastName} onChange={handleChange} />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Password</label>
-              <input required name="adminPassword" type="password" minLength={6} className="input w-full" value={formData.adminPassword} onChange={handleChange} />
+              <input required name="password" type="password" minLength={6} className="input w-full" value={formData.password} onChange={handleChange} />
             </div>
           </div>
 

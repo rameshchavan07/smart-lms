@@ -10,16 +10,27 @@ import {
   rejectInstitute,
   suspendInstitute,
   reactivateInstitute,
+  updateMyInstituteSettings,
+  getMyInstitute,
+  uploadMyInstituteLogo,
 } from '../controllers/instituteController';
 import { protect, authorize } from '../middleware/auth';
+import { uploadThumbnail } from '../middleware/upload';
 
 const router = express.Router();
 
 // Public route — no auth needed
 router.get('/by-slug/:slug', getInstituteBySlug);
 
-// All remaining routes are protected and restricted to SUPER_ADMIN
+// Protected routes
 router.use(protect);
+
+// Admin route
+router.get('/settings', authorize('ADMIN'), getMyInstitute);
+router.put('/settings', authorize('ADMIN'), updateMyInstituteSettings);
+router.post('/settings/logo', authorize('ADMIN'), uploadThumbnail.single('logo'), uploadMyInstituteLogo);
+
+// All remaining routes are restricted to SUPER_ADMIN
 router.use(authorize('SUPER_ADMIN'));
 
 // CRUD

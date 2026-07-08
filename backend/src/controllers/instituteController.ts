@@ -100,6 +100,16 @@ export const getInstituteBySlug = catchAsync(async (req: Request, res: Response)
       phone: true,
       email: true,
       website: true,
+      themeColor: true,
+      coverImageUrl: true,
+      description: true,
+      allowedEmailDomain: true,
+      isPrivate: true,
+      facebookUrl: true,
+      linkedinUrl: true,
+      twitterUrl: true,
+      supportEmail: true,
+      supportPhone: true,
     }
   });
 
@@ -156,11 +166,23 @@ export const updateInstitute = catchAsync(async (req: AuthRequest, res: Response
   }
 
   const { id } = req.params;
-  const { name, address, phone, email, website } = req.body;
+  const { 
+    name, address, phone, email, website, 
+    themeColor, coverImageUrl, description, 
+    allowedEmailDomain, isPrivate, 
+    facebookUrl, linkedinUrl, twitterUrl, 
+    supportEmail, supportPhone 
+  } = req.body;
 
   const institute = await prisma.institute.update({
     where: { id: id as string },
-    data: { name, address, phone, email, website }
+    data: { 
+      name, address, phone, email, website,
+      themeColor, coverImageUrl, description,
+      allowedEmailDomain, isPrivate,
+      facebookUrl, linkedinUrl, twitterUrl,
+      supportEmail, supportPhone
+    }
   });
 
   await logActivity(req.user.id, `Updated Institute: ${name}`, 'Institute', institute.id);
@@ -416,4 +438,111 @@ export const deleteInstitute = catchAsync(async (req: AuthRequest, res: Response
   await logActivity(req.user.id, `Deleted Institute: ${institute.name} (${institute._count.users} users, ${institute._count.courses} courses)`, 'Institute', id as string);
 
   res.json({ message: 'Institute and all associated data deleted successfully' });
+});
+
+// ─── GET MY INSTITUTE SETTINGS (Admin) ──────────────────────────────────────
+export const getMyInstitute = catchAsync(async (req: AuthRequest, res: Response) => {
+  const instituteId = req.user?.instituteId;
+  if (!instituteId) {
+    throw new ForbiddenError('You are not associated with any institute.');
+  }
+
+  const institute = await prisma.institute.findUnique({
+    where: { id: instituteId },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      logoUrl: true,
+      status: true,
+      address: true,
+      phone: true,
+      email: true,
+      website: true,
+      themeColor: true,
+      coverImageUrl: true,
+      description: true,
+      allowedEmailDomain: true,
+      isPrivate: true,
+      facebookUrl: true,
+      linkedinUrl: true,
+      twitterUrl: true,
+      supportEmail: true,
+      supportPhone: true,
+    }
+  });
+
+  if (!institute) {
+    throw new NotFoundError('Institute not found');
+  }
+
+  res.json({ institute });
+});
+
+// ─── UPDATE MY INSTITUTE SETTINGS (Admin) ───────────────────────────────────
+export const updateMyInstituteSettings = catchAsync(async (req: AuthRequest, res: Response) => {
+  const instituteId = req.user?.instituteId;
+  if (!instituteId) {
+    throw new ForbiddenError('You are not associated with any institute.');
+  }
+
+  const {
+    themeColor,
+    coverImageUrl,
+    description,
+    allowedEmailDomain,
+    isPrivate,
+    facebookUrl,
+    linkedinUrl,
+    twitterUrl,
+    supportEmail,
+    supportPhone,
+  } = req.body;
+
+  const institute = await prisma.institute.update({
+    where: { id: instituteId },
+    data: {
+      themeColor,
+      coverImageUrl,
+      description,
+      allowedEmailDomain,
+      isPrivate,
+      facebookUrl,
+      linkedinUrl,
+      twitterUrl,
+      supportEmail,
+      supportPhone,
+    },
+  });
+
+  if (req.user?.id) {
+    await logActivity(req.user.id, `Updated Institute Settings`, 'Institute', instituteId);
+  }
+
+  res.json({ institute });
+});
+
+// ─── UPLOAD MY INSTITUTE LOGO (Admin) ───────────────────────────────────────
+export const uploadMyInstituteLogo = catchAsync(async (req: AuthRequest, res: Response) => {
+  const instituteId = req.user?.instituteId;
+  if (!instituteId) {
+    throw new ForbiddenError('You are not associated with any institute.');
+  }
+
+  if (!req.file) {
+    throw new ValidationError('No file uploaded');
+  }
+
+  const logoUrl = `/uploads/${req.file.filename}`;
+
+  const institute = await prisma.institute.update({
+    where: { id: instituteId },
+    data: { logoUrl },
+  });
+
+  if (req.user?.id) {
+    await logActivity(req.user.id, `Updated Institute Logo`, 'Institute', instituteId);
+  }
+
+  res.json({ logoUrl, message: 'Logo updated successfully' });
 });

@@ -23,6 +23,10 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (e.target.name === 'role' && e.target.value === 'INSTITUTE') {
+      navigate('/register-institute');
+      return;
+    }
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
@@ -276,8 +280,7 @@ const Register: React.FC = () => {
                   className="pl-10 pr-4 py-2.5 w-full bg-surface/50 dark:bg-slate-900/50 border border-border dark:border-slate-800 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all dark:text-white appearance-none"
                 >
                   <option value="STUDENT">🎓 Student</option>
-                  <option value="TEACHER">👨‍🏫 Teacher</option>
-                  <option value="ADMIN">🛡️ Admin</option>
+                  <option value="INSTITUTE">🏢 Institute</option>
                 </select>
               </div>
             </div>

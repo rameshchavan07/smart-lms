@@ -44,7 +44,10 @@ router.post('/verify-reset-otp', validate(verifyResetOtpSchema), verifyResetOtp)
 router.post('/reset-password', validate(resetPasswordSchema), resetPassword);
 
 // ─── Google OAuth ─────────────────────────────────────────────────────────────
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
+router.get('/google', (req, res, next) => {
+  const state = req.query.state ? String(req.query.state) : undefined;
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false, state })(req, res, next);
+});
 router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: '/login', session: false }),

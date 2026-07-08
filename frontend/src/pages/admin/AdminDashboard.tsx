@@ -7,10 +7,12 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import {
   Users, BookOpen, GraduationCap, ClipboardList,
   Plus, UserPlus, Megaphone, FileText,
-  Activity, Server, Database, HardDrive, Mail, HistoryIcon
+  Activity, Server, Database, HardDrive, Mail, HistoryIcon, Copy, Link2
 } from 'lucide-react';
 import { StatCard, ErrorState } from '../../components';
 import { StatCardSkeleton } from '../../components/Skeleton';
+import { useAuth } from '../../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 
 /* ── Types ── */
@@ -33,43 +35,43 @@ const STATUS_CONFIG = {
 };
 
 /* ── Component ── */
-interface DashboardMetrics {
-  totalUsers?: number;
-  totalStudents?: number;
-  totalTeachers?: number;
-  totalCourses?: number;
-  totalEnrollments?: number;
-  totalAssessments?: number;
-  growth?: { users: number; courses: number; enrollments: number; assessments: number; };
-  roleBreakdown?: { students: number; teachers: number; admins: number; parents: number };
-  users?: { total: number };
-  courses?: { total: number; active: number };
-  enrollments?: { total: number; active: number };
-  assessments?: { total: number; completed: number };
-}
 
 const AdminDashboard: React.FC = () => {
-  const { data: metrics, isLoading: metricsLoading, isError: metricsError, refetch } = useQuery({
-    queryKey: ['adminMetrics'],
-    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.ADMIN_STATS).then(res => res.data as DashboardMetrics),
+  const { user } = useAuth();
+  
+  const handleCopyLink = (path: string, label: string) => {
+    const url = `${window.location.origin}${path}`;
+    navigator.clipboard.writeText(url);
+    toast.success(`${label} copied to clipboard!`);
+  };
+
+  const { data: dashboardData, isLoading: metricsLoading, isError: metricsError, refetch } = useQuery({
+    queryKey: ['adminDashboardData'],
+    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.ADMIN_BASE).then(res => res.data),
     refetchInterval: 300000,
   });
 
-  const { data: trendData } = useQuery({
-    queryKey: ['adminEnrollmentTrend'],
-    queryFn: () => api.get(API_ENDPOINTS.ANALYTICS.ADMIN_ENROLLMENT_TREND).then(res => res.data as { month: string; students: number; teachers: number }[]),
-    refetchInterval: 300000,
-  });
+  const metrics = dashboardData?.metrics || {};
+  const topCourses = dashboardData?.recentCourses || [];
+  const recentActivity = dashboardData?.recentActivities?.map((a: { id: string; user?: { firstName?: string; lastName?: string }; action?: string; createdAt: string | Date }) => ({
+    id: a.id,
+    type: 'activity',
+    title: `${a.user?.firstName || 'User'} ${a.action || 'performed an action'}`,
+    user: `${a.user?.firstName || ''} ${a.user?.lastName || ''}`,
+    timestamp: a.createdAt,
+    time: new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  })) || [];
 
-  const { data: topCourses } = useQuery({
-    queryKey: ['adminRecentCourses'],
-    queryFn: () => api.get(`${API_ENDPOINTS.COURSES.BASE}?limit=5&sort=desc`).then(res => res.data.courses as { id: string; title: string; name?: string; category: string; status: string; enrollments: number; rating: number }[]),
-  });
-
-  const { data: recentActivity } = useQuery({
-    queryKey: ['adminRecentActivity'],
-    queryFn: () => api.get(API_ENDPOINTS.ACTIVITY.ADMIN_RECENT).then(res => res.data as { id: string; type: string; title: string; user: string; timestamp: string; color?: string; text?: string; time?: string; }[]),
-  });
+  // Mock trend data since there's no backend endpoint for it yet
+  const trendData = [
+    { name: 'Mon', enrollments: 10 },
+    { name: 'Tue', enrollments: 25 },
+    { name: 'Wed', enrollments: 20 },
+    { name: 'Thu', enrollments: 40 },
+    { name: 'Fri', enrollments: 35 },
+    { name: 'Sat', enrollments: 55 },
+    { name: 'Sun', enrollments: 50 },
+  ];
 
   const roleBreakdown = metrics?.roleBreakdown
     ? [
@@ -87,7 +89,7 @@ const AdminDashboard: React.FC = () => {
 
   const totalPie = roleBreakdown.reduce((a, b) => a + b.value, 0);
   const courses = topCourses ?? [];
-  const maxEnrollments = courses.length > 0 ? Math.max(...courses.map(c => c.enrollments)) : 1;
+  const maxEnrollments = courses.length > 0 ? Math.max(...courses.map((c: { _count?: { enrollments?: number } }) => c._count?.enrollments || 0)) : 1;
   const activities = recentActivity ?? [];
 
   const dateLabel = (() => {
@@ -112,14 +114,43 @@ const AdminDashboard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/admin/courses" className="btn btn-primary btn-sm gap-1.5">
+          <Link to="courses" className="btn btn-primary btn-sm gap-1.5">
             <Plus size={14} /> Add Course
           </Link>
-          <Link to="/admin/users" className="btn btn-secondary btn-sm gap-1.5">
+          <Link to="users" className="btn btn-secondary btn-sm gap-1.5">
             <UserPlus size={14} /> Add User
           </Link>
         </div>
       </div>
+
+      {/* Quick Links */}
+      {user?.instituteSlug && (
+        <div className="card p-4 flex flex-col sm:flex-row sm:items-center gap-4 bg-brand-50/50 dark:bg-brand-900/10 border-brand-100 dark:border-brand-800/30">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center flex-shrink-0">
+              <Link2 size={18} className="text-brand-600 dark:text-brand-400" />
+            </div>
+            <div>
+              <h3 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>Share your Institute Links</h3>
+              <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Copy and share these links with your students and teachers to grant them access.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button 
+              onClick={() => handleCopyLink(`/i/${user.instituteSlug}/login`, 'Login URL')}
+              className="btn btn-secondary btn-sm flex-1 sm:flex-none justify-center gap-2"
+            >
+              <Copy size={14} /> Copy Login URL
+            </button>
+            <button 
+              onClick={() => handleCopyLink(`/i/${user.instituteSlug}/register`, 'Student Registration URL')}
+              className="btn btn-primary btn-sm flex-1 sm:flex-none justify-center gap-2"
+            >
+              <Copy size={14} /> Copy Register URL
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -130,17 +161,17 @@ const AdminDashboard: React.FC = () => {
             <StatCard title="Total Users" value={(metrics?.totalUsers ?? 0).toLocaleString()}
               icon={Users} color="#4361f0" bg="rgba(67,97,240,0.1)"
               trend={metrics?.growth?.users !== undefined ? { value: metrics.growth.users, positive: metrics.growth.users >= 0, label: 'vs last week' } : undefined}
-              linkTo="/admin/users" linkLabel="Manage users"
+              linkTo="users" linkLabel="Manage users"
             />
             <StatCard title="Total Courses" value={(metrics?.totalCourses ?? 0).toLocaleString()}
               icon={BookOpen} color="#10b981" bg="rgba(16,185,129,0.1)"
               trend={metrics?.growth?.courses !== undefined ? { value: metrics.growth.courses, positive: metrics.growth.courses >= 0 } : undefined}
-              linkTo="/admin/courses" linkLabel="Manage courses"
+              linkTo="courses" linkLabel="Manage courses"
             />
             <StatCard title="Enrollments" value={(metrics?.totalEnrollments ?? 0).toLocaleString()}
               icon={GraduationCap} color="#8b5cf6" bg="rgba(139,92,246,0.1)"
               trend={metrics?.growth?.enrollments !== undefined ? { value: metrics.growth.enrollments, positive: metrics.growth.enrollments >= 0 } : undefined}
-              linkTo="/admin/enrollments" linkLabel="View enrollments"
+              linkTo="enrollments" linkLabel="View enrollments"
             />
             <StatCard title="Assessments" value={(metrics?.totalAssessments ?? 0).toLocaleString()}
               icon={ClipboardList} color="#f59e0b" bg="rgba(245,158,11,0.1)"
@@ -182,14 +213,15 @@ const AdminDashboard: React.FC = () => {
         <div className="card">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Top Courses</h2>
-            <Link to="/admin/courses" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>View all</Link>
+            <Link to="courses" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>View all</Link>
           </div>
           {courses.length === 0 ? (
             <p className="text-[13px] text-center py-8" style={{ color: 'var(--text-muted)' }}>No courses yet</p>
           ) : (
             <div className="space-y-4">
-              {courses.map(c => {
-                const pct = maxEnrollments > 0 ? Math.round((c.enrollments / maxEnrollments) * 100) : 0;
+              {courses.map((c: { id: string; name?: string; title?: string; _count?: { enrollments?: number } }) => {
+                const enrollments = c._count?.enrollments || 0;
+                const pct = maxEnrollments > 0 ? Math.round((enrollments / maxEnrollments) * 100) : 0;
                 return (
                   <div key={c.id} className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(67,97,240,0.1)' }}>
@@ -197,10 +229,10 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="text-[12px] font-semibold truncate mr-2" style={{ color: 'var(--text-primary)' }}>{c.name}</p>
+                        <p className="text-[12px] font-semibold truncate mr-2" style={{ color: 'var(--text-primary)' }}>{c.name || c.title}</p>
                         <span className="text-[12px] font-black flex-shrink-0" style={{ color: 'var(--text-primary)' }}>{pct}%</span>
                       </div>
-                      <p className="text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>{c.enrollments.toLocaleString()} enrollments</p>
+                      <p className="text-[11px] mb-1" style={{ color: 'var(--text-muted)' }}>{enrollments.toLocaleString()} enrollments</p>
                       <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
                         <div className="h-full rounded-full" style={{ width: `${pct}%`, background: '#4361f0' }} />
                       </div>
@@ -277,8 +309,8 @@ const AdminDashboard: React.FC = () => {
             <h2 className="text-[16px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Quick Actions</h2>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Add Course', icon: Plus,       color: '#4361f0', bg: 'rgba(67,97,240,0.1)',  to: '/admin/courses' },
-                { label: 'Add User',   icon: UserPlus,   color: '#10b981', bg: 'rgba(16,185,129,0.1)', to: '/admin/users' },
+                { label: 'Add Course', icon: Plus,       color: '#4361f0', bg: 'rgba(67,97,240,0.1)',  to: 'courses' },
+                { label: 'Add User',   icon: UserPlus,   color: '#10b981', bg: 'rgba(16,185,129,0.1)', to: 'users' },
                 { label: 'Announce',   icon: Megaphone,  color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)', to: '#' },
                 { label: 'Report',     icon: FileText,   color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', to: '#' },
               ].map(a => {
@@ -308,10 +340,10 @@ const AdminDashboard: React.FC = () => {
               <p className="text-[12px] text-center py-4" style={{ color: 'var(--text-muted)' }}>No recent activity</p>
             ) : (
               <div className="space-y-3">
-                {activities.map(a => (
+                {activities.map((a: { id: string; color?: string; title?: string; text?: string; time: string }) => (
                   <div key={a.id} className="pl-3 border-l-2 flex flex-col gap-0.5"
-                    style={{ borderColor: a.color }}>
-                    <p className="text-[12px] font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>{a.text}</p>
+                    style={{ borderColor: a.color || '#4361f0' }}>
+                    <p className="text-[12px] font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>{a.title || a.text}</p>
                     <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{a.time}</span>
                   </div>
                 ))}

@@ -12,6 +12,8 @@ import {
   LogOut, Menu, X, Search, Moon, Sun, Mail,
   ChevronRight, GraduationCap, Plus, Award
 } from 'lucide-react';
+import { AIBotOnboarding } from '../components/Onboarding/AIBotOnboarding';
+import { DashboardTour } from '../components/Onboarding/DashboardTour';
 
 interface NavItem {
   label: string;
@@ -39,6 +41,17 @@ const StudentLayout: React.FC = () => {
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+
+  // Check onboarding status on mount
+  React.useEffect(() => {
+    if (user && user.hasCompletedOnboarding === false) {
+      setShowOnboarding(true);
+    }
+  }, [user]);
 
   const getHref = (path: string) => {
     if (!institute) return '#';
@@ -69,7 +82,7 @@ const StudentLayout: React.FC = () => {
       )}
 
       {/* ── Sidebar ── */}
-      <aside className={`sidebar ${isMobileOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
+      <aside className={`sidebar tour-sidebar ${isMobileOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5">
           {institute?.logoUrl ? (
@@ -193,7 +206,7 @@ const StudentLayout: React.FC = () => {
               <Mail className="w-5 h-5" />
             </button>
             <div className="w-px h-6 mx-1 hidden sm:block" style={{ background: 'var(--border)' }} />
-            <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="User profile">
+            <button className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors tour-profile" aria-label="User profile">
               {user?.profileImage ? (
                 <img src={user.profileImage} alt="Profile" className="w-8 h-8 rounded-full object-cover shrink-0" />
               ) : (
@@ -228,6 +241,19 @@ const StudentLayout: React.FC = () => {
 
       {/* Mobile Bottom Navigation */}
       <BottomNav items={navItems.slice(0, 4).map(item => ({ ...item, href: getHref(item.path) }))} />
+
+      {/* Onboarding Components */}
+      {showOnboarding && (
+        <AIBotOnboarding onComplete={() => {
+          setShowOnboarding(false);
+          setShowTour(true);
+        }} />
+      )}
+      
+      <DashboardTour 
+        run={showTour} 
+        onFinish={() => setShowTour(false)} 
+      />
     </div>
   );
 };
