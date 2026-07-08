@@ -18,7 +18,7 @@ import { AppError, NotFoundError, ValidationError, ForbiddenError, UnauthorizedE
 
 // ─── Helper: Set Auth Cookies ───────────────────────────────────────────────
 export const setAuthCookies = (res: Response, token: string, refreshToken: string) => {
-  const isProd = process.env.NODE_ENV === 'production' || (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost'));
+  const isProd = process.env.NODE_ENV === 'production' || (!!process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost'));
   res.cookie('token', token, {
     httpOnly: true,
     secure: isProd,
@@ -304,7 +304,7 @@ export const refresh = catchAsync(async (req: Request, res: Response) => {
   }
 
   const newToken = generateToken(user.id, user.role);
-  const isProd = process.env.NODE_ENV === 'production' || (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost'));
+  const isProd = process.env.NODE_ENV === 'production' || (!!process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost'));
   res.cookie('token', newToken, {
     httpOnly: true,
     secure: isProd,
