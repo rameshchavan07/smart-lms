@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Lottie from 'lottie-react';
+import helloAnim from '../../assets/animations/Robot says hello.json';
+import botAnim1 from '../../assets/animations/Chabot.json';
+import botAnim2 from '../../assets/animations/Ghostsmart.json';
+import botAnim3 from '../../assets/animations/chatbot.json';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
-import { ChevronRight, ArrowLeft, Check, Sparkles, Moon, Sun, Monitor, Bell, BellOff, Bot } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Check, Sparkles, Moon, Sun, Monitor, Bell, BellOff } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface AIBotOnboardingProps {
@@ -25,7 +30,17 @@ export const AIBotOnboarding: React.FC<AIBotOnboardingProps> = ({ onComplete }) 
   const [themePref, setThemePref] = useState<string>('system');
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
 
+  // For Lottie CJS interop
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const LottieComponent = (Lottie as any).default || Lottie;
 
+  // Select animation based on step
+  const getAnimation = () => {
+    if (step === 1) return helloAnim;
+    if (step === 2 || step === 3) return botAnim1;
+    if (step === 4 || step === 5) return botAnim2;
+    return botAnim3;
+  };
 
   const nextStep = () => {
     setDirection(1);
@@ -127,19 +142,22 @@ export const AIBotOnboarding: React.FC<AIBotOnboardingProps> = ({ onComplete }) 
           
           <div className="flex-1 flex flex-col items-center justify-center -mt-6">
             <motion.div 
-              animate={{ y: [0, -12, 0] }}
+              animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-              className="w-36 h-36 rounded-[2rem] bg-gradient-to-tr from-brand-500 via-purple-500 to-pink-500 p-[2px] shadow-2xl shadow-brand-500/20 mb-2"
+              className="w-48 h-48 drop-shadow-2xl"
             >
-              <div className="w-full h-full rounded-[2rem] bg-white dark:bg-[#121212] flex items-center justify-center relative overflow-hidden group">
-                <div className="absolute inset-0 bg-brand-500/5 group-hover:bg-brand-500/10 transition-colors" />
+              <AnimatePresence mode="wait">
                 <motion.div
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+                  key={step}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3 }}
+                  className="w-full h-full"
                 >
-                  <Bot className="w-16 h-16 text-brand-500 drop-shadow-md" strokeWidth={1.5} />
+                  <LottieComponent animationData={getAnimation()} loop={true} />
                 </motion.div>
-              </div>
+              </AnimatePresence>
             </motion.div>
             
             <AnimatePresence mode="wait">
@@ -396,15 +414,7 @@ export const AIBotOnboarding: React.FC<AIBotOnboardingProps> = ({ onComplete }) 
              animate={{ opacity: 1 }} 
              className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center"
            >
-             <motion.div 
-              animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-              className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-brand-500 to-purple-500 p-[2px] shadow-2xl shadow-brand-500/30 mb-6"
-             >
-               <div className="w-full h-full rounded-3xl bg-white dark:bg-[#121212] flex items-center justify-center">
-                 <Bot className="w-12 h-12 text-brand-500" strokeWidth={1.5} />
-               </div>
-             </motion.div>
+            <LottieComponent animationData={botAnim3} loop={true} className="w-40 h-40 mb-4 drop-shadow-2xl" />
              <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-500 to-purple-500">
                 You're all set!
              </h3>
