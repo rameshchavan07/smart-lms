@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Lottie from 'lottie-react';
-import chatbotAnimation from '../../assets/live-chatbot.json';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
-import { ChevronRight, ArrowLeft, Check, Sparkles, Moon, Sun, Monitor, Bell, BellOff } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Check, Sparkles, Moon, Sun, Monitor, Bell, BellOff, Bot } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface AIBotOnboardingProps {
@@ -27,9 +25,7 @@ export const AIBotOnboarding: React.FC<AIBotOnboardingProps> = ({ onComplete }) 
   const [themePref, setThemePref] = useState<string>('system');
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
 
-  // For Lottie CJS interop
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const LottieComponent = (Lottie as any).default || Lottie;
+
 
   const nextStep = () => {
     setDirection(1);
@@ -131,11 +127,19 @@ export const AIBotOnboarding: React.FC<AIBotOnboardingProps> = ({ onComplete }) 
           
           <div className="flex-1 flex flex-col items-center justify-center -mt-6">
             <motion.div 
-              animate={{ y: [0, -10, 0] }}
+              animate={{ y: [0, -12, 0] }}
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-              className="w-48 h-48 drop-shadow-2xl"
+              className="w-36 h-36 rounded-[2rem] bg-gradient-to-tr from-brand-500 via-purple-500 to-pink-500 p-[2px] shadow-2xl shadow-brand-500/20 mb-2"
             >
-              <LottieComponent animationData={chatbotAnimation} loop={true} />
+              <div className="w-full h-full rounded-[2rem] bg-white dark:bg-[#121212] flex items-center justify-center relative overflow-hidden group">
+                <div className="absolute inset-0 bg-brand-500/5 group-hover:bg-brand-500/10 transition-colors" />
+                <motion.div
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+                >
+                  <Bot className="w-16 h-16 text-brand-500 drop-shadow-md" strokeWidth={1.5} />
+                </motion.div>
+              </div>
             </motion.div>
             
             <AnimatePresence mode="wait">
@@ -392,7 +396,15 @@ export const AIBotOnboarding: React.FC<AIBotOnboardingProps> = ({ onComplete }) 
              animate={{ opacity: 1 }} 
              className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center"
            >
-             <LottieComponent animationData={chatbotAnimation} loop={true} className="w-32 h-32 mb-4" />
+             <motion.div 
+              animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+              className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-brand-500 to-purple-500 p-[2px] shadow-2xl shadow-brand-500/30 mb-6"
+             >
+               <div className="w-full h-full rounded-3xl bg-white dark:bg-[#121212] flex items-center justify-center">
+                 <Bot className="w-12 h-12 text-brand-500" strokeWidth={1.5} />
+               </div>
+             </motion.div>
              <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-500 to-purple-500">
                 You're all set!
              </h3>
