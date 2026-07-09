@@ -1,27 +1,8 @@
-<div align="center">
-  <br />
-  <h1>🎓 Smart LMS (OpenLearnX)</h1>
-  <p>
-    <strong>A high-performance, multi-tenant virtual classroom platform designed for educational institutes, coaching centers, and independent educators.</strong>
-  </p>
-  
-  <p>
-    [![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-emerald.svg?style=for-the-badge&logo=node.js)](https://nodejs.org)
-    [![React Version](https://img.shields.io/badge/react-19.0.0-blue.svg?style=for-the-badge&logo=react)](https://react.dev)
-    [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue.svg?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
-    [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg?style=for-the-badge&logo=postgresql)](https://www.postgresql.org)
-    [![Prisma ORM](https://img.shields.io/badge/Prisma-7.0-indigo.svg?style=for-the-badge&logo=prisma)](https://www.prisma.io)
-    [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4.0-38bdf8.svg?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
-  </p>
+# 🎓 Smart LMS (OpenLearnX)
 
-  <p>
-    <a href="#-project-overview">Overview</a> •
-    <a href="#-key-features">Features</a> •
-    <a href="#-system-architecture">Architecture</a> •
-    <a href="#-getting-started">Getting Started</a> •
-    <a href="#-deployment">Deployment</a>
-  </p>
-</div>
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-emerald.svg?style=for-the-badge&logo=node.js)](https://nodejs.org) [![React Version](https://img.shields.io/badge/react-19.0.0-blue.svg?style=for-the-badge&logo=react)](https://react.dev) [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue.svg?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg?style=for-the-badge&logo=postgresql)](https://www.postgresql.org) [![Prisma ORM](https://img.shields.io/badge/Prisma-7.0-indigo.svg?style=for-the-badge&logo=prisma)](https://www.prisma.io) [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4.0-38bdf8.svg?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
+
+**A high-performance, multi-tenant virtual classroom platform designed for educational institutes, coaching centers, and independent educators.**
 
 ---
 
@@ -44,33 +25,57 @@ Built on a robust **Monorepo-style structure**, it marries a secure, strongly-ty
 
 ## 💻 Tech Stack
 
-| Frontend | Backend | Infrastructure / DevOps |
-| :--- | :--- | :--- |
-| **React 19** (Vite) | **Node.js** + **Express 5** | **PostgreSQL** |
-| **TypeScript** | **TypeScript** | **Prisma ORM** |
-| **Tailwind CSS v4** | **Socket.IO** (Real-time) | **Redis** (Caching/PubSub) |
-| **TanStack Query v5** | **Passport.js** (Auth) | **Husky** (Git Hooks) |
-| **Framer Motion** | **Pino** (Logging) | **Vitest** (Testing) |
+- **Frontend**: React 19 (Vite), TypeScript, Tailwind CSS v4, TanStack Query v5, Framer Motion
+- **Backend**: Node.js, Express 5, TypeScript, Socket.IO (Real-time), Passport.js (Auth)
+- **Infrastructure**: PostgreSQL, Prisma ORM, Redis (Caching/PubSub)
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture Flow
 
 ```mermaid
 graph TD
-    SA[Super Admin Portal] -->|Manages| I(Institutes & System Settings)
-    SA -->|Onboards| A[Admin Portal]
-    A -->|Manages Institute| B(Users, Courses & Quizzes)
-    C[Teacher Portal] -->|Schedules & Records| D(Live Classes)
-    C -->|Uploads| E(Drive Study Materials)
-    F[Student Portal] -->|Attends| D
-    F -->|Downloads| E
-    F -->|Takes| G(Assessments & Quizzes)
-    C -->|Grades| G
-    H[WebSocket Server] -->|Real-time Events| F
-    H -->|Real-time Events| C
+    SA["Super Admin Portal"] -->|"Manages"| I("Institutes & System Settings")
+    SA -->|"Onboards"| A["Admin Portal"]
+    A -->|"Manages Institute"| B("Users, Courses & Quizzes")
+    C["Teacher Portal"] -->|"Schedules & Records"| D("Live Classes")
+    C -->|"Uploads"| E("Drive Study Materials")
+    F["Student Portal"] -->|"Attends"| D
+    F -->|"Downloads"| E
+    F -->|"Takes"| G("Assessments & Quizzes")
+    C -->|"Grades"| G
+    H["WebSocket Server"] -->|"Real-time Events"| F
+    H -->|"Real-time Events"| C
 ```
 
-<details>
-<summary><b>📂 View Project Directory Structure</b></summary>
+## 🗄️ Database Schema Diagram
+
+Below is a high-level Entity-Relationship diagram illustrating the core models in the Prisma database.
+
+```mermaid
+erDiagram
+    Institute ||--o{ User : "has"
+    Institute ||--o{ Course : "offers"
+    
+    User ||--o| Teacher : "can be"
+    User ||--o| Student : "can be"
+    
+    Teacher ||--o{ Course : "teaches"
+    
+    Student ||--o{ Enrollment : "enrolls in"
+    Course ||--o{ Enrollment : "has"
+    
+    Course ||--o{ Lecture : "contains"
+    Course ||--o{ Assignment : "contains"
+    Course ||--o{ Quiz : "contains"
+    Course ||--o{ StudyMaterial : "contains"
+    
+    Student ||--o{ AssignmentSubmission : "submits"
+    Assignment ||--o{ AssignmentSubmission : "receives"
+    
+    Student ||--o{ QuizSubmission : "submits"
+    Quiz ||--o{ QuizSubmission : "receives"
+```
+
+## 📂 Project Directory Structure
 
 ```text
 smart-lms/
@@ -81,21 +86,18 @@ smart-lms/
 │   │   ├── middleware/       # Express Route Protections (Auth, CSRF, Rate limits)
 │   │   ├── routes/           # REST endpoint mapping
 │   │   ├── services/         # Integrations (Google Drive, Passport)
-│   │   └── utils/            # Helpers & Loggers (Pino)
+│   │   └── utils/            # Helpers & Loggers
 │   └── package.json
 ├── frontend/                 # React SPA
 │   ├── src/
 │   │   ├── components/       # Reusable UI widgets
 │   │   ├── contexts/         # React Contexts (Auth, Theme, Institute, Socket)
-│   │   ├── layouts/          # Workspace Frames (Admin, Teacher, Student, SuperAdmin)
+│   │   ├── layouts/          # Workspace Frames
 │   │   ├── pages/            # Role-based dashboard views
-│   │   └── services/         # API Client configuration (Axios)
+│   │   └── services/         # API Client configuration
 │   └── package.json
 └── README.md
 ```
-</details>
-
----
 
 ## 🚀 Getting Started
 
@@ -115,13 +117,8 @@ smart-lms/
 
 2. **Install Dependencies:**
    ```bash
-   # Root hooks
    npm install
-
-   # Backend
    cd backend && npm install
-
-   # Frontend
    cd ../frontend && npm install
    ```
 
@@ -138,91 +135,50 @@ smart-lms/
 
 5. **Start Development Servers:**
    Open two terminals:
+   
+   **Terminal 1: Backend**
    ```bash
-   # Terminal 1: Backend
    cd backend
    npm run dev
-
-   # Terminal 2: Frontend
+   ```
+   
+   **Terminal 2: Frontend**
+   ```bash
    cd frontend
    npm run dev
    ```
 
----
-
 ## ⚙️ Configuration
 
-<details>
-<summary><b>Backend <code>.env</code> template</b></summary>
-
+### Backend `.env` template
 ```env
-# Server
 PORT=5000
 NODE_ENV=development
 FRONTEND_URL="http://localhost:5173"
-
-# Database
 DATABASE_URL="postgresql://user:password@localhost:5432/smart_lms?schema=public"
-
-# Authentication Secrets
 SESSION_SECRET="your_session_secret"
 JWT_SECRET="your_jwt_secret"
-JWT_REFRESH_SECRET="your_refresh_secret"
-
-# Redis (Optional)
 REDIS_URL="redis://localhost:6379"
 ```
-</details>
 
-<details>
-<summary><b>Frontend <code>.env</code> template</b></summary>
-
+### Frontend `.env` template
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
-</details>
-
----
-
-## 🔒 Authentication Flow
-
-Smart LMS ensures robust security utilizing a **JWT + HttpOnly Cookie** architecture:
-1. Client authenticates via `/api/auth/login`.
-2. Server validates and sets strict `HttpOnly`, `Secure`, `SameSite=Strict` cookies.
-3. Tokens are inherently protected from XSS attacks (no `localStorage`).
-4. Double CSRF tokens prevent Cross-Site Request Forgery on state-changing API endpoints.
-5. React Context verifies session automatically on load.
-
----
 
 ## 🌐 Deployment
 
 Smart LMS is built to be deployed on modern serverless or containerized cloud providers.
 
-- **Database**: Use Serverless Postgres (e.g., Neon, Supabase)
-- **Cache/WebSockets**: Serverless Redis (e.g., Upstash)
+- **Database**: Serverless Postgres (e.g., Neon)
+- **Cache**: Serverless Redis (e.g., Upstash)
 - **API Server**: Render, Railway, or Heroku
 - **Frontend App**: Vercel, Netlify, or Cloudflare Pages
 
-> **Important Deployment Note**: Ensure your `FRONTEND_URL` in the backend environment matches your production frontend URL to avoid CORS errors. Additionally, `withCredentials: true` must remain active in the Axios setup.
-
----
-
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+> **Important**: Ensure your `FRONTEND_URL` in the backend environment matches your production frontend URL to avoid CORS errors.
 
 ## 📄 License
 
-This project is distributed under the **ISC License**. See the `LICENSE` file for more information.
+This project is distributed under the **ISC License**.
 
-<div align="center">
-  <br />
-  <i>Designed and developed by <a href="https://github.com/rameshchavan07">Ramesh Chavan</a></i>
-</div>
+*Designed and developed by Ramesh Chavan*

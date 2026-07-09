@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { AxiosError } from 'axios';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { getBackendBaseUrl } from '../../utils/url';
 
 export default function InstituteLogin() {
   const { institute, isLoading: instituteLoading } = useInstitute();
@@ -15,7 +16,7 @@ export default function InstituteLogin() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+  const BACKEND_URL = getBackendBaseUrl();
 
   const handleGoogleLogin = () => {
     if (!institute?.slug) return;
