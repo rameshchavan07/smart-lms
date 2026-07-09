@@ -56,7 +56,7 @@ app.post('/api/auth/logout',  logoutUser);
 app.post('/api/auth/refresh', refresh);
 
 // ─── Shared data ──────────────────────────────────────────────────────────────
-const HASHED_PASSWORD = bcrypt.hashSync('correctpassword', 10);
+const HASHED_PASSWORD = bcrypt.hashSync('correctpassword', 1); // Use low rounds in tests for speed
 
 const MOCK_USER = {
   id:              'user-123',
