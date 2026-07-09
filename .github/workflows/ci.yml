@@ -10,6 +10,9 @@ jobs:
   backend:
     name: Backend CI
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      contains(github.event.pull_request.changed_files, 'backend/')
     
     defaults:
       run:
@@ -44,6 +47,9 @@ jobs:
   frontend:
     name: Frontend CI
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      contains(github.event.pull_request.changed_files, 'frontend/')
     
     defaults:
       run:
