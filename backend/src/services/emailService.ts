@@ -8,14 +8,15 @@ const createTransporter = () => nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true, // SSL — required for port 465, works on Render
+  family: 4, // 'family' is passed to the net/tls Socket
   auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS, // Gmail App Password (not your login password)
+    user: process.env.GMAIL_USER || '',
+    pass: process.env.GMAIL_PASS || '', // Gmail App Password (not your login password)
   },
   connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 15000,
-});
+} as any);
 
 let transporter = createTransporter();
 

@@ -15,6 +15,10 @@ import { doubleCsrfProtection, generateCsrfToken, invalidCsrfTokenError } from '
 const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:5173'];
 
 const app: Application = express();
+
+// Trust reverse proxy (e.g. Render, Heroku) to properly resolve client IPs for express-rate-limit
+app.set('trust proxy', 1);
+
 import routes from './routes';
 
 // Configure Passport strategy
