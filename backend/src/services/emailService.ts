@@ -6,13 +6,14 @@ dns.setDefaultResultOrder('ipv4first');
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,       // 465 (SMTPS) is blocked on Render/Railway/Vercel — use 587 (STARTTLS)
+  secure: false,   // false = STARTTLS (upgrades connection after handshake)
   auth: {
     user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS, // This must be an App Password, not regular password
+    pass: process.env.GMAIL_PASS, // This must be a Gmail App Password, not your regular password
   },
   tls: {
+    rejectUnauthorized: false,
     // Force IPv4 to prevent ENETUNREACH issues on environments with broken IPv6
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -84,18 +85,8 @@ const sendWithRetry = async (
     }
   }
 
-  // All SMTP retries failed — try Resend fallback
-  console.warn('All SMTP retries failed. Attempting Resend API fallback...');
-  try {
-    await sendViaResend(mailOptions.to, mailOptions.subject, mailOptions.html);
-    console.log('✅ Email sent via Resend fallback');
-    return;
-  } catch (resendErr) {
-    console.error('Resend fallback also failed:', resendErr instanceof Error ? resendErr.message : String(resendErr));
-  }
-
-  // Both failed — throw the original SMTP error
-  throw lastError || new Error('Email delivery failed via all providers');
+  // All SMTP retries failed
+  throw lastError || new Error('Email delivery failed');
 };
 
 // ─── HTML Templates ───────────────────────────────────────────────────────────
