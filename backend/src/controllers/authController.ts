@@ -177,7 +177,10 @@ export const forgotPassword = catchAsync(async (req: Request, res: Response) => 
   }
 
   const otp = await createOtp(email, OtpType.PASSWORD_RESET);
-  await sendPasswordResetOtp(email, user.firstName, otp);
+  // Fire email in background — don't block response
+  sendPasswordResetOtp(email, user.firstName, otp).catch((err) =>
+    console.error('Failed to send password reset OTP:', err instanceof Error ? err.message : String(err))
+  );
 
   res.status(200).json({ message: 'A password reset OTP has been sent to your email.' });
 });

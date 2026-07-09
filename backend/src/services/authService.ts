@@ -90,7 +90,10 @@ export const registerUserLogic = async (data: RegisterUserData) => {
   }
 
   const otp = await createOtp(email, OtpType.EMAIL_VERIFICATION);
-  await sendEmailVerificationOtp(email, firstName, otp);
+  // Fire email in background — don't block registration response
+  sendEmailVerificationOtp(email, firstName, otp).catch((err) =>
+    console.error('Failed to send verification OTP:', err instanceof Error ? err.message : String(err))
+  );
   await logActivity(user.id, 'Registered account — awaiting email verification', 'User', user.id);
 
   return { email };

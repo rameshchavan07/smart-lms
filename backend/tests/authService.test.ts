@@ -33,9 +33,9 @@ vi.mock('../src/services/otpService', () => ({
 }));
 
 vi.mock('../src/services/emailService', () => ({
-  sendEmailVerificationOtp: vi.fn(),
-  sendPasswordResetOtp: vi.fn(),
-  sendWelcomeEmail: vi.fn(),
+  sendEmailVerificationOtp: vi.fn().mockResolvedValue(undefined),
+  sendPasswordResetOtp: vi.fn().mockResolvedValue(undefined),
+  sendWelcomeEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../src/utils/jwt', () => ({

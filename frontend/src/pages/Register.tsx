@@ -299,6 +299,12 @@ const Register: React.FC = () => {
                 Sign in here
               </Link>
             </div>
+            <div className="text-center text-xs text-muted pt-1">
+              Registering an institution?{' '}
+              <Link to="/register-institute" className="font-semibold text-indigo-500 hover:text-indigo-600 transition-colors">
+                Register your institute
+              </Link>
+            </div>
           </form>
         </motion.div>
       </div>

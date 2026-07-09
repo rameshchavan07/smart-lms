@@ -1,64 +1,34 @@
 import nodemailer from 'nodemailer';
 import dns from 'dns';
 
-// Force DNS resolution to IPv4 first to avoid ENETUNREACH IPv6 issues on platforms like Vercel/Render
+// Force DNS resolution to IPv4 first to avoid ENETUNREACH IPv6 issues on platforms like Render
 dns.setDefaultResultOrder('ipv4first');
 
-const transporter = nodemailer.createTransport({
+const createTransporter = () => nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587,       // 465 (SMTPS) is blocked on Render/Railway/Vercel — use 587 (STARTTLS)
-  secure: false,   // false = STARTTLS (upgrades connection after handshake)
+  port: 465,
+  secure: true, // SSL — required for port 465, works on Render
   auth: {
     user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS, // This must be a Gmail App Password, not your regular password
+    pass: process.env.GMAIL_PASS, // Gmail App Password (not your login password)
   },
-  tls: {
-    rejectUnauthorized: false,
-    // Force IPv4 to prevent ENETUNREACH issues on environments with broken IPv6
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    lookup: (hostname: string, options: unknown, callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
-      dns.lookup(hostname, { family: 4 }, (err, address, family) => {
-        callback(err, address as string, family);
-      });
-    }
-  }
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
-// Verify SMTP connection on startup
+let transporter = createTransporter();
+
+// Verify SMTP connection on startup (non-blocking)
 transporter.verify()
   .then(() => console.log('✅ SMTP connection verified'))
   .catch((err) => console.error('❌ SMTP connection failed:', err instanceof Error ? err.message : String(err)));
 
+
 const FROM_EMAIL = process.env.GMAIL_USER || 'noreply@openlearnx.org';
 const APP_NAME = 'OpenLearnX';
 
-// ─── Resend API Fallback ──────────────────────────────────────────────────────
-
-const sendViaResend = async (to: string, subject: string, html: string): Promise<void> => {
-  const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
-
-  if (!apiKey) {
-    throw new Error('RESEND_API_KEY is not configured — cannot send via fallback.');
-  }
-
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ from: fromEmail, to, subject, html }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Resend API failed (${res.status}): ${body}`);
-  }
-};
-
-// ─── Core Send With Retry + Fallback ──────────────────────────────────────────
+// ─── Core Send With Retry ─────────────────────────────────────────────────────
 
 const sendWithRetry = async (
   mailOptions: { from: string; to: string; subject: string; html: string },
@@ -70,24 +40,26 @@ const sendWithRetry = async (
     return;
   }
 
-  // Try Gmail SMTP with retries
   let lastError: Error | undefined;
   for (let i = 0; i < retries; i++) {
     try {
-      await transporter.sendMail(mailOptions);
+      // Create a fresh transporter per attempt to avoid stale connections
+      const t = createTransporter();
+      await t.sendMail(mailOptions);
+      console.log(`✅ Email sent via Gmail SMTP to ${mailOptions.to}`);
       return; // Success
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       console.error(`SMTP attempt ${i + 1}/${retries} failed:`, lastError.message);
       if (i < retries - 1) {
-        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i))); // exponential backoff
+        await new Promise(r => setTimeout(r, 1500)); // fixed 1.5s wait between retries
       }
     }
   }
 
-  // All SMTP retries failed
-  throw lastError || new Error('Email delivery failed');
+  throw lastError || new Error('Email delivery failed after all retries');
 };
+
 
 // ─── HTML Templates ───────────────────────────────────────────────────────────
 

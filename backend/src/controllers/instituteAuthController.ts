@@ -64,7 +64,10 @@ export const registerInstitute = catchAsync(async (req: Request, res: Response) 
 
   // Send OTP for email verification
   const otp = await createOtp(email, OtpType.EMAIL_VERIFICATION);
-  await sendEmailVerificationOtp(email, firstName, otp);
+  // Fire in background — don't block response
+  sendEmailVerificationOtp(email, firstName, otp).catch((err) =>
+    console.error('Failed to send institute OTP:', err instanceof Error ? err.message : String(err))
+  );
 
   // Notify Super Admins about the new pending registration
   const superAdmins = await prisma.user.findMany({
@@ -142,7 +145,10 @@ export const registerStudentForInstitute = catchAsync(async (req: Request, res: 
 
   // Send OTP for email verification
   const otp = await createOtp(email, OtpType.EMAIL_VERIFICATION);
-  await sendEmailVerificationOtp(email, firstName, otp);
+  // Fire in background — don't block response
+  sendEmailVerificationOtp(email, firstName, otp).catch((err) =>
+    console.error('Failed to send student OTP:', err instanceof Error ? err.message : String(err))
+  );
 
   await logActivity(user.id, `Registered as student for institute: ${institute.name}`, 'User', user.id);
 
