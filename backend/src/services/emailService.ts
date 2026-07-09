@@ -6,16 +6,16 @@ dns.setDefaultResultOrder('ipv4first');
 
 const createTransporter = () => nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // SSL — required for port 465, works on Render
-  family: 4, // 'family' is passed to the net/tls Socket
+  port: 587, // Port 587 with STARTTLS is often less restricted on cloud providers
+  secure: false, // Must be false for port 587 (uses STARTTLS)
+  requireTLS: true,
   auth: {
     user: process.env.GMAIL_USER || '',
-    pass: process.env.GMAIL_PASS || '', // Gmail App Password (not your login password)
+    pass: process.env.GMAIL_PASS || '', // Gmail App Password
   },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
+  connectionTimeout: 20000, // Increased timeout
+  greetingTimeout: 20000,
+  socketTimeout: 20000,
 } as any);
 
 let transporter = createTransporter();
