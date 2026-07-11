@@ -1,32 +1,10 @@
-import nodemailer from 'nodemailer';
-import dns from 'dns';
+import { Resend } from 'resend';
 
-// Force DNS resolution to IPv4 first to avoid ENETUNREACH IPv6 issues on platforms like Render
-dns.setDefaultResultOrder('ipv4first');
+// Initialize Resend with the API key from environment variables
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const createTransporter = () => nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587, // Port 587 with STARTTLS is often less restricted on cloud providers
-  secure: false, // Must be false for port 587 (uses STARTTLS)
-  requireTLS: true,
-  auth: {
-    user: process.env.GMAIL_USER || '',
-    pass: process.env.GMAIL_PASS || '', // Gmail App Password
-  },
-  connectionTimeout: 20000, // Increased timeout
-  greetingTimeout: 20000,
-  socketTimeout: 20000,
-} as any);
-
-let transporter = createTransporter();
-
-// Verify SMTP connection on startup (non-blocking)
-transporter.verify()
-  .then(() => console.log('✅ SMTP connection verified'))
-  .catch((err) => console.error('❌ SMTP connection failed:', err instanceof Error ? err.message : String(err)));
-
-
-const FROM_EMAIL = process.env.GMAIL_USER || 'noreply@openlearnx.org';
+// Use the FROM_EMAIL environment variable, fallback to a placeholder
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@openlearnx.shop';
 const APP_NAME = 'OpenLearnX';
 
 // ─── Core Send With Retry ─────────────────────────────────────────────────────
@@ -35,8 +13,8 @@ const sendWithRetry = async (
   mailOptions: { from: string; to: string; subject: string; html: string },
   retries = 3
 ): Promise<void> => {
-  // Dev fallback: if SMTP credentials are not set, log to console
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+  // Dev fallback: if Resend API key is not set, log to console
+  if (!process.env.RESEND_API_KEY) {
     console.log(`\n[DEV FALLBACK] Email to ${mailOptions.to}: ${mailOptions.subject}\n`);
     return;
   }
@@ -44,16 +22,24 @@ const sendWithRetry = async (
   let lastError: Error | undefined;
   for (let i = 0; i < retries; i++) {
     try {
-      // Create a fresh transporter per attempt to avoid stale connections
-      const t = createTransporter();
-      await t.sendMail(mailOptions);
-      console.log(`✅ Email sent via Gmail SMTP to ${mailOptions.to}`);
+      const { data, error } = await resend.emails.send({
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject,
+        html: mailOptions.html,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      console.log(`✅ Email sent via Resend to ${mailOptions.to} (ID: ${data?.id})`);
       return; // Success
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      console.error(`SMTP attempt ${i + 1}/${retries} failed:`, lastError.message);
+      console.error(`Resend attempt ${i + 1}/${retries} failed:`, lastError.message);
       if (i < retries - 1) {
-        await new Promise(r => setTimeout(r, 1500)); // fixed 1.5s wait between retries
+        await new Promise(r => setTimeout(r, 1500)); // 1.5s wait between retries
       }
     }
   }
