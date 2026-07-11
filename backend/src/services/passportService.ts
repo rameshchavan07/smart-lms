@@ -1,6 +1,8 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import prisma from '../config/db';
+import { generateUniqueSlug } from '../utils/slugify';
+import { sendNewInstituteNotification } from './instituteEmailService';
 
 export const configurePassport = () => {
   passport.use(
@@ -19,7 +21,7 @@ export const configurePassport = () => {
             return done(new Error('No email returned from Google'), undefined);
           }
 
-          let stateData: { instituteSlug?: string; action?: string } | null = null;
+          let stateData: { instituteSlug?: string; action?: string; instituteName?: string; phone?: string } | null = null;
           if (req.query.state) {
             try {
               stateData = JSON.parse(decodeURIComponent(req.query.state as string));
@@ -29,7 +31,37 @@ export const configurePassport = () => {
           }
 
           let targetInstituteId: string | undefined = undefined;
-          if (stateData?.instituteSlug) {
+
+          if (stateData?.action === 'register_institute' && stateData.instituteName) {
+            // Generating new institute on registration
+            const existingUser = await prisma.user.findFirst({
+              where: { OR: [{ googleId: profile.id }, { email }] }
+            });
+
+            if (existingUser && existingUser.instituteId) {
+              return done(new Error('User already associated with an institute.'), undefined);
+            }
+
+            const slug = await generateUniqueSlug(stateData.instituteName);
+            const institute = await prisma.institute.create({
+              data: {
+                name: stateData.instituteName,
+                slug,
+                email: email,
+                phone: stateData.phone,
+                status: 'PENDING'
+              }
+            });
+            targetInstituteId = institute.id;
+
+            const superAdmins = await prisma.user.findMany({
+              where: { role: 'SUPER_ADMIN' },
+              select: { email: true }
+            });
+            for (const sa of superAdmins) {
+              sendNewInstituteNotification(sa.email, stateData.instituteName, email).catch(console.error);
+            }
+          } else if (stateData?.instituteSlug) {
             const institute = await prisma.institute.findUnique({
               where: { slug: stateData.instituteSlug },
             });
@@ -49,19 +81,17 @@ export const configurePassport = () => {
             user = await prisma.user.findUnique({ where: { email } });
 
             if (user) {
-              // If we are logging into a specific institute, optionally check/assign it.
-              // For now, just link Google account.
+              // Link Google account
               user = await prisma.user.update({
                 where: { id: user.id },
                 data: { 
                   googleId: profile.id, 
                   isEmailVerified: true,
-                  ...(targetInstituteId && !user.instituteId ? { instituteId: targetInstituteId } : {})
+                  ...(targetInstituteId && !user.instituteId ? { instituteId: targetInstituteId, role: stateData?.action === 'register_institute' ? 'ADMIN' : user.role } : {})
                 },
               });
               
-              // If user didn't have a student profile but is joining an institute, create it.
-              if (targetInstituteId) {
+              if (targetInstituteId && user.role !== 'ADMIN') {
                 const studentProfile = await prisma.student.findUnique({ where: { userId: user.id } });
                 if (!studentProfile) {
                   await prisma.student.create({
@@ -74,13 +104,14 @@ export const configurePassport = () => {
               }
             } else {
               // Brand-new user
+              const role = targetInstituteId && stateData?.action === 'register_institute' ? 'ADMIN' : 'STUDENT';
               user = await prisma.user.create({
                 data: {
                   firstName,
                   lastName,
                   email,
                   passwordHash: null,
-                  role: 'STUDENT',
+                  role,
                   googleId: profile.id,
                   isEmailVerified: true,
                   profileImage: profile.photos?.[0]?.value,
@@ -88,27 +119,31 @@ export const configurePassport = () => {
                 },
               });
 
-              await prisma.student.create({
-                data: {
-                  userId: user.id,
-                  enrollmentNumber: `STU-${Date.now()}`,
-                },
-              });
+              if (role === 'STUDENT') {
+                await prisma.student.create({
+                  data: {
+                    userId: user.id,
+                    enrollmentNumber: `STU-${Date.now()}`,
+                  },
+                });
+              }
             }
           } else if (targetInstituteId && !user.instituteId) {
-             // If user logged in before via Google (no institute), and now logs into an institute
+             const newRole = stateData?.action === 'register_institute' ? 'ADMIN' : user.role;
              user = await prisma.user.update({
                where: { id: user.id },
-               data: { instituteId: targetInstituteId }
+               data: { instituteId: targetInstituteId, role: newRole }
              });
-             const studentProfile = await prisma.student.findUnique({ where: { userId: user.id } });
-             if (!studentProfile) {
-               await prisma.student.create({
-                 data: {
-                   userId: user.id,
-                   enrollmentNumber: `STU-${Date.now()}`,
-                 },
-               });
+             if (newRole !== 'ADMIN') {
+               const studentProfile = await prisma.student.findUnique({ where: { userId: user.id } });
+               if (!studentProfile) {
+                 await prisma.student.create({
+                   data: {
+                     userId: user.id,
+                     enrollmentNumber: `STU-${Date.now()}`,
+                   },
+                 });
+               }
              }
           }
 
