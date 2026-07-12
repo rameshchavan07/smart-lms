@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Play, Square, Pause, RotateCcw, UploadCloud, Download,
@@ -12,6 +12,9 @@ import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
+
+// ─── Constants ────────────────────────────────────────────────────────────
+const FFMPEG_BASE_URL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 const formatTime = (s: number) => {
@@ -91,12 +94,22 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
   const [trimEnd, setTrimEnd] = useState(Math.floor(duration));
   const [isTrimming, setIsTrimming] = useState(false);
   const [trimProgress, setTrimProgress] = useState(0);
+  const [trimError, setTrimError] = useState<string | null>(null);
   const ffmpegRef = useRef(new FFmpeg());
 
   const abortRef = useRef<AbortController | null>(null);
-  const videoUrl = React.useMemo(() => URL.createObjectURL(currentBlob), [currentBlob]);
-  const [prevBlob, setPrevBlob] = useState(blob);
 
+  // Derive videoUrl during render (no state needed). A separate effect handles
+  // cleanup only — no setState is called inside the effect body.
+  const videoUrl = useMemo(() => URL.createObjectURL(currentBlob), [currentBlob]);
+  useEffect(() => {
+    return () => URL.revokeObjectURL(videoUrl);
+  }, [videoUrl]);
+
+  // Sync blob/duration props using the React-recommended "compare during render"
+  // pattern. Calling setState conditionally *during* render (not inside an effect)
+  // is explicitly supported by React and avoids cascading renders.
+  const [prevBlob, setPrevBlob] = useState(blob);
   if (blob !== prevBlob) {
     setPrevBlob(blob);
     setCurrentBlob(blob);
@@ -107,49 +120,59 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
 
   const handleTrim = async () => {
     if (trimStart >= trimEnd || trimStart < 0 || trimEnd > currentDuration) {
-      alert("Invalid trim range");
+      // FIX #4: Use inline error state instead of blocking alert().
+      setTrimError('Invalid trim range. Please check start and end times.');
       return;
     }
-    
+    setTrimError(null);
+
     try {
       setIsTrimming(true);
       setTrimProgress(0);
       const ffmpeg = ffmpegRef.current;
-      
+
       if (!ffmpeg.loaded) {
-        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
         await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+          coreURL: await toBlobURL(`${FFMPEG_BASE_URL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${FFMPEG_BASE_URL}/ffmpeg-core.wasm`, 'application/wasm'),
         });
       }
 
-      ffmpeg.on('progress', ({ progress }) => {
+      // FIX #3: Store the progress handler so it can be removed after the operation,
+      // preventing duplicate listeners from stacking up on repeated trims.
+      const onProgress = ({ progress }: { progress: number }) => {
         setTrimProgress(Math.round(progress * 100));
-      });
+      };
+      ffmpeg.on('progress', onProgress);
 
-      await ffmpeg.writeFile('input.webm', await fetchFile(currentBlob));
-      
-      const formatTimeArg = (secs: number) => new Date(secs * 1000).toISOString().slice(11, 23);
-      
-      await ffmpeg.exec([
-        '-ss', formatTimeArg(trimStart),
-        '-to', formatTimeArg(trimEnd),
-        '-i', 'input.webm',
-        '-c', 'copy',
-        'output.webm'
-      ]);
-      
-      const data = await ffmpeg.readFile('output.webm');
-      const newBlob = new Blob([(data as Uint8Array).buffer], { type: 'video/webm' });
-      setCurrentBlob(newBlob);
-      const newDuration = trimEnd - trimStart;
-      setCurrentDuration(newDuration);
-      setTrimStart(0);
-      setTrimEnd(Math.floor(newDuration));
+      try {
+        await ffmpeg.writeFile('input.webm', await fetchFile(currentBlob));
+
+        const formatTimeArg = (secs: number) => new Date(secs * 1000).toISOString().slice(11, 23);
+
+        await ffmpeg.exec([
+          '-ss', formatTimeArg(trimStart),
+          '-to', formatTimeArg(trimEnd),
+          '-i', 'input.webm',
+          '-c', 'copy',
+          'output.webm'
+        ]);
+
+        const data = await ffmpeg.readFile('output.webm');
+        const newBlob = new Blob([data as BlobPart], { type: 'video/webm' });
+        setCurrentBlob(newBlob);
+        const newDuration = trimEnd - trimStart;
+        setCurrentDuration(newDuration);
+        setTrimStart(0);
+        setTrimEnd(Math.floor(newDuration));
+      } finally {
+        // Always remove the listener regardless of success or failure.
+        ffmpeg.off('progress', onProgress);
+      }
     } catch (e) {
       console.error(e);
-      alert('Error trimming video');
+      // FIX #4: Use inline error state instead of blocking alert().
+      setTrimError('Error trimming video. Please try again.');
     } finally {
       setIsTrimming(false);
     }
@@ -271,6 +294,11 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
               Trim
             </button>
           </div>
+          {trimError && (
+            <div className="px-1 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+              {trimError}
+            </div>
+          )}
         </div>
       )}
 
@@ -381,9 +409,9 @@ const RecordingStudioPage: React.FC = () => {
 
   const handleStop = useCallback(async () => { await stopRecording(); }, [stopRecording]);
 
-  const handleDiscard = async () => {
+  const handleDiscard = useCallback(async () => {
     await resetRecorder();
-  };
+  }, [resetRecorder]);
 
   const isActive = status === 'recording' || status === 'paused';
   const isIdle = status === 'idle' || status === 'error' || status === 'stopped';
