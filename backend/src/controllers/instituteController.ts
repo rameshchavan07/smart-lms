@@ -397,62 +397,13 @@ export const deleteInstitute = catchAsync(async (req: AuthRequest, res: Response
 
   if (!institute) throw new NotFoundError('Institute not found');
 
-  // Cascade delete: remove all users and courses belonging to this institute
-  // Courses must be deleted first due to foreign key constraints
-  const courses = await prisma.course.findMany({
-    where: { instituteId: id as string },
-    select: { id: true }
-  });
-
-  const courseIds = courses.map(c => c.id);
-
-  if (courseIds.length > 0) {
-    // Delete all course-dependent data
-    await prisma.$transaction([
-      prisma.certificate.deleteMany({ where: { courseId: { in: courseIds } } }),
-      prisma.announcement.deleteMany({ where: { courseId: { in: courseIds } } }),
-      prisma.discussionReply.deleteMany({ where: { discussion: { courseId: { in: courseIds } } } }),
-      prisma.discussion.deleteMany({ where: { courseId: { in: courseIds } } }),
-      prisma.message.deleteMany({ where: { group: { courseId: { in: courseIds } } } }),
-      prisma.chatGroupMember.deleteMany({ where: { group: { courseId: { in: courseIds } } } }),
-      prisma.chatGroup.deleteMany({ where: { courseId: { in: courseIds } } }),
-      prisma.quizAnswer.deleteMany({ where: { submission: { quiz: { courseId: { in: courseIds } } } } }),
-      prisma.quizSubmission.deleteMany({ where: { quiz: { courseId: { in: courseIds } } } }),
-      prisma.quizOption.deleteMany({ where: { question: { quiz: { courseId: { in: courseIds } } } } }),
-      prisma.quizQuestion.deleteMany({ where: { quiz: { courseId: { in: courseIds } } } }),
-      prisma.quiz.deleteMany({ where: { courseId: { in: courseIds } } }),
-      prisma.assignmentSubmission.deleteMany({ where: { assignment: { courseId: { in: courseIds } } } }),
-      prisma.assignment.deleteMany({ where: { courseId: { in: courseIds } } }),
-      prisma.studyMaterial.deleteMany({ where: { courseId: { in: courseIds } } }),
-      prisma.attendance.deleteMany({ where: { lecture: { courseId: { in: courseIds } } } }),
-      prisma.lecture.deleteMany({ where: { courseId: { in: courseIds } } }),
-      prisma.enrollment.deleteMany({ where: { courseId: { in: courseIds } } }),
-      prisma.course.deleteMany({ where: { instituteId: id as string } }),
-    ]);
-  }
-
-  // Delete all users belonging to this institute
-  const users = await prisma.user.findMany({
-    where: { instituteId: id as string },
-    select: { id: true },
-  });
-  const userIds = users.map(u => u.id);
-
-  if (userIds.length > 0) {
-    await prisma.$transaction([
-      prisma.auditLog.deleteMany({ where: { userId: { in: userIds } } }),
-      prisma.notification.deleteMany({ where: { userId: { in: userIds } } }),
-      prisma.pushSubscription.deleteMany({ where: { userId: { in: userIds } } }),
-      prisma.googleDriveFile.deleteMany({ where: { uploadedBy: { in: userIds } } }),
-      prisma.refreshToken.deleteMany({ where: { userId: { in: userIds } } }),
-      prisma.student.deleteMany({ where: { userId: { in: userIds } } }),
-      prisma.teacher.deleteMany({ where: { userId: { in: userIds } } }),
-      prisma.user.deleteMany({ where: { instituteId: id as string } }),
-    ]);
-  }
-
-  // Finally delete the institute
-  await prisma.institute.delete({ where: { id: id as string } });
+  // Soft delete all courses, users, and the institute
+  // The Prisma Client Extension will intercept these and set deletedAt = new Date()
+  await prisma.$transaction([
+    prisma.course.deleteMany({ where: { instituteId: id as string } }),
+    prisma.user.deleteMany({ where: { instituteId: id as string } }),
+    prisma.institute.delete({ where: { id: id as string } }),
+  ]);
 
   await logActivity(req.user.id, `Deleted Institute: ${institute.name} (${institute._count.users} users, ${institute._count.courses} courses)`, 'Institute', id as string);
 

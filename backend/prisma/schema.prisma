@@ -31,12 +31,14 @@ model Institute {
   supportPhone    String?         @db.VarChar(20)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
 
   users   User[]
   courses Course[]
 
   @@index([slug])
   @@index([status])
+  @@index([deletedAt])
 }
 
 model User {
@@ -63,6 +65,7 @@ model User {
   notificationsEnabled Boolean         @default(true)
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
   instituteId       String?
   institute         Institute?         @relation(fields: [instituteId], references: [id])
   auditLogs         AuditLog[]
@@ -79,6 +82,7 @@ model User {
   chatGroupMembers  ChatGroupMember[]
 
   @@index([email])
+  @@index([deletedAt])
 }
 
 model Teacher {
@@ -126,6 +130,7 @@ model Course {
   status         CourseStatus    @default(DRAFT)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
   instituteId    String?
   institute      Institute?      @relation(fields: [instituteId], references: [id])
   assignments    Assignment[]
@@ -140,6 +145,7 @@ model Course {
   certificates   Certificate[]
 
   @@index([teacherId])
+  @@index([deletedAt])
 }
 
 model Enrollment {
