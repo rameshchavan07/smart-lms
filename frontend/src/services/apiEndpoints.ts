@@ -46,6 +46,8 @@ export const API_ENDPOINTS = {
     BY_COURSE: (courseId: string) => `/lectures/course/${courseId}`,
     BY_ID: (id: string) => `/lectures/${id}`,
     RECORDING: (id: string) => `/lectures/${id}/recording`,
+    RECORDING_UPLOAD_URL: (id: string) => `/lectures/${id}/recording/upload-url`,
+    RECORDING_CONFIRM: (id: string) => `/lectures/${id}/recording/confirm`,
     THUMBNAIL: (id: string) => `/lectures/${id}/thumbnail`,
   },
   ATTENDANCE: {

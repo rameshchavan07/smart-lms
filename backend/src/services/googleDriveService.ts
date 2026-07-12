@@ -250,6 +250,79 @@ export const uploadFileToDrive = async (
 };
 
 /**
+ * Gets a resumable upload URL from Google Drive for direct-to-cloud uploads
+ */
+export const getResumableUploadUrl = async (
+  fileName: string,
+  mimeType: string,
+  parentFolderId?: string
+): Promise<string> => {
+  const drive = getDriveClient();
+  if (!drive) {
+    throw new Error('Google Drive not configured.');
+  }
+
+  const folderId = parentFolderId || process.env.GOOGLE_DRIVE_FOLDER_ID;
+  const parents = folderId ? [folderId] : [];
+
+  // @ts-ignore - access auth client
+  const authClient = await drive.context._options.auth;
+  // @ts-ignore
+  const token = await authClient.getAccessToken();
+
+  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token.token}`,
+      'Content-Type': 'application/json',
+      'X-Upload-Content-Type': mimeType
+    },
+    body: JSON.stringify({
+      name: fileName,
+      parents: parents
+    })
+  });
+
+  const location = response.headers.get('Location');
+  if (!location) {
+    throw new Error('Failed to get resumable upload URL from Google Drive');
+  }
+
+  return location;
+};
+
+/**
+ * Makes a Google Drive file publicly accessible and returns its links
+ */
+export const makeFilePublic = async (fileId: string) => {
+  const drive = getDriveClient();
+  if (!drive) throw new Error('Google Drive not configured.');
+
+  try {
+    await drive.permissions.create({
+      fileId,
+      supportsAllDrives: true,
+      requestBody: { role: 'reader', type: 'anyone' },
+    });
+    
+    const result = await drive.files.get({
+      fileId,
+      fields: 'id, webViewLink, webContentLink',
+      supportsAllDrives: true,
+    });
+    
+    return {
+      fileId: result.data.id,
+      webViewLink: result.data.webViewLink,
+      webContentLink: result.data.webContentLink,
+    };
+  } catch (error) {
+    console.error('[GoogleDrive] ❌ Failed to make file public:', getGoogleErrorMessage(error));
+    throw new Error(getGoogleErrorMessage(error));
+  }
+};
+
+/**
  * Deletes a file from Google Drive
  */
 export const deleteFileFromDrive = async (fileId: string) => {

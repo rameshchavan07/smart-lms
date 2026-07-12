@@ -11,6 +11,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@jitsi/react-sdk": "^1.4.4",
     "@tanstack/react-query": "^5.101.0",
     "axios": "^1.18.1",

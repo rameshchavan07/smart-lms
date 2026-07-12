@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -29,6 +29,8 @@ const Login: React.FC = () => {
   const [searchParams] = useSearchParams();
   const oauthError = searchParams.get('error');
 
+  const navigate = useNavigate();
+
   React.useEffect(() => {
     if (oauthError) {
       toast.error('Google authentication failed. Please try again.');
@@ -44,10 +46,17 @@ const Login: React.FC = () => {
       toast.success('Login successful!');
       login(data);
     } catch (err) {
-      const e2 = err as { response?: { data?: { message?: string } } };
+      const e2 = err as { response?: { data?: { message?: string }; status?: number } };
       const msg = e2.response?.data?.message || 'Login failed. Please try again.';
       setError(msg);
       toast.error(msg);
+      
+      // If the email is not verified, redirect them to the verification page
+      if (e2.response?.status === 403 && msg.includes('not verified')) {
+        setTimeout(() => {
+          navigate('/verify-email', { state: { email } });
+        }, 1500);
+      }
     } finally {
       setLoading(false);
     }

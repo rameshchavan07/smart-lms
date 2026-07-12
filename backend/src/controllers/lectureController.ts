@@ -5,7 +5,7 @@ import { generateJitsiToken } from '../services/jitsi.service';
 import { logActivity } from '../utils/auditLogger';
 import path from 'path';
 import fs from 'fs';
-import { getOrCreateFolderId, uploadFileToDrive, deleteFileFromDrive } from '../services/googleDriveService';
+import { getOrCreateFolderId, uploadFileToDrive, deleteFileFromDrive, getResumableUploadUrl, makeFilePublic } from '../services/googleDriveService';
 import { createNotification } from '../services/notificationService';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, NotFoundError, ValidationError, ForbiddenError, UnauthorizedError } from '../utils/AppError';
@@ -515,6 +515,100 @@ function slugify(text: string): string {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')           // Replace spaces with -
-    .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
     .replace(/\-\-+/g, '-');        // Replace multiple - with single -
 }
+
+export const getRecordingUploadUrl = catchAsync(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { fileName, mimeType } = req.body;
+
+  if (!fileName || !mimeType) {
+    throw new ValidationError('fileName and mimeType are required');
+  }
+
+  const lecture = await prisma.lecture.findUnique({
+    where: { id: id as string },
+    include: { 
+      course: {
+        include: { institute: { select: { name: true } } }
+      } 
+    }
+  });
+
+  if (!lecture) {
+    throw new NotFoundError('Lecture not found');
+  }
+
+  // Authorisation: must be the teacher who created the lecture or an admin
+  if (lecture.createdBy !== req.user!.id && req.user!.role !== 'ADMIN') {
+    throw new ForbiddenError('You can only upload recordings for your own lectures');
+  }
+
+  const instName = lecture.course.institute?.name || 'Global';
+  const instId = lecture.course.instituteId || 'global';
+  const courseName = lecture.course.title;
+  const cId = lecture.course.id;
+
+  // Resolve Google Drive target folder: Institutes/[Institute]/Courses/[Course]/Videos
+  const pathComponents = [
+    { path: 'institutes', name: 'Institutes' },
+    { path: `institutes/${instId}`, name: instName },
+    { path: `institutes/${instId}/courses`, name: 'Courses' },
+    { path: `institutes/${instId}/courses/${cId}`, name: courseName },
+    { path: `institutes/${instId}/courses/${cId}/Videos`, name: 'Videos' }
+  ];
+
+  const targetFolderId = await getOrCreateFolderId(pathComponents);
+
+  const uploadUrl = await getResumableUploadUrl(fileName, mimeType, targetFolderId);
+
+  res.json({ uploadUrl });
+});
+
+export const confirmRecordingUpload = catchAsync(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { fileId, fileName, size, duration } = req.body;
+
+  if (!fileId) {
+    throw new ValidationError('fileId is required');
+  }
+
+  const lecture = await prisma.lecture.findUnique({
+    where: { id: id as string },
+    include: { course: true },
+  });
+
+  if (!lecture) {
+    throw new NotFoundError('Lecture not found');
+  }
+
+  if (lecture.createdBy !== req.user!.id && req.user!.role !== 'ADMIN') {
+    throw new ForbiddenError('You can only modify your own lectures');
+  }
+
+  // Make the uploaded file public
+  const fileData = await makeFilePublic(fileId);
+
+  // Save to GoogleDriveFile table
+  await prisma.googleDriveFile.create({
+    data: {
+      driveFileId: fileData.fileId || fileId,
+      fileName: fileName || `recording-${lecture.id}.webm`,
+      fileUrl: fileData.webViewLink || '',
+      uploadedBy: req.user!.id,
+    }
+  });
+
+  const updatedLecture = await prisma.lecture.update({
+    where: { id: id as string },
+    data: { 
+      recordingUrl: fileData.webViewLink || '',
+      recordingSize: size ? parseInt(size, 10) : null,
+      recordingDuration: duration ? parseInt(duration, 10) : null
+    }
+  });
+
+  await logActivity(req.user!.id, `Confirmed direct upload recording for lecture: ${lecture.title}`, 'Lecture', lecture.id);
+
+  res.json({ message: 'Lecture recording confirmed successfully', lecture: updatedLecture });
+});

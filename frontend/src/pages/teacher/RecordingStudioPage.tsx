@@ -3,11 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import {
   Play, Square, Pause, RotateCcw, UploadCloud, Download,
   ArrowLeft, Settings, Video, VideoOff, Mic, MicOff,
-  X, Check, Loader2, ChevronDown, ChevronUp, Monitor
+  X, Check, Loader2, ChevronDown, ChevronUp, Monitor, Scissors
 } from 'lucide-react';
 import { useScreenRecorder, type RecordingQuality } from '../../hooks/useScreenRecorder';
 import api from '../../services/api';
+import axios from 'axios';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
+
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 const formatTime = (s: number) => {
@@ -75,12 +79,81 @@ interface PreviewPanelProps {
 }
 
 const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, onDiscard, onUploaded }) => {
+  const [currentBlob, setCurrentBlob] = useState(blob);
+  const [currentDuration, setCurrentDuration] = useState(duration);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Trimming State
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(Math.floor(duration));
+  const [isTrimming, setIsTrimming] = useState(false);
+  const [trimProgress, setTrimProgress] = useState(0);
+  const ffmpegRef = useRef(new FFmpeg());
+
   const abortRef = useRef<AbortController | null>(null);
-  const videoUrl = URL.createObjectURL(blob);
+  const videoUrl = React.useMemo(() => URL.createObjectURL(currentBlob), [currentBlob]);
+  const [prevBlob, setPrevBlob] = useState(blob);
+
+  if (blob !== prevBlob) {
+    setPrevBlob(blob);
+    setCurrentBlob(blob);
+    setCurrentDuration(duration);
+    setTrimStart(0);
+    setTrimEnd(Math.floor(duration));
+  }
+
+  const handleTrim = async () => {
+    if (trimStart >= trimEnd || trimStart < 0 || trimEnd > currentDuration) {
+      alert("Invalid trim range");
+      return;
+    }
+    
+    try {
+      setIsTrimming(true);
+      setTrimProgress(0);
+      const ffmpeg = ffmpegRef.current;
+      
+      if (!ffmpeg.loaded) {
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+      }
+
+      ffmpeg.on('progress', ({ progress }) => {
+        setTrimProgress(Math.round(progress * 100));
+      });
+
+      await ffmpeg.writeFile('input.webm', await fetchFile(currentBlob));
+      
+      const formatTimeArg = (secs: number) => new Date(secs * 1000).toISOString().slice(11, 23);
+      
+      await ffmpeg.exec([
+        '-ss', formatTimeArg(trimStart),
+        '-to', formatTimeArg(trimEnd),
+        '-i', 'input.webm',
+        '-c', 'copy',
+        'output.webm'
+      ]);
+      
+      const data = await ffmpeg.readFile('output.webm');
+      const newBlob = new Blob([(data as Uint8Array).buffer], { type: 'video/webm' });
+      setCurrentBlob(newBlob);
+      const newDuration = trimEnd - trimStart;
+      setCurrentDuration(newDuration);
+      setTrimStart(0);
+      setTrimEnd(Math.floor(newDuration));
+    } catch (e) {
+      console.error(e);
+      alert('Error trimming video');
+    } finally {
+      setIsTrimming(false);
+    }
+  };
 
   const handleDownload = () => {
     const a = document.createElement('a');
@@ -96,18 +169,30 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
     setUploadError(null);
     abortRef.current = new AbortController();
 
-    const formData = new FormData();
-    formData.append('recording', blob, `recording-${lectureId}.webm`);
-    formData.append('duration', duration.toString());
-
     try {
-      await api.put(API_ENDPOINTS.LECTURES.RECORDING(lectureId), formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const urlResponse = await api.post(API_ENDPOINTS.LECTURES.RECORDING_UPLOAD_URL(lectureId), {
+        fileName: `recording-${lectureId}.webm`,
+        mimeType: currentBlob.type || 'video/webm'
+      });
+      const uploadUrl = urlResponse.data.uploadUrl;
+
+      const driveResponse = await axios.put(uploadUrl, currentBlob, {
+        headers: { 'Content-Type': currentBlob.type || 'video/webm' },
         signal: abortRef.current.signal,
         onUploadProgress: (e) => {
           if (e.total) setUploadProgress(Math.round((e.loaded * 100) / e.total));
         },
       });
+
+      const fileId = driveResponse.data?.id;
+
+      await api.post(API_ENDPOINTS.LECTURES.RECORDING_CONFIRM(lectureId), {
+        fileId: fileId || '',
+        fileName: `recording-${lectureId}.webm`,
+        size: currentBlob.size,
+        duration: currentDuration,
+      });
+
       setUploadSuccess(true);
       setTimeout(() => onUploaded(), 2000);
     } catch (err: unknown) {
@@ -127,7 +212,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
         <div>
           <h3 className="text-white font-bold text-xl">Preview Recording</h3>
           <p className="text-white/40 text-sm mt-0.5">
-            Duration: {formatTime(duration)} · {(blob.size / (1024 * 1024)).toFixed(1)} MB · WebM
+            Duration: {formatTime(currentDuration)} · {(currentBlob.size / (1024 * 1024)).toFixed(1)} MB · WebM
           </p>
         </div>
         <button
@@ -140,11 +225,55 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
 
       <div className="rounded-2xl overflow-hidden bg-black flex-1 min-h-0 flex items-center justify-center">
         <video
+          key={videoUrl} // Force re-render on url change to reset state
           src={videoUrl}
           controls
           className="w-full h-full max-h-[340px] outline-none"
         />
       </div>
+
+      {/* Trim Controls */}
+      {!isUploading && !uploadSuccess && (
+        <div className="mt-4 p-4 rounded-xl bg-surface/5 border border-white/10 flex flex-col gap-3">
+          <div className="flex items-center justify-between text-sm text-white/60">
+            <span className="font-medium">Trim Video</span>
+            {isTrimming && <span className="text-primary">{trimProgress}%</span>}
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-xs text-white/40">Start Time (sec)</label>
+              <input
+                type="number"
+                min={0}
+                max={trimEnd - 1}
+                value={trimStart}
+                onChange={e => setTrimStart(Number(e.target.value))}
+                className="bg-black/50 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-xs text-white/40">End Time (sec)</label>
+              <input
+                type="number"
+                min={trimStart + 1}
+                max={Math.floor(currentDuration)}
+                value={trimEnd}
+                onChange={e => setTrimEnd(Number(e.target.value))}
+                className="bg-black/50 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+              />
+            </div>
+            <button
+              onClick={handleTrim}
+              disabled={isTrimming || trimStart >= trimEnd || (trimStart === 0 && trimEnd === Math.floor(currentDuration))}
+              className="mt-5 flex items-center gap-2 px-4 py-1.5 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition disabled:opacity-50"
+            >
+              {isTrimming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Scissors className="w-4 h-4" />}
+              Trim
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {/* Upload progress */}
       {isUploading && (

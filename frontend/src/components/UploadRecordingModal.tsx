@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, UploadCloud } from 'lucide-react';
+import axios from 'axios';
 import api from '../services/api';
 import { API_ENDPOINTS } from '../services/apiEndpoints';
 import Button from './Button';
@@ -32,16 +33,31 @@ const UploadRecordingModal: React.FC<UploadRecordingModalProps> = ({
     setUploading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append('recording', selectedFile);
-
     try {
-      await api.put(API_ENDPOINTS.LECTURES.RECORDING(lectureId), formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 120000, // 5 min timeout for large video files
+      // 1. Get the upload URL from our backend
+      const urlResponse = await api.post(API_ENDPOINTS.LECTURES.RECORDING_UPLOAD_URL(lectureId), {
+        fileName: selectedFile.name,
+        mimeType: selectedFile.type || 'video/webm'
       });
+      const uploadUrl = urlResponse.data.uploadUrl;
+
+      // 2. Upload directly to Google Drive
+      const driveResponse = await axios.put(uploadUrl, selectedFile, {
+        headers: {
+          'Content-Type': selectedFile.type || 'video/webm',
+        },
+        timeout: 0,
+      });
+
+      const fileId = driveResponse.data?.id;
+
+      // 3. Confirm upload with our backend
+      await api.post(API_ENDPOINTS.LECTURES.RECORDING_CONFIRM(lectureId), {
+        fileId: fileId || '',
+        fileName: selectedFile.name,
+        size: selectedFile.size,
+      });
+
       onSuccess();
       onClose();
     } catch (err: unknown) {

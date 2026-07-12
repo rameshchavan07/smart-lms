@@ -13,6 +13,9 @@ import {
   sendInstituteSuspensionEmail,
   sendInstituteReactivationEmail,
 } from '../services/instituteEmailService';
+import { getCache, setCache, invalidateCacheByPattern } from '../utils/cache';
+import { CACHE_KEYS, CACHE_TTL } from '../utils/cacheKeys';
+
 
 // ─── GET ALL INSTITUTES (Super Admin, with status filter) ────────────────────
 export const getInstitutes = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -87,6 +90,13 @@ export const getInstituteById = catchAsync(async (req: AuthRequest, res: Respons
 // ─── GET INSTITUTE BY SLUG (Public) ─────────────────────────────────────────
 export const getInstituteBySlug = catchAsync(async (req: Request, res: Response) => {
   const { slug } = req.params;
+  const cacheKey = CACHE_KEYS.INSTITUTE_SLUG(slug as string);
+
+  const cached = await getCache<object>(cacheKey);
+  if (cached) {
+    res.json(cached);
+    return;
+  }
 
   const institute = await prisma.institute.findUnique({
     where: { slug: slug as string },
@@ -117,7 +127,10 @@ export const getInstituteBySlug = catchAsync(async (req: Request, res: Response)
     throw new NotFoundError('Institute not found');
   }
 
-  res.json({ institute });
+  const responseData = { institute };
+  await setCache(cacheKey, responseData, CACHE_TTL.INSTITUTE_SLUG);
+
+  res.json(responseData);
 });
 
 // ─── CREATE INSTITUTE (Super Admin — auto-approved) ─────────────────────────
@@ -156,7 +169,8 @@ export const createInstitute = catchAsync(async (req: AuthRequest, res: Response
 
   await logActivity(req.user.id, `Created Institute: ${name}`, 'Institute', institute.id);
 
-  res.status(201).json({ message: 'Institute created successfully', institute });
+    await invalidateCacheByPattern(CACHE_KEYS.INSTITUTE_PATTERN);
+res.status(201).json({ message: 'Institute created successfully', institute });
 });
 
 // ─── UPDATE INSTITUTE (Super Admin) ──────────────────────────────────────────
@@ -187,7 +201,8 @@ export const updateInstitute = catchAsync(async (req: AuthRequest, res: Response
 
   await logActivity(req.user.id, `Updated Institute: ${name}`, 'Institute', institute.id);
 
-  res.json({ message: 'Institute updated successfully', institute });
+    await invalidateCacheByPattern(CACHE_KEYS.INSTITUTE_PATTERN);
+res.json({ message: 'Institute updated successfully', institute });
 });
 
 // ─── APPROVE INSTITUTE (Super Admin) ─────────────────────────────────────────
@@ -231,7 +246,8 @@ export const approveInstitute = catchAsync(async (req: AuthRequest, res: Respons
     sendInstituteApprovalEmail(admin.email, admin.firstName, institute.name, institute.slug).catch(console.error);
   }
 
-  res.json({ message: 'Institute approved successfully' });
+    await invalidateCacheByPattern(CACHE_KEYS.INSTITUTE_PATTERN);
+res.json({ message: 'Institute approved successfully' });
 });
 
 // ─── REJECT INSTITUTE (Super Admin) ──────────────────────────────────────────
@@ -278,7 +294,8 @@ export const rejectInstitute = catchAsync(async (req: AuthRequest, res: Response
     sendInstituteRejectionEmail(admin.email, admin.firstName, institute.name, reason.trim()).catch(console.error);
   }
 
-  res.json({ message: 'Institute rejected' });
+    await invalidateCacheByPattern(CACHE_KEYS.INSTITUTE_PATTERN);
+res.json({ message: 'Institute rejected' });
 });
 
 // ─── SUSPEND INSTITUTE (Super Admin) ─────────────────────────────────────────
@@ -317,7 +334,8 @@ export const suspendInstitute = catchAsync(async (req: AuthRequest, res: Respons
     sendInstituteSuspensionEmail(admin.email, admin.firstName, institute.name).catch(console.error);
   }
 
-  res.json({ message: 'Institute suspended' });
+    await invalidateCacheByPattern(CACHE_KEYS.INSTITUTE_PATTERN);
+res.json({ message: 'Institute suspended' });
 });
 
 // ─── REACTIVATE INSTITUTE (Super Admin) ──────────────────────────────────────
@@ -360,7 +378,8 @@ export const reactivateInstitute = catchAsync(async (req: AuthRequest, res: Resp
     sendInstituteReactivationEmail(admin.email, admin.firstName, institute.name, institute.slug).catch(console.error);
   }
 
-  res.json({ message: 'Institute reactivated successfully' });
+    await invalidateCacheByPattern(CACHE_KEYS.INSTITUTE_PATTERN);
+res.json({ message: 'Institute reactivated successfully' });
 });
 
 // ─── DELETE INSTITUTE (Super Admin) ──────────────────────────────────────────
@@ -437,7 +456,8 @@ export const deleteInstitute = catchAsync(async (req: AuthRequest, res: Response
 
   await logActivity(req.user.id, `Deleted Institute: ${institute.name} (${institute._count.users} users, ${institute._count.courses} courses)`, 'Institute', id as string);
 
-  res.json({ message: 'Institute and all associated data deleted successfully' });
+    await invalidateCacheByPattern(CACHE_KEYS.INSTITUTE_PATTERN);
+res.json({ message: 'Institute and all associated data deleted successfully' });
 });
 
 // ─── GET MY INSTITUTE SETTINGS (Admin) ──────────────────────────────────────
@@ -519,7 +539,8 @@ export const updateMyInstituteSettings = catchAsync(async (req: AuthRequest, res
     await logActivity(req.user.id, `Updated Institute Settings`, 'Institute', instituteId);
   }
 
-  res.json({ institute });
+    await invalidateCacheByPattern(CACHE_KEYS.INSTITUTE_PATTERN);
+res.json({ institute });
 });
 
 // ─── UPLOAD MY INSTITUTE LOGO (Admin) ───────────────────────────────────────
@@ -544,5 +565,6 @@ export const uploadMyInstituteLogo = catchAsync(async (req: AuthRequest, res: Re
     await logActivity(req.user.id, `Updated Institute Logo`, 'Institute', instituteId);
   }
 
-  res.json({ logoUrl, message: 'Logo updated successfully' });
+    await invalidateCacheByPattern(CACHE_KEYS.INSTITUTE_PATTERN);
+res.json({ logoUrl, message: 'Logo updated successfully' });
 });

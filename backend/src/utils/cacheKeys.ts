@@ -8,6 +8,11 @@ export const CACHE_KEYS = {
   TEACHER_STATS: (teacherId: string) => `analytics:teacher_stats:${teacherId}`,
   STUDENT_STATS: (studentId: string) => `analytics:student_stats:${studentId}`,
 
+  // Institutes
+  INSTITUTE_SLUG: (slug: string) => `institute:slug:${slug}`,
+  INSTITUTE_PATTERN: 'institute:*',
+
+
   // Courses
   COURSES: (instituteId: string | null, page: number, limit: number, search: string) =>
     `courses:inst:${instituteId ?? 'all'}:page:${page}:limit:${limit}:search:${search ?? ''}`,
@@ -55,6 +60,7 @@ export const CACHE_TTL = {
   ADMIN_STATS: 5 * 60,           // 5 minutes
   TEACHER_STATS: 5 * 60,         // 5 minutes
   STUDENT_STATS: 5 * 60,         // 5 minutes
+  INSTITUTE_SLUG: 10 * 60,       // 10 minutes — rarely changes, high read traffic
   COURSES: 2 * 60,               // 2 minutes
   TEACHER_COURSES: 5 * 60,       // 5 minutes
   USERS: 2 * 60,                 // 2 minutes

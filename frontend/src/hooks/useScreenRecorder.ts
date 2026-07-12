@@ -75,6 +75,11 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
   const pauseStartDuration = useRef<number>(0);
   const dbRef = useRef<IDBDatabase | null>(null);
 
+  const pipAnimFrameRef = useRef<number | null>(null);
+  const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const displayVideoRef = useRef<HTMLVideoElement | null>(null);
+  const webcamVideoRef = useRef<HTMLVideoElement | null>(null);
+
   // Stable ref to stopRecording, so it can be called inside startRecording's onended
   // without creating a circular useCallback dependency
   const stopRecordingRef = useRef<() => Promise<Blob | null>>(() => Promise.resolve(null));
@@ -110,13 +115,30 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
     }
   }, []);
 
+  const cleanupPip = useCallback(() => {
+    if (pipAnimFrameRef.current) cancelAnimationFrame(pipAnimFrameRef.current);
+    pipAnimFrameRef.current = null;
+    if (displayVideoRef.current) {
+      displayVideoRef.current.pause();
+      displayVideoRef.current.srcObject = null;
+      displayVideoRef.current = null;
+    }
+    if (webcamVideoRef.current) {
+      webcamVideoRef.current.pause();
+      webcamVideoRef.current.srcObject = null;
+      webcamVideoRef.current = null;
+    }
+    pipCanvasRef.current = null;
+  }, []);
+
   // Open IndexedDB on mount; stopAudioMeter is declared above so cleanup is safe
   useEffect(() => {
     openDB().then(db => { dbRef.current = db; }).catch(console.warn);
     return () => {
       stopAudioMeter();
+      cleanupPip();
     };
-  }, [stopAudioMeter]);
+  }, [stopAudioMeter, cleanupPip]);
 
   // ── Stop ───────────────────────────────────────────────────────────────
   // Declared BEFORE startRecording so startRecording can safely reference
@@ -142,6 +164,7 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
         webcamRef.current = null;
 
         stopAudioMeter();
+        cleanupPip();
         if (timerInterval.current) clearInterval(timerInterval.current);
         setStatus('stopped');
         resolve(blob);
@@ -153,7 +176,7 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
         resolve(null);
       }
     });
-  }, [stopAudioMeter]);
+  }, [stopAudioMeter, cleanupPip]);
 
   // Keep the ref in sync with the latest stopRecording
   useEffect(() => {
@@ -177,9 +200,9 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
 
       // Quality constraints
       const videoConstraints =
-        quality === '4K'    ? { width: { ideal: 3840 }, height: { ideal: 2160 } } :
-        quality === '1080p' ? { width: { ideal: 1920 }, height: { ideal: 1080 } } :
-                             { width: { ideal: 1280 }, height: { ideal: 720  } };
+        quality === '4K'    ? { width: { ideal: 3840 }, height: { ideal: 2160 }, frameRate: { ideal: 60 } } :
+        quality === '1080p' ? { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } } :
+                             { width: { ideal: 1280 }, height: { ideal: 720  }, frameRate: { ideal: 60 } };
 
       // 1. Screen + System Audio
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
@@ -206,10 +229,82 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
         }
       }
 
-      // 4. Mix audio
+      // 4. Mix video (True PiP Compositing)
       const combinedStream = new MediaStream();
-      displayStream.getVideoTracks().forEach(t => combinedStream.addTrack(t));
+      const camStream = enableWebcam ? webcamRef.current : null;
 
+      if (camStream) {
+        const canvas = document.createElement('canvas');
+        pipCanvasRef.current = canvas;
+        const width = videoConstraints.width?.ideal || 1280;
+        const height = videoConstraints.height?.ideal || 720;
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        
+        const displayVideo = document.createElement('video');
+        displayVideo.srcObject = displayStream;
+        displayVideo.muted = true;
+        displayVideo.playsInline = true;
+        displayVideoRef.current = displayVideo;
+        
+        const webcamVideo = document.createElement('video');
+        webcamVideo.srcObject = camStream;
+        webcamVideo.muted = true;
+        webcamVideo.playsInline = true;
+        webcamVideoRef.current = webcamVideo;
+
+        await Promise.all([
+          displayVideo.play().catch(() => {}),
+          webcamVideo.play().catch(() => {})
+        ]);
+
+        const drawPip = () => {
+          if (!ctx) return;
+          ctx.drawImage(displayVideo, 0, 0, width, height);
+          
+          const camWidth = width * 0.2; // 20%
+          const camHeight = (webcamVideo.videoHeight / Math.max(webcamVideo.videoWidth, 1)) * camWidth || (camWidth * 9/16);
+          const padding = width * 0.02; // 2% padding
+          
+          const extendedCtx = ctx as CanvasRenderingContext2D & {
+            roundRect?: (x: number, y: number, w: number, h: number, radii?: number | number[]) => void;
+          };
+
+          ctx.save();
+          ctx.beginPath();
+          if (extendedCtx.roundRect) {
+            extendedCtx.roundRect(width - camWidth - padding, height - camHeight - padding, camWidth, camHeight, 16);
+          } else {
+            ctx.rect(width - camWidth - padding, height - camHeight - padding, camWidth, camHeight);
+          }
+          ctx.clip();
+          ctx.drawImage(webcamVideo, width - camWidth - padding, height - camHeight - padding, camWidth, camHeight);
+          ctx.restore();
+          
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          if (extendedCtx.roundRect) {
+            extendedCtx.roundRect(width - camWidth - padding, height - camHeight - padding, camWidth, camHeight, 16);
+          } else {
+            ctx.rect(width - camWidth - padding, height - camHeight - padding, camWidth, camHeight);
+          }
+          ctx.stroke();
+
+          pipAnimFrameRef.current = requestAnimationFrame(drawPip);
+        };
+        drawPip();
+
+        // 30 FPS for PiP video
+        const canvasStream = canvas.captureStream(30);
+        canvasStream.getVideoTracks().forEach(t => combinedStream.addTrack(t));
+      } else {
+        displayStream.getVideoTracks().forEach(t => combinedStream.addTrack(t));
+      }
+
+      // 5. Mix audio
       const hasDisplayAudio = displayStream.getAudioTracks().length > 0;
       const hasMicAudio = micStream && micStream.getAudioTracks().length > 0;
 
@@ -231,12 +326,20 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
       // Clear old cached chunks
       if (dbRef.current) await clearDB(dbRef.current);
 
-      // 5. MediaRecorder
+      // 6. MediaRecorder
+      const videoBitsPerSecond =
+        quality === '4K' ? 8000000 : // 8 Mbps
+        quality === '1080p' ? 5000000 : // 5 Mbps
+        2500000; // 2.5 Mbps
+
       const mimeType = MediaRecorder.isTypeSupported('video/webm; codecs=vp9,opus')
         ? 'video/webm; codecs=vp9,opus'
         : 'video/webm; codecs=vp8,opus';
 
-      mediaRecorder.current = new MediaRecorder(combinedStream, { mimeType });
+      mediaRecorder.current = new MediaRecorder(combinedStream, { 
+        mimeType,
+        videoBitsPerSecond
+      });
 
       mediaRecorder.current.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
@@ -300,7 +403,8 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
   }, [startAudioMeter]);
 
   // ── Reset ──────────────────────────────────────────────────────────────
-  const resetRecorder = useCallback(async () => {
+  const resetRecorder = async () => {
+    cleanupPip();
     if (dbRef.current) await clearDB(dbRef.current);
     chunks.current = [];
     setPreviewBlob(null);
@@ -310,7 +414,7 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
     setAudioLevel(0);
     setError(null);
     setStatus('idle');
-  }, []);
+  };
 
   return {
     status,

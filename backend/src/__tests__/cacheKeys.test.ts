@@ -20,6 +20,16 @@ describe('CACHE_KEYS', () => {
     });
   });
 
+  describe('Institute keys', () => {
+    it('INSTITUTE_SLUG is scoped to slug', () => {
+      expect(CACHE_KEYS.INSTITUTE_SLUG('test-institute')).toBe('institute:slug:test-institute');
+    });
+
+    it('INSTITUTE_PATTERN is a glob for all institute keys', () => {
+      expect(CACHE_KEYS.INSTITUTE_PATTERN).toBe('institute:*');
+    });
+  });
+
   describe('Course keys', () => {
     it('COURSES encodes all params into the key', () => {
       const key = CACHE_KEYS.COURSES('inst-1', 1, 10, 'math');
