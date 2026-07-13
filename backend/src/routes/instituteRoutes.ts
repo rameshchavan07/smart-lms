@@ -13,6 +13,7 @@ import {
   updateMyInstituteSettings,
   getMyInstitute,
   uploadMyInstituteLogo,
+  getSuperAdminStats,
 } from '../controllers/instituteController';
 import { protect, authorize } from '../middleware/auth';
 import { uploadThumbnail } from '../middleware/upload';
@@ -34,6 +35,7 @@ router.post('/settings/logo', authorize('ADMIN'), uploadThumbnail.single('logo')
 router.use(authorize('SUPER_ADMIN'));
 
 // CRUD
+router.get('/stats', getSuperAdminStats);
 router.get('/', getInstitutes);
 router.get('/:id', getInstituteById);
 router.post('/', createInstitute);

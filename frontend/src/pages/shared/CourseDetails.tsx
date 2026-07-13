@@ -97,7 +97,7 @@ const CourseDetails: React.FC = () => {
         </div>
 
         {user?.role === 'STUDENT' && progress !== undefined && progress !== null && (
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-6 min-w-[300px]">
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-6 w-full md:min-w-[300px]">
             <div className="flex-1">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-sm font-semibold text-slate-700">Course Progress</span>

@@ -3,7 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
-import { Loader2, Users, Calendar, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Loader2, Users, Calendar, CheckCircle2, XCircle, Clock, Download } from 'lucide-react';
+import { downloadCsv } from '../../services/exportCsv';
+import toast from 'react-hot-toast';
 
 export const AttendanceTab: React.FC<{ courseId: string }> = ({ courseId }) => {
   const { user } = useAuth();
@@ -61,12 +63,31 @@ const TeacherAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
     );
   }
 
+  const handleExport = async () => {
+    if (!selectedLecture) return;
+    try {
+      const url = API_ENDPOINTS.ATTENDANCE.EXPORT(selectedLecture);
+      await downloadCsv(url, `attendance-export-${selectedLecture}.csv`);
+    } catch {
+      toast.error('Failed to export CSV');
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="text-lg font-bold">Attendance Reports</h2>
         
         <div className="flex items-center gap-2">
+          {selectedLecture && (
+            <button
+              onClick={handleExport}
+              className="btn btn-secondary btn-sm flex items-center gap-1.5 mr-2"
+            >
+              <Download size={14} />
+              Export Report
+            </button>
+          )}
           <Calendar size={18} className="text-secondary" />
           <select 
             className="input text-sm py-2 px-3 border-border bg-bg text-primary rounded-lg focus:border-brand-500"
@@ -212,8 +233,8 @@ const StudentAttendanceView: React.FC<{ courseId: string }> = ({ courseId }) => 
         </div>
       </div>
 
-      <div className="bg-bg border border-border rounded-xl overflow-hidden mt-6">
-        <table className="w-full text-left border-collapse text-sm">
+      <div className="bg-bg border border-border rounded-xl overflow-x-auto mt-6">
+        <table className="min-w-full text-left border-collapse text-sm">
           <thead>
             <tr className="bg-bg-subtle text-secondary border-b border-border">
               <th className="px-6 py-3 font-semibold">Date</th>

@@ -22,7 +22,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ items }) => {
   };
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border flex justify-around items-center h-16 pb-safe">
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-surface border-t border-border flex justify-around items-center h-16 pb-safe">
       {items.map((item) => {
         const active = isActive(item.href);
         return (

@@ -235,6 +235,12 @@ export const submitQuiz = catchAsync(async (req: AuthRequest, res: Response) => 
     }
   });
 
+  // Award XP
+  await prisma.student.update({
+    where: { id: student.id },
+    data: { xpPoints: { increment: 50 } }
+  });
+
   // Invalidate student stats so dashboard reflects updated quiz scores
   await invalidateCache(CACHE_KEYS.STUDENT_STATS(userId));
 
@@ -260,4 +266,24 @@ export const getQuizSubmissions = catchAsync(async (req: AuthRequest, res: Respo
   });
 
   res.json({ submissions });
+});
+
+export const generateAIQuiz = catchAsync(async (req: AuthRequest, res: Response) => {
+  const { topic, text, numQuestions = 5 } = req.body;
+
+  // Simulate LLM processing time
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  const questions = Array.from({ length: Number(numQuestions) }).map((_, i) => ({
+    text: `(AI Generated) What is a key concept related to ${topic || 'the provided text'}? (Question ${i + 1})`,
+    marks: 10,
+    options: [
+      { text: `The primary correct concept for Q${i + 1}`, isCorrect: true },
+      { text: `A common misconception for Q${i + 1}`, isCorrect: false },
+      { text: `An unrelated concept for Q${i + 1}`, isCorrect: false },
+      { text: `A partially true but incorrect answer for Q${i + 1}`, isCorrect: false }
+    ]
+  }));
+
+  res.json({ questions });
 });

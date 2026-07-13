@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Play, Square, Pause, RotateCcw, UploadCloud, Download,
   ArrowLeft, Settings, Video, VideoOff, Mic, MicOff,
-  X, Check, Loader2, ChevronDown, ChevronUp, Monitor, Scissors
+  X, Check, Loader2, ChevronDown, ChevronUp, Monitor, Scissors,
+  Bookmark, Pencil, Volume2, VolumeX
 } from 'lucide-react';
 import { useScreenRecorder, type RecordingQuality } from '../../hooks/useScreenRecorder';
 import api from '../../services/api';
@@ -11,6 +12,7 @@ import axios from 'axios';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import AnnotationOverlay from './AnnotationOverlay';
 
 
 // ─── Constants ────────────────────────────────────────────────────────────
@@ -72,16 +74,24 @@ const CountdownOverlay: React.FC<{ count: number }> = ({ count }) => (
   </div>
 );
 
+// ─── Chapter type ──────────────────────────────────────────────────────────
+export interface Chapter {
+  id: number;
+  time: number;   // seconds from recording start
+  label: string;
+}
+
 // ─── Preview Panel ─────────────────────────────────────────────────────────
 interface PreviewPanelProps {
   blob: Blob;
   duration: number;
   lectureId?: string;
+  chapters?: Chapter[];
   onDiscard: () => void;
   onUploaded: () => void;
 }
 
-const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, onDiscard, onUploaded }) => {
+const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, chapters = [], onDiscard, onUploaded }) => {
   const [currentBlob, setCurrentBlob] = useState(blob);
   const [currentDuration, setCurrentDuration] = useState(duration);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -246,6 +256,21 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ blob, duration, lectureId, 
         </button>
       </div>
 
+      {/* Chapters in preview */}
+      {chapters.length > 0 && (
+        <div className="mb-4 p-3 rounded-xl bg-surface/5 border border-white/10">
+          <p className="text-white/40 text-[11px] uppercase tracking-wider mb-2">Chapters</p>
+          <div className="flex flex-col gap-1.5">
+            {chapters.map(ch => (
+              <div key={ch.id} className="flex items-center gap-2 text-sm">
+                <span className="font-mono text-primary/80 text-xs w-12 shrink-0">{formatTime(ch.time)}</span>
+                <span className="text-white/70">{ch.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="rounded-2xl overflow-hidden bg-black flex-1 min-h-0 flex items-center justify-center">
         <video
           key={videoUrl} // Force re-render on url change to reset state
@@ -377,9 +402,15 @@ const RecordingStudioPage: React.FC = () => {
   const navigate = useNavigate();
   const [quality, setQuality] = useState<RecordingQuality>('720p');
   const [enableWebcam, setEnableWebcam] = useState(false);
+  const [enableNoiseSuppression, setEnableNoiseSuppression] = useState(true);
   const [selectedLectureId, setSelectedLectureId] = useState('');
-  // Derived from recorder state — no setState-in-effect needed
   const [settingsOpen, setSettingsOpen] = useState(true);
+  // Chapters / Bookmarks
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [editingChapterId, setEditingChapterId] = useState<number | null>(null);
+  const chapterCounterRef = useRef(0);
+  // Annotation overlay
+  const [isAnnotating, setIsAnnotating] = useState(false);
   const webcamVideoRef = useRef<HTMLVideoElement>(null);
 
   const {
@@ -396,7 +427,7 @@ const RecordingStudioPage: React.FC = () => {
     resumeRecording,
     stopRecording,
     resetRecorder,
-  } = useScreenRecorder({ quality, enableWebcam });
+  } = useScreenRecorder({ quality, enableWebcam, enableNoiseSuppression });
 
   useEffect(() => {
     if (webcamVideoRef.current && webcamStream) {
@@ -410,8 +441,33 @@ const RecordingStudioPage: React.FC = () => {
   const handleStop = useCallback(async () => { await stopRecording(); }, [stopRecording]);
 
   const handleDiscard = useCallback(async () => {
+    setChapters([]);
+    chapterCounterRef.current = 0;
+    setIsAnnotating(false);
     await resetRecorder();
   }, [resetRecorder]);
+
+  // ── Add chapter ──────────────────────────────────────────────────────────
+  const addChapter = useCallback(() => {
+    if (status !== 'recording' && status !== 'paused') return;
+    chapterCounterRef.current += 1;
+    const id = chapterCounterRef.current;
+    setChapters(prev => [
+      ...prev,
+      { id, time: duration, label: `Chapter ${id}` },
+    ]);
+  }, [status, duration]);
+
+  // ── Keyboard shortcuts ───────────────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Ignore when typing in an input / textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'b' || e.key === 'B') addChapter();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [addChapter]);
 
   const isActive = status === 'recording' || status === 'paused';
   const isIdle = status === 'idle' || status === 'error' || status === 'stopped';
@@ -512,12 +568,20 @@ const RecordingStudioPage: React.FC = () => {
                   blob={previewBlob}
                   duration={duration}
                   lectureId={selectedLectureId || undefined}
+                  chapters={chapters}
                   onDiscard={handleDiscard}
                   onUploaded={() => { resetRecorder(); }}
                 />
               </div>
             ) : (
               <>
+                {/* Annotation overlay */}
+                <AnnotationOverlay
+                  active={isActive}
+                  isAnnotating={isAnnotating}
+                  onToggle={() => setIsAnnotating(a => !a)}
+                />
+
                 {/* Webcam PiP */}
                 {webcamStream && (
                   <div className="absolute top-4 right-4 w-40 h-28 rounded-xl overflow-hidden border-2 border-white/20 shadow-2xl">
@@ -610,7 +674,7 @@ const RecordingStudioPage: React.FC = () => {
 
           {/* Control buttons */}
           {!showPreview && (
-            <div className="flex items-center justify-center gap-4 mt-6">
+            <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
               {isIdle && (
                 <button
                   onClick={startRecording}
@@ -667,6 +731,43 @@ const RecordingStudioPage: React.FC = () => {
                     <Square className="w-5 h-5" /> Stop & Preview
                   </button>
                 </>
+              )}
+
+              {/* Annotation toggle (only while active) */}
+              {isActive && (
+                <button
+                  onClick={() => setIsAnnotating(a => !a)}
+                  title="Toggle drawing mode (shortcut: D)"
+                  className="flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-bold transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    background: isAnnotating
+                      ? 'rgba(139,92,246,0.3)'
+                      : 'rgba(255,255,255,0.08)',
+                    color: isAnnotating ? '#c4b5fd' : 'rgba(255,255,255,0.5)',
+                    border: isAnnotating
+                      ? '1px solid rgba(139,92,246,0.5)'
+                      : '1px solid rgba(255,255,255,0.1)',
+                  }}
+                >
+                  <Pencil className="w-4 h-4" />
+                  {isAnnotating ? 'Drawing…' : 'Annotate'}
+                </button>
+              )}
+
+              {/* Add Chapter button (only while active) */}
+              {isActive && (
+                <button
+                  onClick={addChapter}
+                  title="Add chapter bookmark (shortcut: B)"
+                  className="flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-bold transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    background: 'rgba(245,158,11,0.15)',
+                    color: '#fbbf24',
+                    border: '1px solid rgba(245,158,11,0.3)',
+                  }}
+                >
+                  <Bookmark className="w-4 h-4" /> Chapter
+                </button>
               )}
             </div>
           )}
@@ -767,6 +868,38 @@ const RecordingStudioPage: React.FC = () => {
                   </div>
                 </button>
               </div>
+
+              {/* Noise Suppression */}
+              <div>
+                <label className="text-white/40 text-[11px] uppercase tracking-wider block mb-2">
+                  Noise Suppression
+                </label>
+                <button
+                  onClick={() => setEnableNoiseSuppression(n => !n)}
+                  disabled={isActive || status === 'countdown'}
+                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: enableNoiseSuppression ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)',
+                    border: enableNoiseSuppression ? '1px solid rgba(16,185,129,0.35)' : '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <span className="flex items-center gap-2 text-sm font-medium text-white/70">
+                    {enableNoiseSuppression
+                      ? <Volume2 className="w-4 h-4" style={{ color: '#34d399' }} />
+                      : <VolumeX className="w-4 h-4" />}
+                    {enableNoiseSuppression ? 'On (Recommended)' : 'Off (Raw mic)'}
+                  </span>
+                  <div
+                    className="w-9 h-5 rounded-full relative transition-all"
+                    style={{ background: enableNoiseSuppression ? '#10b981' : 'rgba(255,255,255,0.1)' }}
+                  >
+                    <div
+                      className="absolute top-0.5 w-4 h-4 bg-surface rounded-full shadow transition-all"
+                      style={{ left: enableNoiseSuppression ? '18px' : '2px' }}
+                    />
+                  </div>
+                </button>
+              </div>
             </div>
           )}
 
@@ -782,14 +915,59 @@ const RecordingStudioPage: React.FC = () => {
             <AudioMeter level={audioLevel} active={status === 'recording'} />
           </div>
 
+          {/* Chapters list in sidebar */}
+          {chapters.length > 0 && (
+            <div className="px-5 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <p className="text-white/40 text-[11px] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Bookmark className="w-3 h-3" /> Chapters ({chapters.length})
+              </p>
+              <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
+                {chapters.map(ch => (
+                  <div key={ch.id} className="flex items-center gap-2 group">
+                    <span className="font-mono text-xs text-primary/70 w-11 shrink-0">{formatTime(ch.time)}</span>
+                    {editingChapterId === ch.id ? (
+                      <input
+                        autoFocus
+                        className="flex-1 bg-black/40 border border-white/20 rounded px-2 py-0.5 text-xs text-white outline-none"
+                        defaultValue={ch.label}
+                        onBlur={e => {
+                          const val = e.target.value.trim();
+                          if (val) setChapters(prev => prev.map(c => c.id === ch.id ? { ...c, label: val } : c));
+                          setEditingChapterId(null);
+                        }}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      />
+                    ) : (
+                      <span
+                        className="flex-1 text-xs text-white/60 cursor-pointer hover:text-white transition truncate"
+                        onClick={() => setEditingChapterId(ch.id)}
+                        title="Click to rename"
+                      >
+                        {ch.label}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => setChapters(prev => prev.filter(c => c.id !== ch.id))}
+                      className="opacity-0 group-hover:opacity-100 text-red-400/60 hover:text-red-400 transition"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Info Panel */}
           <div className="mt-auto px-5 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="space-y-2 text-xs">
               {[
                 { label: 'Quality', value: quality },
                 { label: 'Webcam', value: enableWebcam ? 'On' : 'Off' },
+                { label: 'Noise Suppress', value: enableNoiseSuppression ? 'On' : 'Off' },
                 { label: 'Duration', value: formatTime(duration) },
                 { label: 'Pauses', value: `${pausedSegments.length}` },
+                { label: 'Chapters', value: `${chapters.length}` },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between">
                   <span className="text-white/30">{label}</span>

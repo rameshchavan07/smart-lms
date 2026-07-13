@@ -519,3 +519,34 @@ export const uploadMyInstituteLogo = catchAsync(async (req: AuthRequest, res: Re
     await invalidateCacheByPattern(CACHE_KEYS.INSTITUTE_PATTERN);
 res.json({ logoUrl, message: 'Logo updated successfully' });
 });
+
+// ─── GET SUPER ADMIN DASHBOARD STATS ──────────────────────────────────────────────
+export const getSuperAdminStats = catchAsync(async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'SUPER_ADMIN') {
+    throw new ForbiddenError('Access denied. Super Admin only.');
+  }
+
+  const [pending, approved, suspended, rejected, totalUsers, recentInstitutes] = await Promise.all([
+    prisma.institute.count({ where: { status: 'PENDING' } }),
+    prisma.institute.count({ where: { status: 'APPROVED' } }),
+    prisma.institute.count({ where: { status: 'SUSPENDED' } }),
+    prisma.institute.count({ where: { status: 'REJECTED' } }),
+    prisma.user.count(),
+    prisma.institute.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        users: {
+          where: { role: 'ADMIN' },
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    }),
+  ]);
+
+  res.json({
+    stats: { pending, approved, suspended, rejected, totalUsers, total: pending + approved + suspended + rejected },
+    recentPending: recentInstitutes,
+  });
+});

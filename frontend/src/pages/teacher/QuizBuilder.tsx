@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
-import { Plus, Trash2, Save, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Save, ArrowLeft, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
-import { Button } from '../../components';
+import { Button, Modal } from '../../components';
 import toast from 'react-hot-toast';
 
 interface Option {
@@ -28,6 +28,12 @@ const QuizBuilder: React.FC = () => {
     { text: '', marks: 1, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] }
   ]);
   const [saving, setSaving] = useState(false);
+
+  // AI Generator State
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiTopic, setAiTopic] = useState('');
+  const [aiText, setAiText] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleAddQuestion = () => {
     setQuestions([...questions, { text: '', marks: 1, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] }]);
@@ -108,6 +114,38 @@ const QuizBuilder: React.FC = () => {
     }
   };
 
+  const handleGenerateAI = async () => {
+    if (!aiTopic.trim() && !aiText.trim()) {
+      return toast.error('Please provide a topic or text material.');
+    }
+    setIsGenerating(true);
+    try {
+      const res = await api.post(API_ENDPOINTS.QUIZZES.GENERATE_AI, {
+        topic: aiTopic,
+        text: aiText,
+        numQuestions: 5
+      });
+      const generatedQuestions = res.data.questions;
+      
+      // If we only have the default empty question, replace it. Otherwise append.
+      if (questions.length === 1 && !questions[0].text.trim()) {
+        setQuestions(generatedQuestions);
+      } else {
+        setQuestions([...questions, ...generatedQuestions]);
+      }
+      
+      toast.success('AI successfully generated questions!');
+      setIsAiModalOpen(false);
+      setAiTopic('');
+      setAiText('');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to generate quiz with AI.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20">
       <div className="flex items-center gap-4">
@@ -118,6 +156,15 @@ const QuizBuilder: React.FC = () => {
           <h1 className="text-2xl font-bold text-primary">Create New Quiz</h1>
           <p className="text-sm text-muted">Build a multiple-choice assessment for your students.</p>
         </div>
+      </div>
+      <div className="flex justify-end">
+        <Button 
+          onClick={() => setIsAiModalOpen(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0"
+        >
+          <Sparkles className="w-4 h-4" />
+          Generate with AI
+        </Button>
       </div>
 
       <div className="bg-surface rounded-xl shadow-sm border border-border p-6 space-y-4">
@@ -255,6 +302,48 @@ const QuizBuilder: React.FC = () => {
           )}
         </Button>
       </div>
+
+      <Modal isOpen={isAiModalOpen} onClose={() => !isGenerating && setIsAiModalOpen(false)} title="✨ Generate Quiz with AI">
+        <div className="space-y-4 p-2">
+          <p className="text-sm text-muted">
+            Provide a topic or paste study materials, and our AI will automatically generate a 5-question multiple choice quiz for you to review.
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-secondary mb-1">Topic (Optional)</label>
+            <input 
+              type="text" 
+              className="w-full border-border bg-surface text-primary rounded-md border p-2 focus:ring-purple-500 focus:border-purple-500"
+              placeholder="e.g., Photosynthesis"
+              value={aiTopic}
+              onChange={(e) => setAiTopic(e.target.value)}
+              disabled={isGenerating}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-secondary mb-1">Study Material Text (Optional)</label>
+            <textarea 
+              className="w-full border-border bg-surface text-primary rounded-md border p-2 focus:ring-purple-500 focus:border-purple-500"
+              rows={4}
+              placeholder="Paste lecture notes or reading material here..."
+              value={aiText}
+              onChange={(e) => setAiText(e.target.value)}
+              disabled={isGenerating}
+            />
+          </div>
+          <div className="pt-4 flex justify-end gap-3">
+            <Button variant="ghost" onClick={() => setIsAiModalOpen(false)} disabled={isGenerating}>Cancel</Button>
+            <Button 
+              onClick={handleGenerateAI} 
+              disabled={isGenerating}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0"
+            >
+              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin mr-2 inline" /> : <Sparkles className="w-4 h-4 mr-2 inline" />}
+              {isGenerating ? 'Generating...' : 'Generate Questions'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 };

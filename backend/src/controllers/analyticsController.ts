@@ -182,7 +182,9 @@ export const getStudentStats = catchAsync(async (req: AuthRequest, res: Response
         quizAverage,
         badgesEarned: Math.floor(totalCompleted / 5),
         overallProgress,
-        progressBreakdown: { excellent: 2, good: 1, average: 0 }
+        progressBreakdown: { excellent: 2, good: 1, average: 0 },
+        xpPoints: student.xpPoints,
+        currentStreak: student.currentStreak
       }
     };
 
@@ -353,4 +355,26 @@ export const getTeacherWeeklyProgress = catchAsync(async (req: AuthRequest, res:
     });
 
     res.json({ data: last7Days.map(d => ({ day: d.day, progress: d.progress, submissions: d.submissions })) });
+});
+
+export const getLeaderboard = catchAsync(async (req: AuthRequest, res: Response) => {
+    const instituteId = req.user!.role !== 'SUPER_ADMIN' ? req.user!.instituteId : undefined;
+    
+    const topStudents = await prisma.student.findMany({
+      where: instituteId ? { user: { instituteId } } : {},
+      include: { user: { select: { firstName: true, lastName: true, profileImage: true } } },
+      orderBy: { xpPoints: 'desc' },
+      take: 10
+    });
+  
+    const leaderboard = topStudents.map((s, index) => ({
+      id: s.id,
+      rank: index + 1,
+      name: `${s.user.firstName} ${s.user.lastName}`,
+      xp: s.xpPoints,
+      streak: s.currentStreak,
+      avatar: s.user.profileImage
+    }));
+  
+    res.json({ leaderboard });
 });

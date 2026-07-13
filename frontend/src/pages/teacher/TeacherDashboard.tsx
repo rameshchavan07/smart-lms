@@ -7,12 +7,13 @@ import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import {
   BookOpen, Users, ClipboardList, TrendingUp,
-  Video, Calendar, GraduationCap, Clapperboard
+  Video, Calendar, GraduationCap, Clapperboard,
+  AlertTriangle, Upload, ChevronRight, PenLine
 } from 'lucide-react';
 import { StatCard, ErrorState } from '../../components';
 import { StatCardSkeleton } from '../../components/Skeleton';
 
-/* ── Types ──────────────────────────────── */
+/* ── Types ──────────────────────────── */
 interface TeacherMetrics {
   totalCourses: number;
   totalStudents: number;
@@ -32,7 +33,7 @@ interface UpcomingClass {
   title: string;
   courseTitle: string;
   startTime: string;
-  duration: number; // minutes
+  duration: number;
 }
 
 interface RecentAssignment {
@@ -51,8 +52,6 @@ interface CourseProgress {
   studentCount: number;
   color: string;
 }
-
-// Fallback data removed - now fetched dynamically from backend
 
 const PROGRESS_COLORS = ['#4361f0', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899'];
 
@@ -82,7 +81,7 @@ const TeacherDashboard: React.FC = () => {
 
   const { data: recentAssignments } = useQuery({
     queryKey: ['teacher-recent-assignments'],
-    queryFn: () => api.get(`${API_ENDPOINTS.ASSIGNMENTS.TEACHER_RECENT}?limit=3`).then(r => r.data.assignments as RecentAssignment[]),
+    queryFn: () => api.get(`${API_ENDPOINTS.ASSIGNMENTS.TEACHER_RECENT}?limit=5`).then(r => r.data.assignments as RecentAssignment[]),
     staleTime: 60_000,
     retry: false,
   });
@@ -108,8 +107,10 @@ const TeacherDashboard: React.FC = () => {
   const assignments = recentAssignments ?? [];
   const courseProgress = courseProgressData ?? [];
 
-
-
+  // Pending assignments urgency
+  const pendingCount = metrics?.pendingAssignments ?? 0;
+  const pendingColor = pendingCount > 10 ? '#ef4444' : pendingCount > 5 ? '#f59e0b' : '#8b5cf6';
+  const pendingBg = pendingCount > 10 ? 'rgba(239,68,68,0.1)' : pendingCount > 5 ? 'rgba(245,158,11,0.1)' : 'rgba(139,92,246,0.1)';
 
   if (metricsError) {
     return <ErrorState message="Failed to load teacher dashboard" onRetry={refetch} />;
@@ -127,12 +128,12 @@ const TeacherDashboard: React.FC = () => {
             Here's what's happening in your courses today
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Link to="courses" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-surface hover:bg-bg-subtle dark:hover:bg-slate-700">
             <Calendar size={14} /> Schedule Class
           </Link>
           <Link to="/teacher/recorder" className="btn btn-ghost btn-sm gap-2 text-sm border border-border shadow-sm bg-surface hover:bg-bg-subtle dark:hover:bg-slate-700">
-            <Clapperboard size={14} /> Recording Studio
+            <Upload size={14} /> Upload Lecture
           </Link>
           <Link to="courses" className="btn btn-primary btn-sm gap-2 text-sm shadow-sm tour-courses">
             <BookOpen size={14} /> My Courses
@@ -158,11 +159,12 @@ const TeacherDashboard: React.FC = () => {
         <div className="flex-1">
           <h3 className="font-bold text-[15px]" style={{ color: 'var(--text-primary)' }}>🎬 Open Recording Studio</h3>
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Record lectures with webcam PiP, audio meter, quality selector &amp; auto-save
+            Record lectures with webcam PiP, annotation overlay, chapters, noise suppression &amp; auto-save
           </p>
         </div>
-        <div className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: 'rgba(67,97,240,0.15)', color: '#6183fb' }}>
-          New ✨
+        <div className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0"
+          style={{ background: 'rgba(67,97,240,0.15)', color: '#6183fb' }}>
+          Open <ChevronRight size={14} />
         </div>
       </Link>
 
@@ -180,12 +182,14 @@ const TeacherDashboard: React.FC = () => {
             <StatCard
               title="Total Students" value={metrics?.totalStudents ?? 0}
               icon={Users} color="#10b981" bg="rgba(16,185,129,0.1)"
-              subtitle="Across all courses" linkTo="/teacher/students" linkLabel="View students"
+              subtitle="Across all courses"
             />
+            {/* Pending Assignments with urgency color */}
             <StatCard
-              title="Pending Assignments" value={metrics?.pendingAssignments ?? 0}
-              icon={ClipboardList} color="#8b5cf6" bg="rgba(139,92,246,0.1)"
-              subtitle="Need grading"
+              title="Pending Grading" value={pendingCount}
+              icon={ClipboardList} color={pendingColor} bg={pendingBg}
+              subtitle={pendingCount > 10 ? '⚠️ High backlog!' : pendingCount > 5 ? 'Needs attention' : 'Need grading'}
+              linkTo="assessments" linkLabel="Grade now"
             />
             <StatCard
               title="Class Progress" value={`${metrics?.avgClassProgress ?? 0}%`}
@@ -200,11 +204,11 @@ const TeacherDashboard: React.FC = () => {
 
       {/* ── Chart + Upcoming Classes ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recharts Area Chart */}
         <div className="card lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Weekly Class Overview</h2>
-            <span className="text-[12px] px-3 py-1 rounded-lg font-medium" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+            <span className="text-[12px] px-3 py-1 rounded-lg font-medium"
+              style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
               This Week
             </span>
           </div>
@@ -247,12 +251,17 @@ const TeacherDashboard: React.FC = () => {
         <div className="card">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Upcoming Classes</h2>
-            <Link to="#" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>Calendar</Link>
+            <Link to="courses" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>
+              Schedule
+            </Link>
           </div>
           {classes.length === 0 ? (
             <div className="text-center py-8">
               <Calendar size={28} className="mx-auto mb-2 opacity-30" style={{ color: 'var(--text-muted)' }} />
               <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>No upcoming classes scheduled</p>
+              <Link to="courses" className="btn btn-secondary btn-sm mt-3 gap-1.5">
+                <Calendar size={13} /> Schedule a class
+              </Link>
             </div>
           ) : (
             <div className="space-y-3">
@@ -283,8 +292,9 @@ const TeacherDashboard: React.FC = () => {
             </div>
           )}
           <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-            <Link to="#" className="text-[12px] font-semibold w-full flex items-center justify-center gap-1" style={{ color: 'var(--brand-500)' }}>
-              <GraduationCap size={13} /> Schedule a class
+            <Link to="courses" className="text-[12px] font-semibold w-full flex items-center justify-center gap-1"
+              style={{ color: 'var(--brand-500)' }}>
+              <GraduationCap size={13} /> Schedule a new class
             </Link>
           </div>
         </div>
@@ -299,7 +309,10 @@ const TeacherDashboard: React.FC = () => {
             <Link to="courses" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>View all</Link>
           </div>
           {courseProgress.length === 0 ? (
-            <p className="text-[13px] text-center py-8" style={{ color: 'var(--text-muted)' }}>No course data available</p>
+            <div className="text-center py-8">
+              <BookOpen size={28} className="mx-auto mb-2 opacity-30" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>No course data available</p>
+            </div>
           ) : (
             <div className="space-y-5">
               {courseProgress.map(c => (
@@ -312,9 +325,14 @@ const TeacherDashboard: React.FC = () => {
                     <div className="h-full rounded-full transition-all duration-700"
                       style={{ width: `${c.progress}%`, background: c.color }} />
                   </div>
-                  <p className="text-[11px] mt-1 text-right" style={{ color: 'var(--text-muted)' }}>
-                    {c.studentCount} students
-                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{c.studentCount} students</p>
+                    {c.progress < 30 && (
+                      <span className="text-[10px] font-bold flex items-center gap-1 text-amber-500">
+                        <AlertTriangle size={10} /> Needs attention
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -325,7 +343,9 @@ const TeacherDashboard: React.FC = () => {
         <div className="card lg:col-span-2">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[16px] font-bold" style={{ color: 'var(--text-primary)' }}>Recent Assignments</h2>
-            <Link to="#" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>View all</Link>
+            <Link to="assessments" className="text-[12px] font-semibold" style={{ color: 'var(--brand-500)' }}>
+              View all
+            </Link>
           </div>
           {assignments.length === 0 ? (
             <div className="text-center py-10">
@@ -336,7 +356,8 @@ const TeacherDashboard: React.FC = () => {
             <div className="overflow-x-auto -mx-5">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-[11px] uppercase tracking-wider" style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                  <tr className="text-[11px] uppercase tracking-wider"
+                    style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                     <th className="pb-3 px-5 font-semibold">Assignment</th>
                     <th className="pb-3 px-5 font-semibold hidden sm:table-cell">Course</th>
                     <th className="pb-3 px-5 font-semibold text-right">Submitted</th>
@@ -349,11 +370,13 @@ const TeacherDashboard: React.FC = () => {
                     const due = new Date(a.dueDate);
                     const isOverdue = due < new Date();
                     return (
-                      <tr key={a.id} className="group border-b" style={{ borderColor: 'var(--border)' }}>
+                      <tr key={a.id} className="group border-b hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                        style={{ borderColor: 'var(--border)' }}>
                         <td className="py-3.5 px-5">
                           <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{a.title}</p>
-                          <p className="text-[11px] mt-0.5 font-medium" style={{ color: isOverdue ? '#ef4444' : 'var(--text-muted)' }}>
-                            {isOverdue ? 'Overdue' : `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                          <p className="text-[11px] mt-0.5 font-medium"
+                            style={{ color: isOverdue ? '#ef4444' : 'var(--text-muted)' }}>
+                            {isOverdue ? '⚠️ Overdue' : `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                           </p>
                         </td>
                         <td className="py-3.5 px-5 hidden sm:table-cell">
@@ -367,9 +390,16 @@ const TeacherDashboard: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-3.5 px-5 text-right">
-                          <button className="text-[12px] font-bold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--brand-500)' }}>
-                            Grade →
-                          </button>
+                          <Link
+                            to="assessments"
+                            className="inline-flex items-center gap-1 text-[12px] font-bold px-2.5 py-1 rounded-lg transition-colors"
+                            style={{
+                              color: 'var(--brand-500)',
+                              background: 'rgba(67,97,240,0.08)',
+                            }}
+                          >
+                            <PenLine size={11} /> Grade
+                          </Link>
                         </td>
                       </tr>
                     );

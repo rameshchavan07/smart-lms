@@ -105,6 +105,32 @@ const CourseManagement: React.FC = () => {
     uploadThumbnailMutation.mutate({ courseId, file });
   };
 
+  const uploadTemplateMutation = useMutation({
+    mutationFn: ({ courseId, file }: { courseId: string, file: File }) => {
+      const formData = new FormData();
+      formData.append('template', file);
+      return api.put(API_ENDPOINTS.COURSES.TEMPLATE(courseId), formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
+    onSuccess: () => {
+      toast.success('Certificate template uploaded successfully!');
+      queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      const errorMessage = err.response?.data?.message || 'Failed to upload template. Please check connection.';
+      console.error('Failed to upload template', error);
+      toast.error(errorMessage);
+    }
+  });
+
+  const handleTemplateUpload = (courseId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadTemplateMutation.mutate({ courseId, file });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -223,6 +249,24 @@ const CourseManagement: React.FC = () => {
                             className="hidden" 
                             onChange={(e) => handleThumbnailUpload(course.id, e)}
                             disabled={uploadThumbnailMutation.isPending}
+                          />
+                        </label>
+                      )}
+                      
+                      {uploadTemplateMutation.isPending ? (
+                        <span className="inline-flex items-center gap-1.5 text-muted mr-3 text-xs">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Uploading...
+                        </span>
+                      ) : (
+                        <label className="text-secondary hover:text-brand-500 cursor-pointer transition-colors mr-2 text-xs">
+                          Upload Template
+                          <input 
+                            type="file" 
+                            accept="image/jpeg, image/png" 
+                            className="hidden" 
+                            onChange={(e) => handleTemplateUpload(course.id, e)}
+                            disabled={uploadTemplateMutation.isPending}
                           />
                         </label>
                       )}

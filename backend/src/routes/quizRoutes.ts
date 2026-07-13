@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createQuiz, getCourseQuizzes, getQuizById, submitQuiz, getQuizSubmissions } from '../controllers/quizController';
+import { createQuiz, getCourseQuizzes, getQuizById, submitQuiz, getQuizSubmissions, generateAIQuiz } from '../controllers/quizController';
 import { protect, authorize } from '../middleware/auth';
 
 const router = Router();
@@ -18,5 +18,8 @@ router.post('/:id/submit', protect, authorize('STUDENT'), submitQuiz);
 
 // Get submissions for a quiz (TEACHER/ADMIN only)
 router.get('/:id/submissions', protect, authorize('TEACHER', 'ADMIN'), getQuizSubmissions);
+
+// Generate AI Quiz (TEACHER/ADMIN only)
+router.post('/generate-ai', protect, authorize('TEACHER', 'ADMIN'), generateAIQuiz);
 
 export default router;

@@ -155,6 +155,12 @@ export const submitAssignment = catchAsync(async (req: AuthRequest, res: Respons
     },
   });
 
+  // Award XP
+  await prisma.student.update({
+    where: { id: student.id },
+    data: { xpPoints: { increment: 100 } }
+  });
+
   // Invalidate student-specific assignment and submission caches
   await invalidateCache(CACHE_KEYS.STUDENT_ASSIGNMENTS(student.id));
   await invalidateCache(CACHE_KEYS.MY_SUBMISSIONS(student.id));

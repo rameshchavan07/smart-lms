@@ -63,6 +63,7 @@ const StudentCommunity = React.lazy(() => import('./pages/student/StudentCommuni
 const StudentMessages = React.lazy(() => import('./pages/student/StudentMessages'));
 const StudentReports = React.lazy(() => import('./pages/student/StudentReports'));
 const StudentSettings = React.lazy(() => import('./pages/student/StudentSettings'));
+const Leaderboard = React.lazy(() => import('./pages/student/Leaderboard'));
 
 const CourseDetails      = React.lazy(() => import('./pages/shared/CourseDetails'));
 const LiveClassRoom      = React.lazy(() => import('./pages/shared/LiveClassRoom'));
@@ -211,6 +212,7 @@ function App() {
                     <Route path="courses/:id/quizzes/:quizId" element={<Suspense fallback={<PageLoader />}><QuizView /></Suspense>} />
                     <Route path="assignments" element={<Suspense fallback={<PageLoader />}><StudentAssignments /></Suspense>} />
                     <Route path="grades" element={<Suspense fallback={<PageLoader />}><StudentGrades /></Suspense>} />
+                    <Route path="leaderboard" element={<Suspense fallback={<PageLoader />}><Leaderboard /></Suspense>} />
                     <Route path="community" element={<Suspense fallback={<PageLoader />}><StudentCommunity /></Suspense>} />
                     <Route path="messages" element={<Suspense fallback={<PageLoader />}><StudentMessages /></Suspense>} />
                     <Route path="reports" element={<Suspense fallback={<PageLoader />}><StudentReports /></Suspense>} />

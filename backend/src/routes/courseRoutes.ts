@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getCourses, createCourse, updateCourse, deleteCourse, getTeacherCourses, uploadCourseThumbnail } from '../controllers/courseController';
+import { getCourses, createCourse, updateCourse, deleteCourse, getTeacherCourses, uploadCourseThumbnail, uploadCourseTemplate } from '../controllers/courseController';
 import { protect, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { upload } from '../middleware/upload';
@@ -21,5 +21,6 @@ router.post('/', validate(createCourseSchema), createCourse);
 router.put('/:id', validate(updateCourseSchema), updateCourse);
 router.delete('/:id', deleteCourse);
 router.put('/:id/thumbnail', upload.single('thumbnail'), uploadCourseThumbnail);
+router.put('/:id/template', upload.single('template'), uploadCourseTemplate);
 
 export default router;

@@ -153,3 +153,73 @@ export const getMyAttendance = catchAsync(async (req: AuthRequest, res: Response
 
   res.status(200).json({ attendance });
 });
+
+export const exportLectureAttendance = catchAsync(async (req: AuthRequest, res: Response) => {
+  const lectureId = req.params.lectureId as string;
+  
+  const lecture = await prisma.lecture.findUnique({
+    where: { id: lectureId },
+    include: {
+      attendance: {
+        include: {
+          student: {
+            include: { user: true }
+          }
+        }
+      },
+      course: {
+        include: {
+          enrollments: {
+            include: {
+              student: {
+                include: { user: true }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!lecture) {
+    throw new NotFoundError('Lecture not found');
+  }
+
+  const enrollments = lecture.course.enrollments;
+  const attendanceRecords = lecture.attendance;
+
+  // Build comprehensive list
+  const report = enrollments.map(e => {
+    const record = attendanceRecords.find(a => a.studentId === e.student.id);
+    return {
+      studentId: e.student.id,
+      firstName: e.student.user.firstName,
+      lastName: e.student.user.lastName,
+      enrollmentNumber: e.student.enrollmentNumber || '',
+      status: record ? record.status : AttendanceStatus.ABSENT,
+      joinTime: record?.joinTime || '',
+      leaveTime: record?.leaveTime || ''
+    };
+  });
+
+  // Basic CSV Generation
+  const header = ['First Name', 'Last Name', 'Enrollment Number', 'Status', 'Join Time', 'Leave Time'].join(',');
+  const rows = report.map(r => {
+    const jTime = r.joinTime ? new Date(r.joinTime).toLocaleTimeString() : 'N/A';
+    const lTime = r.leaveTime ? new Date(r.leaveTime).toLocaleTimeString() : 'N/A';
+    return [
+      `"${r.firstName || ''}"`,
+      `"${r.lastName || ''}"`,
+      `"${r.enrollmentNumber || ''}"`,
+      `"${r.status || ''}"`,
+      `"${jTime}"`,
+      `"${lTime}"`
+    ].join(',');
+  });
+
+  const csv = [header, ...rows].join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="attendance_export_${lectureId}.csv"`);
+  res.status(200).send(csv);
+});

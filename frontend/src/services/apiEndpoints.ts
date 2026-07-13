@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
     BASE: '/courses',
     BY_ID: (id: string) => `/courses/${id}`,
     THUMBNAIL: (id: string) => `/courses/${id}/thumbnail`,
+    TEMPLATE: (id: string) => `/courses/${id}/template`,
     MY_COURSES: '/courses/my-courses',
   },
   ENROLLMENTS: {
@@ -52,6 +53,7 @@ export const API_ENDPOINTS = {
   },
   ATTENDANCE: {
     BY_LECTURE: (lectureId: string) => `/attendance/lecture/${lectureId}`,
+    EXPORT: (lectureId: string) => `/attendance/lecture/${lectureId}/export`,
     MARK: (lectureId: string) => `/attendance/lecture/${lectureId}/mark`,
     MY: '/attendance/my',
   },
@@ -73,6 +75,7 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/quizzes/${id}`,
     SUBMISSIONS: (id: string) => `/quizzes/${id}/submissions`,
     SUBMIT: (id: string) => `/quizzes/${id}/submit`,
+    GENERATE_AI: '/quizzes/generate-ai',
   },
   DISCUSSIONS: {
     BY_COURSE: (courseId: string) => `/discussions/course/${courseId}`,
@@ -110,6 +113,8 @@ export const API_ENDPOINTS = {
     TEACHER_REPORTS: '/analytics/teacher/reports',
     STUDENT_BASE: '/analytics/student',
     STUDENT_STATS: '/analytics/student/stats',
+    STUDENT_PERFORMANCE: '/analytics/student/performance',
+    LEADERBOARD: '/analytics/student/leaderboard',
   },
   ACTIVITY: {
     ADMIN_RECENT: '/activity/admin/recent',

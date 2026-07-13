@@ -108,6 +108,10 @@ model Student {
   enrollmentNumber String                 @unique @db.VarChar(100)
   academicYear     String?                @db.VarChar(50)
   admissionDate    DateTime?              @db.Date
+  xpPoints         Int                    @default(0)
+  currentStreak    Int                    @default(0)
+  longestStreak    Int                    @default(0)
+  lastActiveDate   DateTime?
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
   submissions      AssignmentSubmission[]
@@ -127,6 +131,7 @@ model Course {
   thumbnailUrl   String?
   teacherId      String?
   maxStudents    Int?
+  certificateTemplateUrl String?
   status         CourseStatus    @default(DRAFT)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt

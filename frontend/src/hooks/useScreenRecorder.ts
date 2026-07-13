@@ -50,10 +50,11 @@ async function clearDB(db: IDBDatabase): Promise<void> {
 export interface UseScreenRecorderOptions {
   quality?: RecordingQuality;
   enableWebcam?: boolean;
+  enableNoiseSuppression?: boolean;
 }
 
 export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
-  const { quality = '720p', enableWebcam = false } = options;
+  const { quality = '720p', enableWebcam = false, enableNoiseSuppression = true } = options;
 
   const [status, setStatus] = useState<RecordingStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -210,10 +211,16 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
         audio: true,
       });
 
-      // 2. Microphone
+      // 2. Microphone (with optional noise suppression / echo cancellation)
       let micStream: MediaStream | null = null;
       try {
-        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            noiseSuppression: enableNoiseSuppression,
+            echoCancellation: enableNoiseSuppression,
+            autoGainControl: enableNoiseSuppression,
+          },
+        });
       } catch {
         console.warn('Microphone permission denied, continuing without mic.');
       }
@@ -367,7 +374,7 @@ export const useScreenRecorder = (options: UseScreenRecorderOptions = {}) => {
       setStatus('error');
       setCountdown(null);
     }
-  }, [quality, enableWebcam, startAudioMeter]);
+  }, [quality, enableWebcam, enableNoiseSuppression, startAudioMeter]);
 
   // ── Pause ──────────────────────────────────────────────────────────────
   const pauseRecording = useCallback(() => {

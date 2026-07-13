@@ -438,3 +438,46 @@ export const completeTour = catchAsync(async (req: AuthRequest, res: Response) =
     }
   });
 });
+
+export const exportUsers = catchAsync(async (req: AuthRequest, res: Response) => {
+  const role = req.query.role as string;
+  const whereClause: Prisma.UserWhereInput = {};
+  
+  if (req.user!.role !== 'SUPER_ADMIN') {
+    whereClause.instituteId = req.user!.instituteId;
+  }
+  
+  if (role) whereClause.role = role as UserRole;
+
+  const users = await prisma.user.findMany({
+    where: whereClause,
+    orderBy: { createdAt: 'desc' },
+    select: {
+      firstName: true,
+      lastName: true,
+      email: true,
+      role: true,
+      isActive: true,
+      createdAt: true
+    }
+  });
+
+  // Basic CSV Generation
+  const header = ['First Name', 'Last Name', 'Email', 'Role', 'Status', 'Joined Date'].join(',');
+  const rows = users.map(u => {
+    return [
+      `"${u.firstName || ''}"`,
+      `"${u.lastName || ''}"`,
+      `"${u.email || ''}"`,
+      `"${u.role || ''}"`,
+      `"${u.isActive ? 'Active' : 'Inactive'}"`,
+      `"${new Date(u.createdAt).toLocaleDateString()}"`
+    ].join(',');
+  });
+
+  const csv = [header, ...rows].join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="users_export_${new Date().toISOString().split('T')[0]}.csv"`);
+  res.status(200).send(csv);
+});

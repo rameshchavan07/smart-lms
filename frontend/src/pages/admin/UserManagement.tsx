@@ -4,11 +4,12 @@ import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import CreateUserModal from '../../components/CreateUserModal';
 import EditUserModal from '../../components/EditUserModal';
-import { UserPlus, MoreVertical, ShieldAlert } from 'lucide-react';
+import { UserPlus, MoreVertical, ShieldAlert, Download } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Badge, Button, EmptyState, Modal, ConfirmDialog } from '../../components';
 import toast from 'react-hot-toast';
 import { useOutletContext } from 'react-router-dom';
+import { downloadCsv } from '../../services/exportCsv';
 
 interface UserData {
   id: string;
@@ -109,19 +110,39 @@ const UserManagement: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
+  const handleExport = async () => {
+    try {
+      const roleToFetch = currentUser?.role === 'TEACHER' ? 'STUDENT' : filterRole;
+      const url = `${API_ENDPOINTS.USERS.BASE}/export${roleToFetch ? `?role=${roleToFetch}` : ''}`;
+      await downloadCsv(url, `users-export-${new Date().toISOString().split('T')[0]}.csv`);
+    } catch {
+      toast.error('Failed to export CSV');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-extrabold text-primary">
           {currentUser?.role === 'TEACHER' ? 'My Students' : 'User Management'}
         </h1>
-        <Button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2"
-        >
-          <UserPlus className="w-4 h-4" />
-          Add New User
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="secondary"
+            onClick={handleExport}
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </Button>
+          <Button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" />
+            Add New User
+          </Button>
+        </div>
       </div>
 
       <div className="bg-surface rounded-xl shadow-sm border border-slate-205 dark:border-slate-700 overflow-hidden transition-colors">

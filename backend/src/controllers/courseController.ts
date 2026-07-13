@@ -294,3 +294,66 @@ export const uploadCourseThumbnail = catchAsync(async (req: AuthRequest, res: Re
 
   res.json({ message: 'Course thumbnail uploaded successfully', course: updatedCourse });
 });
+
+export const uploadCourseTemplate = catchAsync(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+
+  if (!req.file) {
+    throw new ValidationError('No template file uploaded');
+  }
+
+  const course = await prisma.course.findUnique({
+    where: { id: id as string },
+    include: { institute: true }
+  });
+
+  if (!course) {
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    throw new NotFoundError('Course not found');
+  }
+
+  if (req.user?.role !== 'SUPER_ADMIN' && course.instituteId !== req.user?.instituteId) {
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    throw new ForbiddenError('Permission denied');
+  }
+
+  const instName = course.institute?.name || 'Global';
+  const instId = course.instituteId || 'global';
+  const courseName = course.title;
+  const cId = course.id;
+
+  const folderId = await getOrCreateFolderId([
+    { path: 'institutes', name: 'Institutes' },
+    { path: `institutes/${instId}`, name: instName },
+    { path: `institutes/${instId}/courses`, name: 'Courses' },
+    { path: `institutes/${instId}/courses/${cId}`, name: courseName },
+    { path: `institutes/${instId}/courses/${cId}/Templates`, name: 'Templates' }
+  ]);
+
+  const uploadResult = await uploadFileToDrive(
+    req.file.path,
+    `template-${course.id}-${Date.now()}${path.extname(req.file.originalname)}`,
+    req.file.mimetype,
+    folderId
+  );
+
+  if (course.certificateTemplateUrl) {
+    const oldFileId = extractFileIdFromUrl(course.certificateTemplateUrl);
+    if (oldFileId) {
+      await deleteFileFromDrive(oldFileId);
+    }
+  }
+
+  const rawDownloadUrl = `https://drive.google.com/uc?export=download&id=${uploadResult.fileId}`;
+
+  const updatedCourse = await prisma.course.update({
+    where: { id: id as string },
+    data: { certificateTemplateUrl: rawDownloadUrl }
+  });
+
+  await logActivity(req.user!.id, `Uploaded certificate template for: ${course.title}`, 'Course', course.id);
+
+  if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
+  res.json({ message: 'Certificate template uploaded successfully', course: updatedCourse });
+});

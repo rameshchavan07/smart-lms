@@ -10,7 +10,7 @@ const APP_NAME = 'OpenLearnX';
 // ─── Core Send With Retry ─────────────────────────────────────────────────────
 
 const sendWithRetry = async (
-  mailOptions: { from: string; to: string; subject: string; html: string },
+  mailOptions: { from: string; to: string; subject: string; html: string; attachments?: any[] },
   retries = 3
 ): Promise<void> => {
   // Dev fallback: if Resend API key is not set, log to console
@@ -27,6 +27,7 @@ const sendWithRetry = async (
         to: mailOptions.to,
         subject: mailOptions.subject,
         html: mailOptions.html,
+        attachments: mailOptions.attachments,
       });
 
       if (error) {
@@ -107,13 +108,14 @@ const otpBlock = (otp: string) => `
  * Send an email using the base template with retry + Resend fallback.
  * Content should be the inner HTML body (NOT wrapped in baseTemplate).
  */
-export const sendEmail = async (to: string, subject: string, content: string): Promise<void> => {
+export const sendEmail = async (to: string, subject: string, content: string, attachments?: any[]): Promise<void> => {
   const html = baseTemplate(content);
   await sendWithRetry({
     from: `"${APP_NAME}" <${FROM_EMAIL}>`,
     to,
     subject,
     html,
+    attachments
   });
 };
 
@@ -167,4 +169,21 @@ export const sendWelcomeEmail = async (email: string, firstName: string): Promis
   `;
 
   await sendEmail(email, `Welcome to ${APP_NAME} — You're all set!`, content);
+};
+
+export const sendCertificateEmail = async (email: string, firstName: string, courseName: string, pdfBuffer: Buffer): Promise<void> => {
+  const content = `
+    <h2 style="margin:0 0 8px 0;color:#0f172a;font-size:22px;font-weight:700;">Congratulations, ${firstName}! 🎓</h2>
+    <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.6;">
+      You have successfully completed <strong>${courseName}</strong>.<br/>
+      Please find your official certificate attached to this email. Great job!
+    </p>
+  `;
+
+  await sendEmail(email, `Your Certificate for ${courseName}`, content, [
+    {
+      filename: `Certificate-${courseName.replace(/\s+/g, '-')}.pdf`,
+      content: pdfBuffer
+    }
+  ]);
 };

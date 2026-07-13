@@ -117,7 +117,7 @@ const LandingPage: React.FC = () => {
           </Link>
 
           {/* Nav Links */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="hidden md:flex">
+          <div style={{ gap: 4 }} className="hidden md:flex items-center">
             {NAV_LINKS.map(l => (
               <a key={l.label} href={l.href} style={{ color: 'rgba(255,255,255,0.65)', fontSize: 14, fontWeight: 500, padding: '8px 14px', borderRadius: 8, textDecoration: 'none', transition: 'all 0.15s' }}
                 onMouseEnter={e => { (e.target as HTMLElement).style.color = 'white'; (e.target as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
@@ -141,147 +141,90 @@ const LandingPage: React.FC = () => {
       </nav>
 
       {/* ── Hero ── */}
-      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
-        {/* Background */}
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(67,97,240,0.3) 0%, transparent 70%)' }} />
-        <div style={{ position: 'absolute', top: '20%', left: '-10%', width: 400, height: 400, borderRadius: '50%', background: 'rgba(67,97,240,0.12)', filter: 'blur(80px)', animation: 'float 6s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', bottom: '10%', right: '-5%', width: 350, height: 350, borderRadius: '50%', background: 'rgba(139,92,246,0.12)', filter: 'blur(80px)', animation: 'float 8s ease-in-out infinite reverse' }} />
+      <section className="relative min-h-[100svh] flex items-center overflow-hidden">
+        {/* Background Gradients & Effects */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(67,97,240,0.3)_0%,transparent_70%)]" />
+        <div className="absolute top-[20%] left-[-10%] w-[400px] h-[400px] rounded-full bg-brand-500/10 blur-[80px] animate-[float_6s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[10%] right-[-5%] w-[350px] h-[350px] rounded-full bg-purple-500/10 blur-[80px] animate-[float_8s_ease-in-out_infinite_reverse]" />
         
-        {/* Grid pattern overlay */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '40px 40px', maskImage: 'radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)' }} />
+        {/* Subtle Grid Pattern Overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_0%,black_40%,transparent_100%)]" />
 
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '120px 24px 80px', width: '100%', position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }} className="hero-grid">
-
-            {/* Left */}
-            <div>
+        <div className="max-w-[1280px] mx-auto px-6 pt-[120px] pb-[80px] w-full relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            
+            {/* Left Content */}
+            <div className="text-center lg:text-left">
               {/* Badge */}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(67,97,240,0.15)', border: '1px solid rgba(67,97,240,0.3)', borderRadius: 999, padding: '6px 16px', marginBottom: 28 }}>
-                <Sparkles size={14} color="#818cf8" />
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#a5b4fc' }}>Open Source • Free Forever • No Vendor Lock-in</span>
+              <div className="inline-flex items-center gap-2 bg-brand-500/15 border border-brand-500/30 rounded-full px-4 py-1.5 mb-7 backdrop-blur-sm shadow-glow mx-auto lg:mx-0">
+                <Sparkles className="w-4 h-4 text-brand-400" />
+                <span className="text-sm font-semibold text-brand-300">Open Source • Free Forever • No Lock-in</span>
               </div>
 
-              <h1 style={{ fontSize: 'clamp(40px, 5vw, 68px)', fontWeight: 900, lineHeight: 1.06, letterSpacing: '-0.03em', marginBottom: 24, color: 'white' }}>
+              {/* Headline */}
+              <h1 className="text-5xl sm:text-6xl lg:text-[68px] font-black leading-[1.05] tracking-tight mb-6 text-white">
                 The Modern LMS<br />
-                <span style={{ background: 'linear-gradient(135deg, #6183fb 0%, #a78bfa 50%, #ec4899 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                <span className="bg-gradient-to-br from-brand-400 via-purple-400 to-pink-500 bg-clip-text text-transparent pb-2 block">
                   Built for Everyone
                 </span>
               </h1>
 
-              <p style={{ fontSize: 19, lineHeight: 1.7, color: 'rgba(255,255,255,0.55)', marginBottom: 40, maxWidth: 480 }}>
+              {/* Description */}
+              <p className="text-lg lg:text-xl text-slate-400 leading-relaxed mb-10 max-w-lg mx-auto lg:mx-0">
                 Create, deliver, and track world-class learning experiences. OpenLearnX powers schools, universities, and enterprises with a platform that's powerful yet beautifully simple.
               </p>
 
-              {/* CTA Buttons */}
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 48 }}>
-                <Link to="/login" style={{ background: 'linear-gradient(135deg,#4361f0,#6366f1)', color: 'white', fontSize: 15, fontWeight: 700, padding: '14px 28px', borderRadius: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 8px 24px rgba(67,97,240,0.4)', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 32px rgba(67,97,240,0.5)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(67,97,240,0.4)'; }}>
-                  Start for Free <ArrowRight size={16} />
+              {/* CTAs */}
+              <div className="flex flex-wrap justify-center lg:justify-start gap-4 mb-12">
+                <Link to="/login" className="flex items-center gap-2 bg-gradient-to-br from-brand-500 to-indigo-500 text-white font-bold text-base px-8 py-3.5 rounded-xl shadow-[0_8px_24px_rgba(67,97,240,0.4)] hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(67,97,240,0.5)] transition-all">
+                  Start for Free <ArrowRight className="w-4 h-4" />
                 </Link>
-                <a href="#how" style={{ background: 'rgba(255,255,255,0.07)', color: 'white', fontSize: 15, fontWeight: 600, padding: '14px 28px', borderRadius: 12, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, border: '1px solid rgba(255,255,255,0.12)', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'; }}>
-                  <Play size={16} /> Watch Demo
+                <a href="#how" className="flex items-center gap-2 bg-white/5 border border-white/10 text-white font-semibold text-base px-8 py-3.5 rounded-xl hover:bg-white/10 backdrop-blur-sm transition-colors">
+                  <Play className="w-4 h-4" /> Watch Demo
                 </a>
               </div>
 
               {/* Trust Row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+              <div className="flex items-center justify-center lg:justify-start gap-6 flex-wrap text-sm text-slate-400 font-medium">
                 {['No credit card required', 'Free forever plan', 'Open source'].map(t => (
-                  <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
-                    <CheckCircle2 size={14} color="#10b981" />
+                  <div key={t} className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     {t}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Right – Dashboard Mockup */}
-            <div style={{ position: 'relative' }} className="hero-right">
-              {/* Glow */}
-              <div style={{ position: 'absolute', inset: '-20px', background: 'radial-gradient(ellipse at center, rgba(67,97,240,0.2) 0%, transparent 70%)', borderRadius: '50%' }} />
-
-              {/* Mock Window */}
-              <div style={{ background: 'rgba(17,24,39,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', position: 'relative', zIndex: 2, animation: 'float 5s ease-in-out infinite' }}>
-                {/* Title Bar */}
-                <div style={{ background: 'rgba(255,255,255,0.04)', padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {['#ff5f57','#febc2e','#28c840'].map(c => <div key={c} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />)}
-                  </div>
-                  <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 6, padding: '4px 12px', fontSize: 12, color: 'rgba(255,255,255,0.35)', textAlign: 'center' }}>
-                    app.openlearnx.org/dashboard
-                  </div>
+            {/* Right - Premium Hero Illustration */}
+            <div className="relative group mt-8 lg:mt-0">
+              {/* Glow Behind Image */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-brand-500/20 to-purple-500/20 blur-3xl opacity-50 group-hover:opacity-75 transition duration-1000 group-hover:duration-200" />
+              
+              {/* The Image Wrapper */}
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-[float_5s_ease-in-out_infinite]">
+                <img src="/assets/hero_dashboard.png" alt="Modern LMS Dashboard Interface" className="w-full h-auto object-cover opacity-90 transition-opacity hover:opacity-100" />
+                
+                {/* Floating Badges */}
+                <div className="absolute top-4 right-4 bg-emerald-500/90 text-white rounded-xl px-4 py-2.5 text-sm font-bold shadow-[0_8px_20px_rgba(16,185,129,0.4)] backdrop-blur-sm flex items-center gap-2 animate-[float_4s_ease-in-out_infinite] z-20">
+                  <Star className="w-4 h-4 fill-white" /> 4.9 Rating
                 </div>
-
-                {/* Dashboard Preview */}
-                <div style={{ padding: 20 }}>
-                  {/* Stats Row */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
-                    {[{ label:'Courses', val:'24', clr:'#4361f0' },{ label:'Students', val:'1,842', clr:'#10b981' },{ label:'Completion', val:'86%', clr:'#8b5cf6' }].map(s => (
-                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px', border: '1px solid rgba(255,255,255,0.07)' }}>
-                        <div style={{ fontSize: 20, fontWeight: 800, color: s.clr }}>{s.val}</div>
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{s.label}</div>
-                      </div>
-                    ))}
+                <div className="absolute bottom-6 -left-2 sm:-left-6 bg-slate-900/90 border border-white/10 rounded-2xl p-4 shadow-[0_8px_24px_rgba(0,0,0,0.4)] flex items-center gap-3 animate-[float_5s_ease-in-out_infinite_1s] z-20 backdrop-blur-xl">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-indigo-500 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-white" />
                   </div>
-
-                  {/* Chart Area */}
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 16, marginBottom: 16, border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>Enrollment Trend</div>
-                    <svg viewBox="0 0 300 80" style={{ width: '100%', height: 80 }}>
-                      <defs>
-                        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#4361f0" stopOpacity="0.5" />
-                          <stop offset="100%" stopColor="#4361f0" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M0,60 C40,50 60,20 100,25 C140,30 160,55 200,40 C240,25 260,15 300,10 L300,80 L0,80 Z" fill="url(#chartGrad)" />
-                      <path d="M0,60 C40,50 60,20 100,25 C140,30 160,55 200,40 C240,25 260,15 300,10" fill="none" stroke="#4361f0" strokeWidth="2.5" strokeLinecap="round" />
-                      {[[100,25],[200,40],[300,10]].map(([x,y],i) => <circle key={i} cx={x} cy={y} r="4" fill="#4361f0" stroke="rgba(17,24,39,0.8)" strokeWidth="2" />)}
-                    </svg>
+                  <div>
+                    <div className="text-sm font-bold text-white">+248 joined today</div>
+                    <div className="text-[10px] text-slate-400">New learners onboarded</div>
                   </div>
-
-                  {/* Course List */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {[
-                      { title: 'Advanced React', prog: 78, clr: '#4361f0' },
-                      { title: 'Data Science 101', prog: 54, clr: '#10b981' },
-                      { title: 'UI/UX Design', prog: 92, clr: '#8b5cf6' },
-                    ].map(c => (
-                      <div key={c.title} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 12px' }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.clr, flexShrink: 0 }} />
-                        <span style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{c.title}</span>
-                        <div style={{ width: 80, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 999, overflow: 'hidden' }}>
-                          <div style={{ width: `${c.prog}%`, height: '100%', background: c.clr, borderRadius: 999 }} />
-                        </div>
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', width: 30, textAlign: 'right' }}>{c.prog}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating badges */}
-              <div style={{ position: 'absolute', top: -16, right: -20, background: '#10b981', color: 'white', borderRadius: 12, padding: '10px 16px', fontSize: 13, fontWeight: 700, boxShadow: '0 8px 20px rgba(16,185,129,0.4)', animation: 'float 4s ease-in-out infinite', zIndex: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Star size={14} fill="white" /> 4.9 Rating
-              </div>
-              <div style={{ position: 'absolute', bottom: 30, left: -24, background: '#1e2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '12px 18px', fontSize: 13, fontWeight: 600, color: 'white', boxShadow: '0 8px 24px rgba(0,0,0,0.4)', animation: 'float 5s ease-in-out infinite 1s', zIndex: 3, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg,#4361f0,#6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Users size={16} color="white" />
-                </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>+248 joined today</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>New learners onboarded</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
-          <div style={{ width: 1, height: 48, background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.2))', animation: 'float 2s ease-in-out infinite' }} />
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-xs text-slate-500 z-10 hidden sm:flex">
+          <div className="w-px h-12 bg-gradient-to-b from-transparent to-white/20 animate-[float_2s_ease-in-out_infinite]" />
           <span>Scroll to explore</span>
         </div>
       </section>

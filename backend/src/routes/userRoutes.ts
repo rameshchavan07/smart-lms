@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getUsers, createTeacher, createStudent, createAdmin, updateUserStatus, updateUser, deleteUser, updateProfile, uploadAvatar, completeOnboarding, completeTour } from '../controllers/userController';
+import { getUsers, createTeacher, createStudent, createAdmin, updateUserStatus, updateUser, deleteUser, updateProfile, uploadAvatar, completeOnboarding, completeTour, exportUsers } from '../controllers/userController';
 import { protect, authorize } from '../middleware/auth';
 import { upload } from '../middleware/upload';
 
@@ -8,6 +8,7 @@ const router = Router();
 // Apply protection to all routes
 router.use(protect);
 
+router.get('/export', authorize('ADMIN', 'TEACHER'), exportUsers);
 router.get('/', authorize('ADMIN', 'TEACHER'), getUsers);
 router.post('/admin', authorize('ADMIN'), createAdmin);
 router.post('/teacher', authorize('ADMIN'), createTeacher);
