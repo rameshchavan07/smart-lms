@@ -9,6 +9,8 @@ import {
   Sparkles, ArrowRight, CheckCircle2
 } from 'lucide-react';
 import { getBackendBaseUrl } from '../utils/url';
+import Lottie from 'lottie-react';
+import registerAnimation from '../assets/animations/register.json';
 
 const BACKEND_URL = getBackendBaseUrl();
 
@@ -119,14 +121,13 @@ const Login: React.FC = () => {
         </div>
 
         {/* Hero illustration */}
-        <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl flex-1 min-h-[300px] mt-8">
-          <img
-            src="/assets/login-illustration.png"
-            alt="Learning platform"
-            className="absolute inset-0 w-full h-full object-cover opacity-90 transition-transform duration-700 hover:scale-105"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0f1729] via-[#0f1729]/40 to-transparent" />
+        <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl flex-1 min-h-[300px] mt-8 flex items-center justify-center bg-white/5">
+          {/* @ts-expect-error Lottie import resolution mismatch */}
+          {React.createElement(Lottie.default || Lottie, {
+            animationData: registerAnimation,
+            loop: true,
+            className: "w-full max-w-[400px]"
+          })}
         </div>
 
         {/* Trust Badges */}

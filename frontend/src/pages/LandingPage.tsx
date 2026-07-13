@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   GraduationCap, BookOpen, Users, BarChart3, ShieldCheck, Zap,
-  Star, Play, ArrowRight, CheckCircle2, Globe,
+  Play, ArrowRight, CheckCircle2, Globe,
   Award, Clock, TrendingUp, MessageSquare, Layers, Sparkles,
   Heart, Rocket
 } from 'lucide-react';
@@ -52,11 +52,7 @@ const STEPS = [
   { num: '04', icon: TrendingUp,   title: 'Track & grow',         desc: 'Monitor learning outcomes, celebrate milestones, and continuously improve.' },
 ];
 
-const TESTIMONIALS = [
-  { name: 'Dr. Priya Sharma',   role: 'Dean, IIT Bombay',         avatar: 'PS', color: '#4361f0', text: 'OpenLearnX transformed our department. Students are more engaged than ever, and the analytics help us identify at-risk learners instantly.', rating: 5 },
-  { name: 'Marcus Johnson',      role: 'CS Teacher, MIT Academy',  avatar: 'MJ', color: '#10b981', text: 'The course builder is a dream. I created a full semester curriculum with quizzes and live sessions in just two days. Simply outstanding!', rating: 5 },
-  { name: 'Ananya Desai',        role: 'Student, 12th Grade',      avatar: 'AD', color: '#8b5cf6', text: 'I can track my progress, attend live classes, and submit assignments — all in one place. My grades improved by 40% this semester!', rating: 5 },
-];
+
 
 const STATS = [
   { value: 50000, suffix: 'K+', label: 'Active Learners',    icon: Users,    color: '#4361f0' },
@@ -151,18 +147,18 @@ const LandingPage: React.FC = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_0%,black_40%,transparent_100%)]" />
 
         <div className="max-w-[1280px] mx-auto px-6 pt-[120px] pb-[80px] w-full relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="flex flex-col items-center justify-center max-w-4xl mx-auto">
             
-            {/* Left Content */}
-            <div className="text-center lg:text-left">
+            {/* Centered Content */}
+            <div className="text-center">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-brand-500/15 border border-brand-500/30 rounded-full px-4 py-1.5 mb-7 backdrop-blur-sm shadow-glow mx-auto lg:mx-0">
+              <div className="inline-flex items-center gap-2 bg-brand-500/15 border border-brand-500/30 rounded-full px-4 py-1.5 mb-7 backdrop-blur-sm shadow-glow mx-auto">
                 <Sparkles className="w-4 h-4 text-brand-400" />
                 <span className="text-sm font-semibold text-brand-300">Open Source • Free Forever • No Lock-in</span>
               </div>
 
               {/* Headline */}
-              <h1 className="text-5xl sm:text-6xl lg:text-[68px] font-black leading-[1.05] tracking-tight mb-6 text-white">
+              <h1 className="text-5xl sm:text-6xl lg:text-[76px] font-black leading-[1.05] tracking-tight mb-6 text-white">
                 The Modern LMS<br />
                 <span className="bg-gradient-to-br from-brand-400 via-purple-400 to-pink-500 bg-clip-text text-transparent pb-2 block">
                   Built for Everyone
@@ -170,12 +166,12 @@ const LandingPage: React.FC = () => {
               </h1>
 
               {/* Description */}
-              <p className="text-lg lg:text-xl text-slate-400 leading-relaxed mb-10 max-w-lg mx-auto lg:mx-0">
+              <p className="text-lg lg:text-xl text-slate-400 leading-relaxed mb-10 max-w-2xl mx-auto">
                 Create, deliver, and track world-class learning experiences. OpenLearnX powers schools, universities, and enterprises with a platform that's powerful yet beautifully simple.
               </p>
 
               {/* CTAs */}
-              <div className="flex flex-wrap justify-center lg:justify-start gap-4 mb-12">
+              <div className="flex flex-wrap justify-center gap-4 mb-12">
                 <Link to="/login" className="flex items-center gap-2 bg-gradient-to-br from-brand-500 to-indigo-500 text-white font-bold text-base px-8 py-3.5 rounded-xl shadow-[0_8px_24px_rgba(67,97,240,0.4)] hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(67,97,240,0.5)] transition-all">
                   Start for Free <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -185,38 +181,13 @@ const LandingPage: React.FC = () => {
               </div>
 
               {/* Trust Row */}
-              <div className="flex items-center justify-center lg:justify-start gap-6 flex-wrap text-sm text-slate-400 font-medium">
+              <div className="flex items-center justify-center gap-6 flex-wrap text-sm text-slate-400 font-medium">
                 {['No credit card required', 'Free forever plan', 'Open source'].map(t => (
                   <div key={t} className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     {t}
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* Right - Premium Hero Illustration */}
-            <div className="relative group mt-8 lg:mt-0">
-              {/* Glow Behind Image */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-brand-500/20 to-purple-500/20 blur-3xl opacity-50 group-hover:opacity-75 transition duration-1000 group-hover:duration-200" />
-              
-              {/* The Image Wrapper */}
-              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-[float_5s_ease-in-out_infinite]">
-                <img src="/assets/hero_dashboard.png" alt="Modern LMS Dashboard Interface" className="w-full h-auto object-cover opacity-90 transition-opacity hover:opacity-100" />
-                
-                {/* Floating Badges */}
-                <div className="absolute top-4 right-4 bg-emerald-500/90 text-white rounded-xl px-4 py-2.5 text-sm font-bold shadow-[0_8px_20px_rgba(16,185,129,0.4)] backdrop-blur-sm flex items-center gap-2 animate-[float_4s_ease-in-out_infinite] z-20">
-                  <Star className="w-4 h-4 fill-white" /> 4.9 Rating
-                </div>
-                <div className="absolute bottom-6 -left-2 sm:-left-6 bg-slate-900/90 border border-white/10 rounded-2xl p-4 shadow-[0_8px_24px_rgba(0,0,0,0.4)] flex items-center gap-3 animate-[float_5s_ease-in-out_infinite_1s] z-20 backdrop-blur-xl">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-indigo-500 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">+248 joined today</div>
-                    <div className="text-[10px] text-slate-400">New learners onboarded</div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -312,44 +283,6 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* ── Testimonials ── */}
-      <section id="testimonials" style={{ padding: '120px 24px' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 72 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 999, padding: '5px 14px', marginBottom: 20 }}>
-              <Star size={13} color="#f59e0b" fill="#f59e0b" />
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#fcd34d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Testimonials</span>
-            </div>
-            <h2 style={{ fontSize: 48, fontWeight: 900, color: 'white', letterSpacing: '-0.03em', marginBottom: 16 }}>
-              Loved by{' '}
-              <span style={{ background: 'linear-gradient(135deg,#f59e0b,#fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>thousands worldwide</span>
-            </h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }} className="testimonials-grid">
-            {TESTIMONIALS.map(t => (
-              <div key={t.name} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, padding: 28, transition: 'all 0.2s' }}
-                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(255,255,255,0.15)'; el.style.background = 'rgba(255,255,255,0.05)'; }}
-                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(255,255,255,0.07)'; el.style.background = 'rgba(255,255,255,0.03)'; }}
-              >
-                {/* Stars */}
-                <div style={{ display: 'flex', gap: 3, marginBottom: 16 }}>
-                  {[...Array(t.rating)].map((_, i) => <Star key={i} size={14} color="#f59e0b" fill="#f59e0b" />)}
-                </div>
-                <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', lineHeight: 1.75, marginBottom: 24, fontStyle: 'italic' }}>"{t.text}"</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${t.color}25`, border: `2px solid ${t.color}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: t.color, flexShrink: 0 }}>{t.avatar}</div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{t.name}</div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{t.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
 
 
       {/* ── CTA Banner ── */}
