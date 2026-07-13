@@ -19,7 +19,7 @@ vi.mock('../src/config/db', () => ({
     course:         { findUnique: vi.fn() },
     quiz:           { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn() },
     quizSubmission: { findUnique: vi.fn(), create: vi.fn(), findMany: vi.fn() },
-    student:        { findUnique: vi.fn() },
+    student:        { findUnique: vi.fn(), update: vi.fn() },
   },
 }));
 
