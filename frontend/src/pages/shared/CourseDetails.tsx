@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { useAuth } from '../../contexts/AuthContext';
@@ -25,15 +26,28 @@ import {
   CheckCircle,
   MessageSquare,
   Megaphone,
-  UserCheck
+  UserCheck,
+  Trophy,
+  Sparkles
 } from 'lucide-react';
+
+type TabType = 'lectures' | 'materials' | 'students' | 'assignments' | 'quizzes' | 'discussions' | 'announcements' | 'attendance';
+
+const TABS: { id: TabType; label: string; icon: React.ElementType; restrict?: string[] }[] = [
+  { id: 'lectures', label: 'Live Lectures', icon: Video },
+  { id: 'materials', label: 'Study Materials', icon: FileText },
+  { id: 'assignments', label: 'Assignments', icon: ClipboardList },
+  { id: 'quizzes', label: 'Quizzes', icon: CheckCircle },
+  { id: 'discussions', label: 'Discussions', icon: MessageSquare },
+  { id: 'announcements', label: 'Announcements', icon: Megaphone },
+  { id: 'attendance', label: 'Attendance', icon: UserCheck },
+  { id: 'students', label: 'Students', icon: Users, restrict: ['TEACHER', 'ADMIN'] },
+];
 
 const CourseDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
-  type TabType = 'lectures' | 'materials' | 'students' | 'assignments' | 'quizzes' | 'discussions' | 'announcements' | 'attendance';
   
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -79,170 +93,166 @@ const CourseDetails: React.FC = () => {
 
   if (!id) return null;
 
+  const visibleTabs = TABS.filter(tab => !tab.restrict || tab.restrict.includes(user?.role || ''));
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="p-2 bg-white rounded-full border border-slate-200 hover:bg-slate-50 transition shadow-sm"
-          >
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Course Classroom</h1>
-            <p className="text-slate-500 mt-1">Access live lectures and study materials.</p>
-          </div>
-        </div>
-
-        {user?.role === 'STUDENT' && progress !== undefined && progress !== null && (
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-6 w-full md:min-w-[300px]">
-            <div className="flex-1">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm font-semibold text-slate-700">Course Progress</span>
-                <span className="text-sm font-bold text-blue-600">{progress}%</span>
+    <div className="space-y-8 animate-fade-in pb-20">
+      
+      {/* ── Immersive Header ── */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-8 md:p-10 shadow-2xl border border-white/10"
+      >
+        {/* Decorative Background Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/20 rounded-full blur-[60px] translate-y-1/3 -translate-x-1/4" />
+        
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="flex items-start gap-5">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="mt-1 flex-shrink-0 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/10 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/20 border border-brand-500/30 text-brand-300 text-xs font-bold uppercase tracking-wider mb-3">
+                <Sparkles className="w-3.5 h-3.5" />
+                Course Classroom
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2.5">
-                <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
-              </div>
+              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">
+                Learning Portal
+              </h1>
+              <p className="text-slate-400 text-sm md:text-base max-w-lg">
+                Access live lectures, study materials, assignments, and track your progress all in one place.
+              </p>
             </div>
-            
-            {progress === 100 && (
-              <button 
-                onClick={handleDownloadCertificate}
-                disabled={isGeneratingCertificate}
-                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white px-4 py-2 rounded-lg hover:from-amber-600 hover:to-amber-700 transition font-medium text-sm shadow-md disabled:opacity-50"
+          </div>
+
+          {/* Progress Widget (Students Only) */}
+          {user?.role === 'STUDENT' && progress !== undefined && progress !== null && (
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white/10 backdrop-blur-xl border border-white/10 p-5 rounded-2xl w-full lg:w-80 shadow-xl relative overflow-hidden"
+            >
+              {progress === 100 && (
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 animate-pulse pointer-events-none" />
+              )}
+              
+              <div className="relative z-10">
+                <div className="flex justify-between items-end mb-3">
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Your Progress</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-3xl font-black text-white leading-none">{progress}%</span>
+                      {progress === 100 && <Trophy className="w-5 h-5 text-amber-400" />}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="w-full bg-slate-800/50 rounded-full h-3 mb-4 overflow-hidden border border-white/5">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    className={`h-full rounded-full relative ${progress === 100 ? 'bg-gradient-to-r from-amber-400 to-amber-500' : 'bg-gradient-to-r from-brand-400 to-indigo-500'}`}
+                  >
+                    <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]" />
+                  </motion.div>
+                </div>
+                
+                {/* Certificate Button */}
+                {progress === 100 && (
+                  <button 
+                    onClick={handleDownloadCertificate}
+                    disabled={isGeneratingCertificate}
+                    className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2.5 rounded-xl hover:from-amber-400 hover:to-orange-400 transition-all font-bold text-sm shadow-[0_4px_14px_rgba(245,158,11,0.4)] disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    {isGeneratingCertificate ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Award className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    )}
+                    {isGeneratingCertificate ? 'Generating...' : 'Download Certificate'}
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* ── Modern Pill Tabs ── */}
+      <div className="relative flex overflow-x-auto scrollbar-hide py-2 -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-2xl shadow-inner border border-slate-200 w-max">
+          {visibleTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors flex items-center gap-2.5 whitespace-nowrap z-10 ${
+                  isActive ? 'text-white' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                }`}
               >
-                {isGeneratingCertificate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
-                Certificate
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabIndicator"
+                    className="absolute inset-0 bg-slate-900 rounded-xl shadow-md -z-10"
+                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <tab.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                {tab.label}
               </button>
-            )}
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex overflow-x-auto border-b border-slate-200 pb-[1px] scrollbar-hide">
-        <button
-          onClick={() => setActiveTab('lectures')}
-          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'lectures'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Video className="w-4 h-4" />
-          Live Lectures
-        </button>
-        <button
-          onClick={() => setActiveTab('materials')}
-          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'materials'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          Study Materials
-        </button>
-        {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
-          <button
-            onClick={() => setActiveTab('students')}
-            className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'students'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
+      {/* ── Animated Content Area ── */}
+      <div className="relative min-h-[500px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="absolute inset-0"
           >
-            <Users className="w-4 h-4" />
-            Students
-          </button>
-        )}
-        <button
-          onClick={() => setActiveTab('assignments')}
-          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'assignments'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <ClipboardList className="w-4 h-4" />
-          Assignments
-        </button>
-        <button
-          onClick={() => setActiveTab('quizzes')}
-          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'quizzes'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <CheckCircle className="w-4 h-4" />
-          Quizzes
-        </button>
-        <button
-          onClick={() => setActiveTab('discussions')}
-          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'discussions'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <MessageSquare className="w-4 h-4" />
-          Discussions
-        </button>
-        <button
-          onClick={() => setActiveTab('announcements')}
-          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'announcements'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Megaphone className="w-4 h-4" />
-          Announcements
-        </button>
-        <button
-          onClick={() => setActiveTab('attendance')}
-          className={`py-3 px-6 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'attendance'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <UserCheck className="w-4 h-4" />
-          Attendance
-        </button>
+            {activeTab === 'lectures' && <LecturesTab courseId={id} />}
+            {activeTab === 'materials' && <MaterialsTab courseId={id} />}
+            {activeTab === 'students' && (user?.role === 'TEACHER' || user?.role === 'ADMIN') && <StudentsTab courseId={id} />}
+            {activeTab === 'assignments' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+                <AssignmentsTab courseId={id} />
+              </div>
+            )}
+            {activeTab === 'quizzes' && <QuizzesTab courseId={id} />}
+            {activeTab === 'discussions' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+                <DiscussionsTab courseId={id} />
+              </div>
+            )}
+            {activeTab === 'announcements' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+                <AnnouncementsTab courseId={id} />
+              </div>
+            )}
+            {activeTab === 'attendance' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+                <AttendanceTab courseId={id} />
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
-
-      {/* Content Area */}
-      <div>
-        {activeTab === 'lectures' && <LecturesTab courseId={id} />}
-        {activeTab === 'materials' && <MaterialsTab courseId={id} />}
-        {activeTab === 'students' && (user?.role === 'TEACHER' || user?.role === 'ADMIN') && <StudentsTab courseId={id} />}
-        {activeTab === 'assignments' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <AssignmentsTab courseId={id} />
-          </div>
-        )}
-        {activeTab === 'quizzes' && <QuizzesTab courseId={id} />}
-        {activeTab === 'discussions' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <DiscussionsTab courseId={id} />
-          </div>
-        )}
-        {activeTab === 'announcements' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <AnnouncementsTab courseId={id} />
-          </div>
-        )}
-        {activeTab === 'attendance' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <AttendanceTab courseId={id} />
-          </div>
-        )}
-      </div>
+      
     </div>
   );
 };
