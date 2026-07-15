@@ -120,6 +120,9 @@ export const getInstituteBySlug = catchAsync(async (req: Request, res: Response)
       twitterUrl: true,
       supportEmail: true,
       supportPhone: true,
+      themeConfig: true,
+      terminologyMap: true,
+      legalPages: true,
     }
   });
 
@@ -185,7 +188,8 @@ export const updateInstitute = catchAsync(async (req: AuthRequest, res: Response
     themeColor, coverImageUrl, description, 
     allowedEmailDomain, isPrivate, 
     facebookUrl, linkedinUrl, twitterUrl, 
-    supportEmail, supportPhone 
+    supportEmail, supportPhone,
+    themeConfig, terminologyMap, legalPages
   } = req.body;
 
   const institute = await prisma.institute.update({
@@ -195,7 +199,8 @@ export const updateInstitute = catchAsync(async (req: AuthRequest, res: Response
       themeColor, coverImageUrl, description,
       allowedEmailDomain, isPrivate,
       facebookUrl, linkedinUrl, twitterUrl,
-      supportEmail, supportPhone
+      supportEmail, supportPhone,
+      themeConfig, terminologyMap, legalPages
     }
   });
 
@@ -440,6 +445,9 @@ export const getMyInstitute = catchAsync(async (req: AuthRequest, res: Response)
       twitterUrl: true,
       supportEmail: true,
       supportPhone: true,
+      themeConfig: true,
+      terminologyMap: true,
+      legalPages: true,
     }
   });
 
@@ -468,6 +476,9 @@ export const updateMyInstituteSettings = catchAsync(async (req: AuthRequest, res
     twitterUrl,
     supportEmail,
     supportPhone,
+    themeConfig,
+    terminologyMap,
+    legalPages,
   } = req.body;
 
   const institute = await prisma.institute.update({
@@ -483,6 +494,9 @@ export const updateMyInstituteSettings = catchAsync(async (req: AuthRequest, res
       twitterUrl,
       supportEmail,
       supportPhone,
+      themeConfig,
+      terminologyMap,
+      legalPages,
     },
   });
 

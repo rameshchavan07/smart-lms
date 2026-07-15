@@ -29,6 +29,9 @@ model Institute {
   twitterUrl      String?         @db.VarChar(255)
   supportEmail    String?         @db.VarChar(255)
   supportPhone    String?         @db.VarChar(20)
+  themeConfig     Json?
+  terminologyMap  Json?
+  legalPages      Json?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   deletedAt       DateTime?

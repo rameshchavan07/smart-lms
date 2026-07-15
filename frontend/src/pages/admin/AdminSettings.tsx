@@ -30,6 +30,20 @@ const AdminSettings: React.FC = () => {
     facebookUrl: '',
     twitterUrl: '',
     linkedinUrl: '',
+    themeConfig: {
+      primaryColor: '',
+      secondaryColor: '',
+      fontFamily: '',
+    },
+    terminologyMap: {
+      Teacher: 'Teacher',
+      Student: 'Student',
+      Course: 'Course',
+    },
+    legalPages: {
+      termsOfService: '',
+      privacyPolicy: '',
+    },
   });
 
   const { data: institute } = useQuery({
@@ -56,6 +70,9 @@ const AdminSettings: React.FC = () => {
       facebookUrl: institute.facebookUrl || '',
       twitterUrl: institute.twitterUrl || '',
       linkedinUrl: institute.linkedinUrl || '',
+      themeConfig: institute.themeConfig || { primaryColor: '', secondaryColor: '', fontFamily: '' },
+      terminologyMap: institute.terminologyMap || { Teacher: 'Teacher', Student: 'Student', Course: 'Course' },
+      legalPages: institute.legalPages || { termsOfService: '', privacyPolicy: '' },
     });
   }
 
@@ -116,6 +133,20 @@ const AdminSettings: React.FC = () => {
     } else {
       setInstituteData((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleNestedChange = (
+    category: 'themeConfig' | 'terminologyMap' | 'legalPages',
+    field: string,
+    value: string
+  ) => {
+    setInstituteData((prev) => ({
+      ...prev,
+      [category]: {
+        ...(prev[category] as Record<string, string>),
+        [field]: value,
+      },
+    }));
   };
 
   return (
@@ -196,11 +227,22 @@ const AdminSettings: React.FC = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[12px] font-semibold mb-1 text-muted">Theme Color (Hex code)</label>
+                    <label className="block text-[12px] font-semibold mb-1 text-muted">Primary Theme Color (Hex code)</label>
                     <div className="flex items-center gap-3">
-                      <input type="color" name="themeColor" value={instituteData.themeColor || '#6366f1'} onChange={handleInstChange} className="w-10 h-10 rounded border-0 bg-transparent p-0 cursor-pointer" />
-                      <input type="text" name="themeColor" placeholder="#6366f1" value={instituteData.themeColor} onChange={handleInstChange} className="input w-full text-[13px]" />
+                      <input type="color" value={instituteData.themeConfig.primaryColor || instituteData.themeColor || '#6366f1'} onChange={(e) => handleNestedChange('themeConfig', 'primaryColor', e.target.value)} className="w-10 h-10 rounded border-0 bg-transparent p-0 cursor-pointer" />
+                      <input type="text" placeholder="#6366f1" value={instituteData.themeConfig.primaryColor} onChange={(e) => handleNestedChange('themeConfig', 'primaryColor', e.target.value)} className="input w-full text-[13px]" />
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-semibold mb-1 text-muted">Secondary Theme Color (Hex code)</label>
+                    <div className="flex items-center gap-3">
+                      <input type="color" value={instituteData.themeConfig.secondaryColor || '#10b981'} onChange={(e) => handleNestedChange('themeConfig', 'secondaryColor', e.target.value)} className="w-10 h-10 rounded border-0 bg-transparent p-0 cursor-pointer" />
+                      <input type="text" placeholder="#10b981" value={instituteData.themeConfig.secondaryColor} onChange={(e) => handleNestedChange('themeConfig', 'secondaryColor', e.target.value)} className="input w-full text-[13px]" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-semibold mb-1 text-muted">Font Family</label>
+                    <input type="text" placeholder="e.g. Inter, sans-serif" value={instituteData.themeConfig.fontFamily || ''} onChange={(e) => handleNestedChange('themeConfig', 'fontFamily', e.target.value)} className="input w-full text-[13px]" />
                   </div>
                   <div>
                     <label className="block text-[12px] font-semibold mb-1 text-muted">Cover Image URL</label>
@@ -228,6 +270,40 @@ const AdminSettings: React.FC = () => {
                     <label className="block text-[12px] font-semibold mb-1 text-muted">Allowed Email Domain (Optional)</label>
                     <input type="text" name="allowedEmailDomain" placeholder="e.g. harvard.edu" value={instituteData.allowedEmailDomain} onChange={handleInstChange} className="input w-full text-[13px]" />
                     <p className="text-[11px] text-muted mt-1">If provided, only users with this email domain can register.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Terminology Section */}
+              <div className="card">
+                <h2 className="text-[16px] font-bold mb-4 flex items-center gap-2 text-primary">Terminology Mapping</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-semibold mb-1 text-muted">Teacher</label>
+                    <input type="text" placeholder="e.g. Instructor" value={instituteData.terminologyMap?.Teacher || ''} onChange={(e) => handleNestedChange('terminologyMap', 'Teacher', e.target.value)} className="input w-full text-[13px]" />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-semibold mb-1 text-muted">Student</label>
+                    <input type="text" placeholder="e.g. Learner" value={instituteData.terminologyMap?.Student || ''} onChange={(e) => handleNestedChange('terminologyMap', 'Student', e.target.value)} className="input w-full text-[13px]" />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-semibold mb-1 text-muted">Course</label>
+                    <input type="text" placeholder="e.g. Program" value={instituteData.terminologyMap?.Course || ''} onChange={(e) => handleNestedChange('terminologyMap', 'Course', e.target.value)} className="input w-full text-[13px]" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Legal & Compliance Section */}
+              <div className="card">
+                <h2 className="text-[16px] font-bold mb-4 flex items-center gap-2 text-primary">Legal & Compliance</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[12px] font-semibold mb-1 text-muted">Terms of Service</label>
+                    <textarea rows={4} placeholder="Paste your Terms of Service here..." value={instituteData.legalPages?.termsOfService || ''} onChange={(e) => handleNestedChange('legalPages', 'termsOfService', e.target.value)} className="input w-full text-[13px]" />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-semibold mb-1 text-muted">Privacy Policy</label>
+                    <textarea rows={4} placeholder="Paste your Privacy Policy here..." value={instituteData.legalPages?.privacyPolicy || ''} onChange={(e) => handleNestedChange('legalPages', 'privacyPolicy', e.target.value)} className="input w-full text-[13px]" />
                   </div>
                 </div>
               </div>

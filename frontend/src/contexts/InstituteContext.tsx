@@ -23,6 +23,16 @@ interface Institute {
   twitterUrl?: string | null;
   supportEmail?: string | null;
   supportPhone?: string | null;
+  themeConfig?: {
+    primaryColor?: string;
+    secondaryColor?: string;
+    fontFamily?: string;
+  } | null;
+  terminologyMap?: Record<string, string> | null;
+  legalPages?: {
+    termsOfService?: string;
+    privacyPolicy?: string;
+  } | null;
 }
 
 interface InstituteContextType {
@@ -30,6 +40,7 @@ interface InstituteContextType {
   isLoading: boolean;
   error: string | null;
   refreshInstitute: () => Promise<void>;
+  t: (term: string) => string;
 }
 
 import { AxiosError } from 'axios';
@@ -79,23 +90,37 @@ export const InstituteProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     await fetchInstitute();
   };
 
-  // Apply dynamic theme color
+  const t = useCallback((term: string) => {
+    if (!institute?.terminologyMap) return term;
+    return institute.terminologyMap[term] || term;
+  }, [institute]);
+
+  // Apply dynamic theme config
   useEffect(() => {
-    if (institute?.themeColor) {
-      document.documentElement.style.setProperty('--color-brand-500', institute.themeColor);
-      document.documentElement.style.setProperty('--color-brand-600', `color-mix(in srgb, ${institute.themeColor} 85%, black)`);
-      document.documentElement.style.setProperty('--color-brand-700', `color-mix(in srgb, ${institute.themeColor} 70%, black)`);
-      document.documentElement.style.setProperty('--color-border-focus', institute.themeColor);
+    const primary = institute?.themeConfig?.primaryColor || institute?.themeColor;
+    
+    if (primary) {
+      document.documentElement.style.setProperty('--color-brand-500', primary);
+      document.documentElement.style.setProperty('--color-brand-600', `color-mix(in srgb, ${primary} 85%, black)`);
+      document.documentElement.style.setProperty('--color-brand-700', `color-mix(in srgb, ${primary} 70%, black)`);
+      document.documentElement.style.setProperty('--color-border-focus', primary);
     } else {
       document.documentElement.style.removeProperty('--color-brand-500');
       document.documentElement.style.removeProperty('--color-brand-600');
       document.documentElement.style.removeProperty('--color-brand-700');
       document.documentElement.style.removeProperty('--color-border-focus');
     }
-  }, [institute?.themeColor]);
+    
+    const secondary = institute?.themeConfig?.secondaryColor;
+    if (secondary) {
+      document.documentElement.style.setProperty('--color-secondary-500', secondary);
+    } else {
+      document.documentElement.style.removeProperty('--color-secondary-500');
+    }
+  }, [institute?.themeColor, institute?.themeConfig]);
 
   return (
-    <InstituteContext.Provider value={{ institute, isLoading, error, refreshInstitute }}>
+    <InstituteContext.Provider value={{ institute, isLoading, error, refreshInstitute, t }}>
       {children}
     </InstituteContext.Provider>
   );
