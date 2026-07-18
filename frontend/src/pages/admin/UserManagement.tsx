@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Badge, Button, EmptyState, Modal, ConfirmDialog } from '../../components';
 import toast from 'react-hot-toast';
 import { useOutletContext } from 'react-router-dom';
+import { isAxiosError } from 'axios';
 import { downloadCsv } from '../../services/exportCsv';
 
 interface UserData {
@@ -95,8 +96,16 @@ const UserManagement: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (error: unknown) => {
-      console.error('Failed to delete user', error);
-      toast.error('Failed to delete user profile.');
+      if (isAxiosError(error) && error.response?.status === 404) {
+        console.warn('User already deleted or not found.');
+        toast.success('User profile deleted successfully.');
+        setIsConfirmOpen(false);
+        setUserIdToDelete(null);
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+      } else {
+        console.error('Failed to delete user', error);
+        toast.error('Failed to delete user profile.');
+      }
     }
   });
 
