@@ -51,27 +51,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun register(instituteCode: String, request: RegisterRequest) {
-        viewModelScope.launch {
-            _authState.value = AuthState.Loading
-            try {
-                val response = api.register(instituteCode, request)
-                if (response.isSuccessful && response.body() != null) {
-                    val authResponse = response.body()!!
-                    if (authResponse.success && authResponse.token != null && authResponse.user != null) {
-                        tokenManager.saveToken(authResponse.token, authResponse.user.role)
-                        _authState.value = AuthState.Success
-                    } else {
-                        _authState.value = AuthState.Error(authResponse.message ?: "Registration failed")
-                    }
-                } else {
-                    _authState.value = AuthState.Error("HTTP Error: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                _authState.value = AuthState.Error(e.localizedMessage ?: "Unknown error occurred")
-            }
-        }
-    }
+
 
     fun resetState() {
         _authState.value = AuthState.Idle
