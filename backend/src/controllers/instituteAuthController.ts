@@ -226,5 +226,15 @@ export const loginForInstitute = catchAsync(async (req: Request, res: Response) 
   setAuthCookies(res, authData.token, authData.refreshToken);
 
   const { token, refreshToken, ...userData } = authData;
-  res.json({ ...userData, instituteSlug: slug });
+  res.json({ 
+    success: true, 
+    token: token, 
+    user: {
+      id: user.id,
+      name: `${user.firstName} ${user.lastName}`,
+      email: user.email,
+      role: user.role
+    },
+    instituteSlug: slug 
+  });
 });

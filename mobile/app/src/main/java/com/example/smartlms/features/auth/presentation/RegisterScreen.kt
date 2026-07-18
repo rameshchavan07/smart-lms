@@ -11,13 +11,29 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.smartlms.data.network.dto.RegisterRequest
 
 @Composable
-fun RegisterScreen() {
+fun RegisterScreen(
+    viewModel: AuthViewModel = hiltViewModel(),
+    onRegisterSuccess: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {}
+) {
+    var instituteCode by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var role by remember { mutableStateOf("Student") } // Default role
+    var role by remember { mutableStateOf("STUDENT") }
+
+    val authState by viewModel.authState.collectAsState()
+
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            onRegisterSuccess()
+            viewModel.resetState()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -53,6 +69,14 @@ fun RegisterScreen() {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
+                    value = instituteCode,
+                    onValueChange = { instituteCode = it },
+                    label = { Text("Institute Code") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium
+                )
+
+                OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Full Name") },
@@ -86,36 +110,52 @@ fun RegisterScreen() {
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(
-                            selected = role == "Student",
-                            onClick = { role = "Student" }
+                            selected = role == "STUDENT",
+                            onClick = { role = "STUDENT" }
                         )
                         Text("Student", style = MaterialTheme.typography.bodyMedium)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(
-                            selected = role == "Teacher",
-                            onClick = { role = "Teacher" }
+                            selected = role == "TEACHER",
+                            onClick = { role = "TEACHER" }
                         )
                         Text("Teacher", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
 
+                if (authState is AuthState.Error) {
+                    Text(
+                        text = (authState as AuthState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { /* TODO: Trigger Registration */ },
+                    onClick = { 
+                        viewModel.register(instituteCode, RegisterRequest(name, email, password, role))
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
+                    enabled = authState !is AuthState.Loading
                 ) {
-                    Text("Sign Up", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    if (authState is AuthState.Loading) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text("Sign Up", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
 
-                TextButton(onClick = { /* TODO: Navigate back to Login */ }) {
+                TextButton(onClick = onNavigateToLogin) {
                     Text("Already have an account? Sign In")
                 }
             }
         }
     }
 }
+

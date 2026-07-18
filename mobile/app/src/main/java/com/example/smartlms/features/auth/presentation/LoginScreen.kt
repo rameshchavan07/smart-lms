@@ -11,11 +11,27 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.smartlms.data.network.dto.LoginRequest
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(
+    viewModel: AuthViewModel = hiltViewModel(),
+    onLoginSuccess: () -> Unit = {},
+    onNavigateToRegister: () -> Unit = {}
+) {
+    var instituteCode by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    
+    val authState by viewModel.authState.collectAsState()
+
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            onLoginSuccess()
+            viewModel.resetState()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -51,6 +67,14 @@ fun LoginScreen() {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
+                    value = instituteCode,
+                    onValueChange = { instituteCode = it },
+                    label = { Text("Institute Code") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium
+                )
+
+                OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email Address") },
@@ -69,22 +93,38 @@ fun LoginScreen() {
                     shape = MaterialTheme.shapes.medium
                 )
 
+                if (authState is AuthState.Error) {
+                    Text(
+                        text = (authState as AuthState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { /* TODO: Trigger login */ },
+                    onClick = { 
+                        viewModel.login(instituteCode, LoginRequest(email, password))
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
-                    shape = MaterialTheme.shapes.medium
+                    shape = MaterialTheme.shapes.medium,
+                    enabled = authState !is AuthState.Loading
                 ) {
-                    Text("Sign In", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    if (authState is AuthState.Loading) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text("Sign In", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
 
-                TextButton(onClick = { /* TODO: Navigate to Register */ }) {
+                TextButton(onClick = onNavigateToRegister) {
                     Text("Don't have an account? Sign Up")
                 }
             }
         }
     }
 }
+

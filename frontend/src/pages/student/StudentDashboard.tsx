@@ -205,6 +205,11 @@ const StudentDashboard: React.FC = () => {
                 </span>
               </>
             )}
+            {user?.instituteSlug && (
+              <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-blue-500/10 text-blue-600 border border-blue-500/20" title="Use this code to log into the mobile app">
+                📱 Institute Code: {user.instituteSlug}
+              </span>
+            )}
           </div>
           <p className="text-[14px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
             Here's your learning summary for today

@@ -144,7 +144,12 @@ app.get('/api/csrf-token', (req: Request, res: Response) => {
 });
 
 // Apply CSRF Protection
-app.use('/api', doubleCsrfProtection);
+app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+  if (req.headers['x-app-client'] === 'mobile') {
+    return next();
+  }
+  doubleCsrfProtection(req, res, next);
+});
 
 // API Routes
 app.use('/api', routes);
