@@ -332,13 +332,18 @@ export const deleteUser = catchAsync(async (req: AuthRequest, res: Response) => 
         ]
       } 
     }),
+    prisma.pushSubscription.deleteMany({ where: { userId: id as string } }),
+    prisma.chatGroupMember.deleteMany({ where: { userId: id as string } }),
     ...(user.student ? [
       prisma.attendance.deleteMany({ where: { studentId: user.student.id } }),
       prisma.assignmentSubmission.deleteMany({ where: { studentId: user.student.id } }),
+      prisma.quizSubmission.deleteMany({ where: { studentId: user.student.id } }),
+      prisma.certificate.deleteMany({ where: { studentId: user.student.id } }),
       prisma.enrollment.deleteMany({ where: { studentId: user.student.id } }),
       prisma.student.delete({ where: { id: user.student.id } })
     ] : []),
     ...(user.teacher ? [
+      prisma.announcement.updateMany({ where: { teacherId: user.teacher.id }, data: { teacherId: null } }),
       prisma.course.updateMany({ where: { teacherId: user.teacher.id }, data: { teacherId: null } }),
       prisma.teacher.delete({ where: { id: user.teacher.id } })
     ] : []),
