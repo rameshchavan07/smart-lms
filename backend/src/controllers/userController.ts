@@ -348,6 +348,10 @@ export const deleteUser = catchAsync(async (req: AuthRequest, res: Response) => 
       prisma.teacher.delete({ where: { id: user.teacher.id } })
     ] : []),
     prisma.refreshToken.deleteMany({ where: { userId: id as string } }),
+    prisma.user.update({
+      where: { id: id as string },
+      data: { email: `deleted_${Date.now()}_${user.email}` }
+    }),
     prisma.user.delete({ where: { id: id as string } })
   ]);
 

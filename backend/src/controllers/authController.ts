@@ -247,44 +247,6 @@ export const resetPassword = catchAsync(async (req: Request, res: Response) => {
   res.status(200).json({ message: 'Password reset successfully. Please log in with your new password.' });
 });
 
-export const deleteUser = catchAsync(async (req: AuthRequest, res: Response) => {
-  const id = req.params.id as string;
-
-  const user = await prisma.user.findUnique({
-    where: { id },
-  });
-
-  if (!user) {
-    throw new NotFoundError('User not found');
-  }
-
-  // Soft delete or hard delete depending on your business logic. 
-  // We'll perform a cascading hard delete within a transaction for now.
-  await prisma.$transaction(async (tx) => {
-    // 1. Delete associated Student profile
-    if (user.role === 'STUDENT') {
-      await tx.student.deleteMany({ where: { userId: user.id } });
-    }
-    // 2. Delete associated Teacher profile
-    if (user.role === 'TEACHER') {
-      await tx.teacher.deleteMany({ where: { userId: user.id } });
-    }
-    // 3. Delete Refresh Tokens
-    await tx.refreshToken.deleteMany({ where: { userId: user.id } });
-    
-    // 4. Delete the User
-    await tx.user.delete({
-      where: { id: user.id },
-    });
-  });
-
-  logActivity(req.user?.id || 'SYSTEM', 'DELETE_USER', 'User', user.id);
-
-  res.status(200).json({
-    success: true,
-    message: 'User deleted successfully',
-  });
-});
 
 export const googleMobileLogin = catchAsync(async (req: Request, res: Response) => {
   const { idToken, instituteCode } = req.body;
