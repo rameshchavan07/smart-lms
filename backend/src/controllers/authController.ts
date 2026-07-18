@@ -15,6 +15,7 @@ import { OtpType, User } from '@prisma/client';
 import { registerUserLogic, verifyEmailLogic, resendOtpLogic } from '../services/authService';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, NotFoundError, ValidationError, ForbiddenError, UnauthorizedError } from '../utils/AppError';
+import { OAuth2Client } from 'google-auth-library';
 
 // ─── Helper: Set Auth Cookies ───────────────────────────────────────────────
 export const setAuthCookies = (res: Response, token: string, refreshToken: string) => {
@@ -244,6 +245,91 @@ export const resetPassword = catchAsync(async (req: Request, res: Response) => {
   await logActivity(user.id, 'Password reset successfully', 'User', user.id);
 
   res.status(200).json({ message: 'Password reset successfully. Please log in with your new password.' });
+});
+
+export const deleteUser = catchAsync(async (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+  });
+
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
+
+  // Soft delete or hard delete depending on your business logic. 
+  // We'll perform a cascading hard delete within a transaction for now.
+  await prisma.$transaction(async (tx) => {
+    // 1. Delete associated Student profile
+    if (user.role === 'STUDENT') {
+      await tx.student.deleteMany({ where: { userId: user.id } });
+    }
+    // 2. Delete associated Teacher profile
+    if (user.role === 'TEACHER') {
+      await tx.teacher.deleteMany({ where: { userId: user.id } });
+    }
+    // 3. Delete Refresh Tokens
+    await tx.refreshToken.deleteMany({ where: { userId: user.id } });
+    
+    // 4. Delete the User
+    await tx.user.delete({
+      where: { id: user.id },
+    });
+  });
+
+  logActivity(req.user?.id || 'SYSTEM', 'DELETE_USER', 'User', user.id);
+
+  res.status(200).json({
+    success: true,
+    message: 'User deleted successfully',
+  });
+});
+
+export const googleMobileLogin = catchAsync(async (req: Request, res: Response) => {
+  const { idToken, instituteCode } = req.body;
+  if (!idToken || !instituteCode) {
+    throw new ValidationError('ID Token and Institute Code are required');
+  }
+
+  const client = new OAuth2Client(process.env.GOOGLE_LOGIN_CLIENT_ID);
+  
+  const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_LOGIN_CLIENT_ID,
+  });
+  
+  const payload = ticket.getPayload();
+  if (!payload || !payload.email) {
+      throw new UnauthorizedError('Invalid Google token');
+  }
+
+  const email = payload.email;
+
+  const user = await prisma.user.findUnique({
+      where: { email },
+      include: { institute: true }
+  });
+
+  if (!user) {
+      throw new NotFoundError('Account not found. Please register on your institute\'s website first.');
+  }
+
+  if (user.institute?.slug !== instituteCode) {
+      throw new ForbiddenError('User does not belong to this institute');
+  }
+
+  // Build JWT response
+  const authResponse = await buildAuthResponse(user);
+  setAuthCookies(res, authResponse.token, authResponse.refreshToken);
+
+  logActivity(user.id, 'LOGIN', 'User', user.id);
+
+  res.status(200).json({
+      success: true,
+      message: 'Logged in successfully',
+      ...authResponse,
+  });
 });
 
 // ─── GOOGLE OAUTH CALLBACK ────────────────────────────────────────────────────

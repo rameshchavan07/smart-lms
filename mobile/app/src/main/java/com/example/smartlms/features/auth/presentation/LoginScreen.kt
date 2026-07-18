@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.smartlms.data.network.dto.LoginRequest
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -206,6 +207,57 @@ fun LoginScreen(
                         } else {
                             Text("Sign In", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val coroutineScope = rememberCoroutineScope()
+                    val credentialManager = remember { androidx.credentials.CredentialManager.create(context) }
+
+                    OutlinedButton(
+                        onClick = {
+                            if (instituteCode.trim().isEmpty()) {
+                                // For simplicity, we trigger error through ViewModel if institute code is empty
+                                // but we can't easily do it here without a new method. We'll just Toast.
+                                android.widget.Toast.makeText(context, "Please enter Institute Code first", android.widget.Toast.LENGTH_SHORT).show()
+                                return@OutlinedButton
+                            }
+                            val googleIdOption = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
+                                .setFilterByAuthorizedAccounts(false)
+                                .setServerClientId("488140899796-ebli2vp08e3q909cunvj6a2ambfhv7b3.apps.googleusercontent.com")
+                                .build()
+                            val request = androidx.credentials.GetCredentialRequest.Builder()
+                                .addCredentialOption(googleIdOption)
+                                .build()
+
+                            coroutineScope.launch {
+                                try {
+                                    val result = credentialManager.getCredential(
+                                        request = request,
+                                        context = context
+                                    )
+                                    val credential = result.credential
+                                    if (credential is androidx.credentials.CustomCredential && credential.type == com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                                        val googleIdTokenCredential = com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.createFrom(credential.data)
+                                        viewModel.googleLogin(instituteCode.trim(), googleIdTokenCredential.idToken)
+                                    }
+                                } catch (e: Exception) {
+                                    android.widget.Toast.makeText(context, "Google Sign-In failed or was cancelled.", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.White
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
+                        enabled = authState !is AuthState.Loading
+                    ) {
+                        Text("Continue with Google", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

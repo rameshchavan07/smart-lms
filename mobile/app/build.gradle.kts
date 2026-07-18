@@ -96,4 +96,13 @@ dependencies {
 
   // DataStore
   implementation(libs.androidx.datastore.preferences)
+
+  // Media3 (ExoPlayer)
+  implementation(libs.androidx.media3.exoplayer)
+  implementation(libs.androidx.media3.ui)
+
+  // Credential Manager for Google Sign-In
+  implementation(libs.androidx.credentials)
+  implementation(libs.androidx.credentials.play.services.auth)
+  implementation(libs.googleid)
 }

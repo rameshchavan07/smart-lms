@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.clickable
 
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,7 +23,8 @@ import androidx.compose.runtime.getValue
 
 @Composable
 fun StudentDashboardScreen(
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: DashboardViewModel = hiltViewModel(),
+    onNavigateToCourseDetail: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -74,7 +76,10 @@ fun StudentDashboardScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(courses) { course ->
-                            CourseCard(course)
+                            CourseCard(
+                                course = course,
+                                onClick = { onNavigateToCourseDetail(course.id) }
+                            )
                         }
                     }
                 }
@@ -84,9 +89,12 @@ fun StudentDashboardScreen(
 }
 
 @Composable
-fun CourseCard(course: com.example.smartlms.features.dashboard.data.CourseDto) {
+fun CourseCard(
+    course: com.example.smartlms.features.dashboard.data.CourseDto,
+    onClick: () -> Unit = {}
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {

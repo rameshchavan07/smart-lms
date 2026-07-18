@@ -2,8 +2,7 @@ package com.example.smartlms.features.dashboard.presentation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -12,7 +11,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun MainDashboardShell() {
+fun MainDashboardShell(
+    onNavigateToCourseDetail: (String) -> Unit = {}
+) {
     val navController = rememberNavController()
     
     val items = listOf(
@@ -54,7 +55,7 @@ fun MainDashboardShell() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(BottomNavItem.Home.route) {
-                StudentDashboardScreen()
+                StudentDashboardScreen(onNavigateToCourseDetail = onNavigateToCourseDetail)
             }
             composable(BottomNavItem.Courses.route) {
                 CoursesScreen()

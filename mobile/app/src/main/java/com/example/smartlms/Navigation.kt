@@ -17,6 +17,11 @@ import com.example.smartlms.features.auth.presentation.LoginScreen
 import com.example.smartlms.features.dashboard.presentation.MainDashboardShell
 import com.example.smartlms.data.local.TokenManager
 
+import com.example.smartlms.features.course.presentation.CourseDetailScreen
+import com.example.smartlms.features.course.presentation.LectureScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+
 @Composable
 fun MainNavigation() {
     val navController = rememberNavController()
@@ -46,7 +51,30 @@ fun MainNavigation() {
             )
         }
         composable("dashboard") {
-            MainDashboardShell()
+            MainDashboardShell(
+                onNavigateToCourseDetail = { courseId ->
+                    navController.navigate("course_detail/$courseId")
+                }
+            )
+        }
+        composable(
+            route = "course_detail/{courseId}",
+            arguments = listOf(navArgument("courseId") { type = NavType.StringType })
+        ) {
+            CourseDetailScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToLecture = { lectureId ->
+                    navController.navigate("lecture/$lectureId")
+                }
+            )
+        }
+        composable(
+            route = "lecture/{lectureId}",
+            arguments = listOf(navArgument("lectureId") { type = NavType.StringType })
+        ) {
+            LectureScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

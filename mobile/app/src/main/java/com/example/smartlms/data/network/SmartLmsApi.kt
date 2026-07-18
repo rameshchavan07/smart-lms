@@ -1,6 +1,7 @@
 package com.example.smartlms.data.network
 
 import com.example.smartlms.data.network.dto.AuthResponse
+import com.example.smartlms.data.network.dto.GoogleLoginRequest
 import com.example.smartlms.data.network.dto.LoginRequest
 import com.example.smartlms.data.network.dto.RegisterRequest
 import retrofit2.Response
@@ -14,6 +15,11 @@ interface SmartLmsApi {
     suspend fun login(
         @Path("instituteCode") instituteCode: String,
         @Body request: LoginRequest
+    ): Response<AuthResponse>
+
+    @POST("auth/google/token")
+    suspend fun googleLogin(
+        @Body request: GoogleLoginRequest
     ): Response<AuthResponse>
 
     @POST("institutes/{instituteCode}/auth/register")

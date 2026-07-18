@@ -12,6 +12,7 @@ import {
   getMe,
   refresh,
   logoutUser,
+  googleMobileLogin,
 } from '../controllers/authController';
 import { protect } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -61,5 +62,8 @@ router.get(
   },
   googleCallback
 );
+
+// Mobile Google ID Token verification
+router.post('/google/token', googleMobileLogin);
 
 export default router;
