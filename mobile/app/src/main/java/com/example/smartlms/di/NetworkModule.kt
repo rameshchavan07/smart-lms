@@ -61,7 +61,7 @@ object NetworkModule {
     fun provideRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit {
         val contentType = "application/json".toMediaType()
         return Retrofit.Builder()
-            .baseUrl("https://smart-lms-api.onrender.com/api/")
+            .baseUrl("http://10.0.2.2:5000/api/")
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()
@@ -83,6 +83,18 @@ object NetworkModule {
     @Singleton
     fun provideCourseApi(retrofit: Retrofit): com.example.smartlms.features.course.data.CourseApi {
         return retrofit.create(com.example.smartlms.features.course.data.CourseApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSocketManager(): com.example.smartlms.data.network.SocketManager {
+        return com.example.smartlms.data.network.SocketManager()
+    }
+
+    @Provides
+    @Singleton
+    fun provideChatApi(retrofit: Retrofit): com.example.smartlms.features.chat.data.ChatApi {
+        return retrofit.create(com.example.smartlms.features.chat.data.ChatApi::class.java)
     }
 }
 

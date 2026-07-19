@@ -57,8 +57,8 @@ const SuperAdminLayout: React.FC = () => {
       <aside className={`sidebar ${isMobileOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-brand flex-shrink-0 mx-auto" style={{ background: 'var(--brand-500)' }}>
-            <Globe className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 mx-auto">
+            <img src="/logo.jpg" alt="OpenLearnX Logo" className="w-9 h-9 rounded-xl object-cover" />
           </div>
           {!isCollapsed && (
             <div>

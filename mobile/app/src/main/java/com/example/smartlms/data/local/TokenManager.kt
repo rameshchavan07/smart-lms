@@ -20,6 +20,8 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
     companion object {
         private val JWT_TOKEN_KEY = stringPreferencesKey("jwt_token")
         private val USER_ROLE_KEY = stringPreferencesKey("user_role")
+        private val INSTITUTE_CODE_KEY = stringPreferencesKey("institute_code")
+        private val USER_ID_KEY = stringPreferencesKey("user_id")
     }
 
     val tokenFlow: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -30,10 +32,24 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
         preferences[USER_ROLE_KEY]
     }
 
-    suspend fun saveToken(token: String, role: String) {
+    val instituteCodeFlow: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[INSTITUTE_CODE_KEY]
+    }
+
+    val userIdFlow: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[USER_ID_KEY]
+    }
+
+    suspend fun saveToken(token: String, role: String, instituteCode: String? = null, userId: String? = null) {
         context.dataStore.edit { preferences ->
             preferences[JWT_TOKEN_KEY] = token
             preferences[USER_ROLE_KEY] = role
+            if (instituteCode != null) {
+                preferences[INSTITUTE_CODE_KEY] = instituteCode
+            }
+            if (userId != null) {
+                preferences[USER_ID_KEY] = userId
+            }
         }
     }
 
@@ -41,6 +57,8 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
         context.dataStore.edit { preferences ->
             preferences.remove(JWT_TOKEN_KEY)
             preferences.remove(USER_ROLE_KEY)
+            preferences.remove(INSTITUTE_CODE_KEY)
+            preferences.remove(USER_ID_KEY)
         }
     }
 }

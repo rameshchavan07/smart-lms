@@ -19,8 +19,13 @@ import com.example.smartlms.data.local.TokenManager
 
 import com.example.smartlms.features.course.presentation.CourseDetailScreen
 import com.example.smartlms.features.course.presentation.LectureScreen
+import com.example.smartlms.features.classroom.presentation.ClassroomScreen
+import com.example.smartlms.features.chat.presentation.ChatListScreen
+import com.example.smartlms.features.chat.presentation.ChatRoomScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun MainNavigation() {
@@ -54,6 +59,13 @@ fun MainNavigation() {
             MainDashboardShell(
                 onNavigateToCourseDetail = { courseId ->
                     navController.navigate("course_detail/$courseId")
+                },
+                onNavigateToLiveClass = { meetingUrl ->
+                    val encodedUrl = java.net.URLEncoder.encode(meetingUrl, StandardCharsets.UTF_8.toString())
+                    navController.navigate("classroom/$encodedUrl")
+                },
+                onNavigateToChat = {
+                    navController.navigate("chat_list")
                 }
             )
         }
@@ -73,6 +85,45 @@ fun MainNavigation() {
             arguments = listOf(navArgument("lectureId") { type = NavType.StringType })
         ) {
             LectureScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = "classroom/{meetingUrl}",
+            arguments = listOf(navArgument("meetingUrl") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val encodedUrl = backStackEntry.arguments?.getString("meetingUrl") ?: ""
+            val meetingUrl = URLDecoder.decode(encodedUrl, StandardCharsets.UTF_8.toString())
+            ClassroomScreen(
+                meetingUrl = meetingUrl,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable("chat_list") {
+            ChatListScreen(
+                onNavigateToRoom = { targetId, isGroup, name ->
+                    val encodedName = java.net.URLEncoder.encode(name, StandardCharsets.UTF_8.toString())
+                    navController.navigate("chat_room/$targetId/$isGroup/$encodedName")
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = "chat_room/{targetId}/{isGroup}/{roomName}",
+            arguments = listOf(
+                navArgument("targetId") { type = NavType.StringType },
+                navArgument("isGroup") { type = NavType.BoolType },
+                navArgument("roomName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val targetId = backStackEntry.arguments?.getString("targetId") ?: ""
+            val isGroup = backStackEntry.arguments?.getBoolean("isGroup") ?: false
+            val encodedName = backStackEntry.arguments?.getString("roomName") ?: ""
+            val roomName = URLDecoder.decode(encodedName, StandardCharsets.UTF_8.toString())
+            ChatRoomScreen(
+                targetId = targetId,
+                isGroup = isGroup,
+                roomName = roomName,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

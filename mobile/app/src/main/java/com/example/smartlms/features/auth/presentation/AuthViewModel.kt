@@ -37,7 +37,7 @@ class AuthViewModel @Inject constructor(
                 if (response.isSuccessful && response.body() != null) {
                     val authResponse = response.body()!!
                     if (authResponse.success && authResponse.token != null && authResponse.user != null) {
-                        tokenManager.saveToken(authResponse.token, authResponse.user.role)
+                        tokenManager.saveToken(authResponse.token, authResponse.user.role, instituteCode, authResponse.user.id)
                         _authState.value = AuthState.Success
                     } else {
                         _authState.value = AuthState.Error(authResponse.message ?: "Login failed")
@@ -62,7 +62,7 @@ class AuthViewModel @Inject constructor(
                 if (response.isSuccessful && response.body() != null) {
                     val authResponse = response.body()!!
                     if (authResponse.success && authResponse.token != null && authResponse.user != null) {
-                        tokenManager.saveToken(authResponse.token, authResponse.user.role)
+                        tokenManager.saveToken(authResponse.token, authResponse.user.role, instituteCode, authResponse.user.id)
                         _authState.value = AuthState.Success
                     } else {
                         _authState.value = AuthState.Error(authResponse.message ?: "Google Login failed")

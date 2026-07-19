@@ -106,8 +106,8 @@ const LandingPage: React.FC = () => {
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Logo */}
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div style={{ width: 38, height: 38, borderRadius: 12, background: 'linear-gradient(135deg,#4361f0,#6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(67,97,240,0.4)' }}>
-              <GraduationCap size={20} color="white" />
+            <div className="flex items-center justify-center">
+              <img src="/logo.jpg" alt="OpenLearnX" className="w-[38px] h-[38px] rounded-xl object-cover" />
             </div>
             <span style={{ fontWeight: 800, fontSize: 18, color: 'white', letterSpacing: '-0.02em' }}>OpenLearnX</span>
           </Link>

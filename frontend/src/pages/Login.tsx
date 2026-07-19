@@ -79,8 +79,8 @@ const Login: React.FC = () => {
 
         {/* Logo */}
         <div className="relative flex items-center gap-3 mb-auto">
-          <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center shadow-brand">
-            <GraduationCap className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center">
+            <img src="/logo.jpg" alt="OpenLearnX" className="w-10 h-10 rounded-xl object-cover" />
           </div>
           <span className="text-white font-bold text-xl">OpenLearnX</span>
         </div>
@@ -146,8 +146,8 @@ const Login: React.FC = () => {
         <div className="w-full max-w-md animate-fade-up">
           {/* Mobile Logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center">
+              <img src="/logo.jpg" alt="OpenLearnX" className="w-9 h-9 rounded-xl object-cover" />
             </div>
             <span className="font-bold text-lg text-primary">OpenLearnX</span>
           </div>

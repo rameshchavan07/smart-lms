@@ -22,4 +22,58 @@ class DashboardRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun getStudentMetrics(): Result<StudentMetricsDto> {
+        return try {
+            val response = api.getStudentMetrics()
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body.metrics)
+                } else {
+                    Result.failure(Exception("Empty response body"))
+                }
+            } else {
+                Result.failure(Exception("Error fetching metrics: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getMyTasks(): Result<List<TaskDto>> {
+        return try {
+            val response = api.getMyTasks()
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body.tasks)
+                } else {
+                    Result.failure(Exception("Empty response body"))
+                }
+            } else {
+                Result.failure(Exception("Error fetching tasks: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getMyAnnouncements(): Result<List<AnnouncementDto>> {
+        return try {
+            val response = api.getMyAnnouncements()
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body.announcements)
+                } else {
+                    Result.failure(Exception("Empty response body"))
+                }
+            } else {
+                Result.failure(Exception("Error fetching announcements: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

@@ -9,10 +9,26 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.ui.graphics.vector.ImageVector
+
+sealed class BottomNavItem(val title: String, val icon: ImageVector, val route: String) {
+    object Home : BottomNavItem("Home", Icons.Default.Home, "dashboard_home")
+    object Courses : BottomNavItem("Courses", Icons.Default.List, "dashboard_courses")
+    object Assignments : BottomNavItem("Tasks", Icons.Default.Assignment, "dashboard_assignments")
+    object Profile : BottomNavItem("Profile", Icons.Default.Person, "dashboard_profile")
+}
 
 @Composable
 fun MainDashboardShell(
-    onNavigateToCourseDetail: (String) -> Unit = {}
+    onNavigateToCourseDetail: (String) -> Unit = {},
+    onNavigateToLiveClass: (String) -> Unit = {},
+    onNavigateToChat: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     
@@ -47,6 +63,18 @@ fun MainDashboardShell(
                     )
                 }
             }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNavigateToChat,
+                containerColor = com.example.smartlms.theme.Brand500,
+                contentColor = androidx.compose.ui.graphics.Color.White
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Email,
+                    contentDescription = "Chat"
+                )
+            }
         }
     ) { innerPadding ->
         NavHost(
@@ -55,7 +83,10 @@ fun MainDashboardShell(
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(BottomNavItem.Home.route) {
-                StudentDashboardScreen(onNavigateToCourseDetail = onNavigateToCourseDetail)
+                StudentDashboardScreen(
+                    onNavigateToCourseDetail = onNavigateToCourseDetail,
+                    onNavigateToLiveClass = onNavigateToLiveClass
+                )
             }
             composable(BottomNavItem.Courses.route) {
                 CoursesScreen()
