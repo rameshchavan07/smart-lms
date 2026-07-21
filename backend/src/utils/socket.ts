@@ -76,6 +76,26 @@ export const initSocket = (server: HttpServer) => {
       console.log(`User ${socket.data.user?.id} joined group_${groupId}`);
     });
 
+    socket.on('typing', (data: { targetId: string, isGroup: boolean }) => {
+      const { targetId, isGroup } = data;
+      const senderId = socket.data.user?.id;
+      if (isGroup) {
+        socket.to(`group_${targetId}`).emit('user_typing', { userId: senderId, groupId: targetId });
+      } else {
+        socket.to(targetId).emit('user_typing', { userId: senderId });
+      }
+    });
+
+    socket.on('stop_typing', (data: { targetId: string, isGroup: boolean }) => {
+      const { targetId, isGroup } = data;
+      const senderId = socket.data.user?.id;
+      if (isGroup) {
+        socket.to(`group_${targetId}`).emit('user_stop_typing', { userId: senderId, groupId: targetId });
+      } else {
+        socket.to(targetId).emit('user_stop_typing', { userId: senderId });
+      }
+    });
+
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
     });

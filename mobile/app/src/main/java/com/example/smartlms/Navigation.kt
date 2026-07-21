@@ -66,6 +66,11 @@ fun MainNavigation() {
                 },
                 onNavigateToChat = {
                     navController.navigate("chat_list")
+                },
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
@@ -77,6 +82,9 @@ fun MainNavigation() {
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToLecture = { lectureId ->
                     navController.navigate("lecture/$lectureId")
+                },
+                onNavigateToQuiz = { quizId ->
+                    navController.navigate("quiz_screen/$quizId")
                 }
             )
         }
@@ -85,6 +93,14 @@ fun MainNavigation() {
             arguments = listOf(navArgument("lectureId") { type = NavType.StringType })
         ) {
             LectureScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = "quiz_screen/{quizId}",
+            arguments = listOf(navArgument("quizId") { type = NavType.StringType })
+        ) {
+            com.example.smartlms.features.quiz.presentation.QuizScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

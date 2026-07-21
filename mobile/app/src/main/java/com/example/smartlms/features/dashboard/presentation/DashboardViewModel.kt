@@ -31,7 +31,8 @@ sealed class DashboardState {
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val repository: DashboardRepository,
-    private val tokenManager: com.example.smartlms.data.local.TokenManager
+    private val tokenManager: com.example.smartlms.data.local.TokenManager,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<DashboardState>(DashboardState.Loading)
@@ -39,6 +40,27 @@ class DashboardViewModel @Inject constructor(
 
     init {
         fetchDashboardData()
+    }
+
+    fun submitAssignment(taskId: String, uri: android.net.Uri) {
+        viewModelScope.launch {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val bytes = inputStream?.readBytes() ?: return@launch
+                val requestBody = okhttp3.RequestBody.create(okhttp3.MediaType.parse(context.contentResolver.getType(uri) ?: "application/octet-stream"), bytes)
+                val multipartBody = okhttp3.MultipartBody.Part.createFormData("file", "submission_file", requestBody)
+                
+                val result = repository.submitAssignment(taskId, multipartBody)
+                if (result.isSuccess) {
+                    // Refresh data
+                    fetchDashboardData()
+                } else {
+                    // Handle error (maybe use a SideEffect/Toast or State flow for errors)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun fetchDashboardData() {

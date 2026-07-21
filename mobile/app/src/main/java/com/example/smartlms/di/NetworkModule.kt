@@ -96,5 +96,11 @@ object NetworkModule {
     fun provideChatApi(retrofit: Retrofit): com.example.smartlms.features.chat.data.ChatApi {
         return retrofit.create(com.example.smartlms.features.chat.data.ChatApi::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideQuizApi(retrofit: Retrofit): com.example.smartlms.features.quiz.data.QuizApi {
+        return retrofit.create(com.example.smartlms.features.quiz.data.QuizApi::class.java)
+    }
 }
 

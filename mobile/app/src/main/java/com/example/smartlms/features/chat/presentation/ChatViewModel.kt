@@ -88,6 +88,43 @@ class ChatViewModel @Inject constructor(
                 }
             }
         }
+
+        viewModelScope.launch {
+            socketManager.incomingEvents.collect { event ->
+                when (event) {
+                    is com.example.smartlms.data.network.SocketEvent.DeleteMessage -> {
+                        try {
+                            val jsonObj = org.json.JSONObject(event.json)
+                            val messageId = jsonObj.getString("messageId")
+                            val currentState = _roomState.value
+                            if (currentState is ChatRoomState.Success) {
+                                _roomState.update {
+                                    ChatRoomState.Success(
+                                        messages = currentState.messages.filter { it.id != messageId },
+                                        currentUserId = currentState.currentUserId
+                                    )
+                                }
+                            }
+                        } catch (e: Exception) {}
+                    }
+                    is com.example.smartlms.data.network.SocketEvent.DeleteGroup -> {
+                        try {
+                            val jsonObj = org.json.JSONObject(event.json)
+                            val groupId = jsonObj.getString("groupId")
+                            if (isActiveRoomGroup && activeRoomTargetId == groupId) {
+                                _roomState.value = ChatRoomState.Error("This group has been deleted.")
+                            }
+                        } catch (e: Exception) {}
+                    }
+                    is com.example.smartlms.data.network.SocketEvent.UserTyping -> {
+                        // In a real app we'd track typing users in state. For brevity we can just log it or add it to state.
+                    }
+                    is com.example.smartlms.data.network.SocketEvent.UserStopTyping -> {
+                        // Handled similarly
+                    }
+                }
+            }
+        }
     }
 
     fun fetchContacts() {

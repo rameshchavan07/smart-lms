@@ -25,11 +25,12 @@ import java.util.Locale
 fun CourseDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLecture: (String) -> Unit,
+    onNavigateToQuiz: (String) -> Unit,
     viewModel: CourseDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     var selectedTabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Lectures", "Materials")
+    val tabs = listOf("Lectures", "Materials", "Quizzes")
 
     Scaffold(
         topBar = {
@@ -125,6 +126,10 @@ fun CourseDetailScreen(
                                 )
                                 1 -> MaterialsList(
                                     materials = currentState.materials
+                                )
+                                2 -> QuizzesList(
+                                    quizzes = currentState.quizzes,
+                                    onQuizClick = onNavigateToQuiz
                                 )
                             }
                         }
@@ -255,5 +260,58 @@ private fun formatTime(timeString: String): String {
         if (date != null) formatter.format(date) else timeString
     } catch (e: Exception) {
         timeString
+    }
+}
+
+@Composable
+fun QuizzesList(
+    quizzes: List<com.example.smartlms.features.quiz.data.QuizDto>,
+    onQuizClick: (String) -> Unit
+) {
+    if (quizzes.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No quizzes available yet.", style = MaterialTheme.typography.bodyMedium)
+        }
+        return
+    }
+
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(quizzes) { quiz ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onQuizClick(quiz.id) },
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info, // Ideally a Quiz icon like Assignment/Star
+                        contentDescription = "Quiz",
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(32.dp).padding(end = 16.dp)
+                    )
+                    Column {
+                        Text(
+                            text = quiz.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${quiz.totalMarks} Marks | ${quiz.durationMins ?: "N/A"} Mins",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
     }
 }

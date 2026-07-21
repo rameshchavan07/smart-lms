@@ -9,6 +9,13 @@ import kotlinx.coroutines.flow.asSharedFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
+sealed class SocketEvent {
+    data class DeleteMessage(val json: String) : SocketEvent()
+    data class DeleteGroup(val json: String) : SocketEvent()
+    data class UserTyping(val json: String) : SocketEvent()
+    data class UserStopTyping(val json: String) : SocketEvent()
+}
+
 @Singleton
 class SocketManager @Inject constructor() {
     private var socket: Socket? = null
@@ -16,6 +23,9 @@ class SocketManager @Inject constructor() {
     // Using a SharedFlow to emit messages to any active subscribers (like ChatViewModel)
     private val _incomingMessages = MutableSharedFlow<String>(extraBufferCapacity = 10)
     val incomingMessages: SharedFlow<String> = _incomingMessages.asSharedFlow()
+
+    private val _incomingEvents = MutableSharedFlow<SocketEvent>(extraBufferCapacity = 10)
+    val incomingEvents: SharedFlow<SocketEvent> = _incomingEvents.asSharedFlow()
 
     fun connect(token: String) {
         if (socket?.connected() == true) return
@@ -45,6 +55,34 @@ class SocketManager @Inject constructor() {
                 }
             }
 
+            socket?.on("delete_message") { args ->
+                if (args.isNotEmpty()) {
+                    val msgJson = args[0].toString()
+                    _incomingEvents.tryEmit(SocketEvent.DeleteMessage(msgJson))
+                }
+            }
+
+            socket?.on("delete_group") { args ->
+                if (args.isNotEmpty()) {
+                    val msgJson = args[0].toString()
+                    _incomingEvents.tryEmit(SocketEvent.DeleteGroup(msgJson))
+                }
+            }
+
+            socket?.on("user_typing") { args ->
+                if (args.isNotEmpty()) {
+                    val msgJson = args[0].toString()
+                    _incomingEvents.tryEmit(SocketEvent.UserTyping(msgJson))
+                }
+            }
+
+            socket?.on("user_stop_typing") { args ->
+                if (args.isNotEmpty()) {
+                    val msgJson = args[0].toString()
+                    _incomingEvents.tryEmit(SocketEvent.UserStopTyping(msgJson))
+                }
+            }
+
             socket?.connect()
         } catch (e: Exception) {
             Log.e("SocketManager", "Error connecting to Socket.IO", e)
@@ -57,6 +95,28 @@ class SocketManager @Inject constructor() {
 
     fun joinGroupRoom(groupId: String) {
         socket?.emit("join_group", groupId)
+    }
+
+    fun emitTyping(targetId: String, isGroup: Boolean) {
+        try {
+            val data = org.json.JSONObject()
+            data.put("targetId", targetId)
+            data.put("isGroup", isGroup)
+            socket?.emit("typing", data)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun emitStopTyping(targetId: String, isGroup: Boolean) {
+        try {
+            val data = org.json.JSONObject()
+            data.put("targetId", targetId)
+            data.put("isGroup", isGroup)
+            socket?.emit("stop_typing", data)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun disconnect() {

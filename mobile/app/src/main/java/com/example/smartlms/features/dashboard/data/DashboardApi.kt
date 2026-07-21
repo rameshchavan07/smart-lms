@@ -97,4 +97,11 @@ interface DashboardApi {
 
     @GET("communications/my-announcements")
     suspend fun getMyAnnouncements(): Response<AnnouncementsResponse>
+
+    @retrofit2.http.Multipart
+    @retrofit2.http.POST("assignments/{id}/submit")
+    suspend fun submitAssignment(
+        @retrofit2.http.Path("id") id: String,
+        @retrofit2.http.Part file: okhttp3.MultipartBody.Part
+    ): Response<Unit>
 }

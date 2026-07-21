@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, Building, 
   Settings, HelpCircle, 
   LogOut, Menu, X, Search, Moon, Sun,
-  ChevronRight, Globe
+  ChevronRight
 } from 'lucide-react';
 
 interface NavItem {

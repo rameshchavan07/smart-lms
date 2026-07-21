@@ -44,6 +44,8 @@ const StudentMessages: React.FC = () => {
   const [groupName, setGroupName] = useState('');
   const [selectedGroupMembers, setSelectedGroupMembers] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch contacts and groups
   const { data: contactsData, isLoading: loadingContacts } = useQuery({
@@ -115,7 +117,21 @@ const StudentMessages: React.FC = () => {
       }
     });
 
+    newSocket.on('user_typing', ({ userId, groupId }) => {
+      // If we are in the chat where typing happens
+      if ((groupId && selectedChat?.id === groupId) || (!groupId && selectedChat?.id === userId)) {
+        setTypingUsers(prev => ({ ...prev, [userId]: true }));
+      }
+    });
+
+    newSocket.on('user_stop_typing', ({ userId, groupId }) => {
+      if ((groupId && selectedChat?.id === groupId) || (!groupId && selectedChat?.id === userId)) {
+        setTypingUsers(prev => ({ ...prev, [userId]: false }));
+      }
+    });
+
     return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       newSocket.disconnect();
     };
   }, [selectedChat, queryClient]);
@@ -432,6 +448,20 @@ const StudentMessages: React.FC = () => {
                     );
                   })
                 )}
+                
+                {/* Typing Indicator */}
+                {Object.keys(typingUsers).some(uid => typingUsers[uid]) && (
+                  <div className="flex w-full justify-start mb-2">
+                    <div className="flex items-center gap-2 bg-surface border border-border text-primary rounded-2xl rounded-bl-none px-4 py-3 shadow-sm">
+                      <div className="flex gap-1">
+                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span className="text-[11px] text-gray-500 ml-1">Someone is typing...</span>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -461,7 +491,16 @@ const StudentMessages: React.FC = () => {
                 <input 
                   type="text" 
                   value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
+                  onChange={(e) => {
+                    setMessageText(e.target.value);
+                    if (selectedChat && socketRef.current) {
+                      socketRef.current.emit('typing', { targetId: selectedChat.id, isGroup: !!selectedChat.name });
+                      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                      typingTimeoutRef.current = setTimeout(() => {
+                        socketRef.current?.emit('stop_typing', { targetId: selectedChat.id, isGroup: !!selectedChat.name });
+                      }, 2000);
+                    }
+                  }}
                   placeholder="Type a message" 
                   className="flex-1 h-10 text-[15px] rounded-lg px-4 bg-surface border border-border focus:ring-0 text-primary placeholder-muted"
                   onKeyDown={(e) => {

@@ -24,6 +24,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.ui.graphics.Brush
 import com.example.smartlms.features.dashboard.data.CourseDto
 import com.example.smartlms.theme.*
 
@@ -63,18 +67,30 @@ fun StudentDashboardScreen(
             ) {
                 // HEADER SECTION
                 item {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Welcome back! 👋",
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                            color = Color(0xFF0F172A)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        if (metrics != null) {
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                item { Badge(icon = "⭐", text = "${metrics.xpPoints ?: 0} XP", color = SemanticWarning, bgColor = Color(0xFFFEF3C7)) }
-                                item { Badge(icon = "🔥", text = "${metrics.currentStreak ?: 0} Day Streak", color = Color(0xFFEA580C), bgColor = Color(0xFFFFEDD5)) }
-                                item { Badge(icon = "📱", text = "Code: demo", color = Brand500, bgColor = Brand50) }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(Brand500.copy(alpha = 0.15f), Color(0xFFF8FAFF))
+                                )
+                            )
+                            .padding(16.dp)
+                    ) {
+                        Column {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Welcome back! 👋",
+                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                                color = Color(0xFF0F172A)
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            if (metrics != null) {
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    item { Badge(icon = "⭐", text = "${metrics.xpPoints ?: 0} XP", color = SemanticWarning, bgColor = Color(0xFFFEF3C7)) }
+                                    item { Badge(icon = "🔥", text = "${metrics.currentStreak ?: 0} Day Streak", color = Color(0xFFEA580C), bgColor = Color(0xFFFFEDD5)) }
+                                    item { Badge(icon = "📱", text = "Code: demo", color = Brand500, bgColor = Brand50) }
+                                }
                             }
                         }
                     }
@@ -268,11 +284,13 @@ fun StatCard(title: String, value: String, icon: ImageVector, tint: Color, bg: C
 }
 
 @Composable
-fun CourseMiniCard(course: CourseDto, onClick: () -> Unit) {
+fun CourseMiniCard(
+    course: CourseDto,
+    modifier: Modifier = Modifier.width(200.dp),
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier
-            .width(200.dp)
-            .clickable { onClick() },
+        modifier = modifier.clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -294,7 +312,7 @@ fun CourseMiniCard(course: CourseDto, onClick: () -> Unit) {
 }
 
 @Composable
-fun TaskRow(title: String, courseName: String, dueDate: String, priority: String, isCompleted: Boolean) {
+fun TaskRow(title: String, courseName: String, dueDate: String, priority: String, isCompleted: Boolean, onUploadClick: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -312,29 +330,16 @@ fun TaskRow(title: String, courseName: String, dueDate: String, priority: String
             Text(text = title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = if (isCompleted) Color(0xFF94A3B8) else Color(0xFF0F172A))
             Text(text = courseName, fontSize = 12.sp, color = Color(0xFF64748B))
         }
+        if (!isCompleted && onUploadClick != null) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = onUploadClick,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                modifier = Modifier.height(32.dp)
+            ) {
+                Text("Upload", fontSize = 12.sp)
+            }
+        }
     }
 }
 
-// OTHER SCREENS
-@Composable
-fun CoursesScreen(viewModel: DashboardViewModel = hiltViewModel()) {
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFF)), contentAlignment = Alignment.Center) {
-        Text("All Enrolled Courses", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun AssignmentsScreen(viewModel: DashboardViewModel = hiltViewModel()) {
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFF)), contentAlignment = Alignment.Center) {
-        Text("My Tasks", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun ProfileScreen() {
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFF)).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(Icons.Default.Person, contentDescription = "Profile", modifier = Modifier.size(100.dp), tint = Brand500)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Student Profile", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-    }
-}

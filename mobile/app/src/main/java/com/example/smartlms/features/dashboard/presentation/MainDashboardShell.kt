@@ -28,9 +28,14 @@ sealed class BottomNavItem(val title: String, val icon: ImageVector, val route: 
 fun MainDashboardShell(
     onNavigateToCourseDetail: (String) -> Unit = {},
     onNavigateToLiveClass: (String) -> Unit = {},
-    onNavigateToChat: () -> Unit = {}
+    onNavigateToChat: () -> Unit = {},
+    onLogout: () -> Unit = {},
+    tokenManager: com.example.smartlms.data.local.TokenManager = androidx.compose.ui.platform.LocalContext.current.let { 
+        dagger.hilt.android.EntryPointAccessors.fromApplication(it, com.example.smartlms.TokenManagerEntryPoint::class.java).tokenManager()
+    }
 ) {
     val navController = rememberNavController()
+    val role by tokenManager.roleFlow.collectAsState(initial = null)
     
     val items = listOf(
         BottomNavItem.Home,
@@ -45,6 +50,9 @@ fun MainDashboardShell(
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
                 items.forEach { item ->
+                    // Hide Assignments tab for Teachers
+                    if (role == "TEACHER" && item == BottomNavItem.Assignments) return@forEach
+                    
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = item.title) },
                         label = { Text(item.title) },
@@ -83,19 +91,30 @@ fun MainDashboardShell(
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(BottomNavItem.Home.route) {
-                StudentDashboardScreen(
-                    onNavigateToCourseDetail = onNavigateToCourseDetail,
-                    onNavigateToLiveClass = onNavigateToLiveClass
-                )
+                if (role == "TEACHER") {
+                    TeacherDashboardScreen(
+                        onNavigateToCourseDetail = onNavigateToCourseDetail,
+                        onNavigateToLiveClass = onNavigateToLiveClass
+                    )
+                } else {
+                    StudentDashboardScreen(
+                        onNavigateToCourseDetail = onNavigateToCourseDetail,
+                        onNavigateToLiveClass = onNavigateToLiveClass
+                    )
+                }
             }
             composable(BottomNavItem.Courses.route) {
-                CoursesScreen()
+                CoursesScreen(
+                    onNavigateToCourseDetail = onNavigateToCourseDetail
+                )
             }
             composable(BottomNavItem.Assignments.route) {
                 AssignmentsScreen()
             }
             composable(BottomNavItem.Profile.route) {
-                ProfileScreen()
+                ProfileScreen(
+                    onLogout = onLogout
+                )
             }
         }
     }

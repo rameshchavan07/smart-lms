@@ -76,4 +76,17 @@ class DashboardRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun submitAssignment(taskId: String, file: okhttp3.MultipartBody.Part): Result<Unit> {
+        return try {
+            val response = api.submitAssignment(taskId, file)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Error submitting assignment: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

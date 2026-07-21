@@ -19,7 +19,8 @@ sealed class CourseDetailState {
     data class Success(
         val course: CourseDetailDto,
         val lectures: List<LectureDto>,
-        val materials: List<StudyMaterialDto>
+        val materials: List<StudyMaterialDto>,
+        val quizzes: List<com.example.smartlms.features.quiz.data.QuizDto>
     ) : CourseDetailState()
     data class Error(val message: String) : CourseDetailState()
 }
@@ -27,6 +28,7 @@ sealed class CourseDetailState {
 @HiltViewModel
 class CourseDetailViewModel @Inject constructor(
     private val repository: CourseRepository,
+    private val quizRepository: com.example.smartlms.features.quiz.data.QuizRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -47,17 +49,20 @@ class CourseDetailViewModel @Inject constructor(
                 val courseResult = repository.getCourseDetails(courseId)
                 val lecturesResult = repository.getLectures(courseId)
                 val materialsResult = repository.getStudyMaterials(courseId)
+                val quizzesResult = quizRepository.getCourseQuizzes(courseId)
 
-                if (courseResult.isSuccess && lecturesResult.isSuccess && materialsResult.isSuccess) {
+                if (courseResult.isSuccess && lecturesResult.isSuccess && materialsResult.isSuccess && quizzesResult.isSuccess) {
                     _state.value = CourseDetailState.Success(
                         course = courseResult.getOrThrow(),
                         lectures = lecturesResult.getOrThrow(),
-                        materials = materialsResult.getOrThrow()
+                        materials = materialsResult.getOrThrow(),
+                        quizzes = quizzesResult.getOrThrow()
                     )
                 } else {
                     val errorMsg = courseResult.exceptionOrNull()?.message 
                         ?: lecturesResult.exceptionOrNull()?.message
                         ?: materialsResult.exceptionOrNull()?.message
+                        ?: quizzesResult.exceptionOrNull()?.message
                         ?: "Failed to load course details"
                     _state.value = CourseDetailState.Error(errorMsg)
                 }
