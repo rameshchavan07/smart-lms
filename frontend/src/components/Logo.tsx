@@ -30,8 +30,20 @@ export const Logo: React.FC<LogoProps> = ({
   };
 
   return (
-    <div className={`flex items-center justify-center ${className}`}>
-      <img src="/logo.jpg" alt="OpenLearnX Logo" className={`${iconSizes[size]} rounded-xl object-contain bg-white`} />
+    <div className={`flex items-center gap-3 ${className}`}>
+      <img src="/logo.jpg" alt="OpenLearnX Logo" className={`${iconSizes[size]} rounded-xl object-contain bg-white flex-shrink-0`} />
+      {!iconOnly && (
+        <div className="flex flex-col">
+          <span className={`font-bold tracking-tight ${textSizes[size]} ${lightText ? 'text-white' : 'text-slate-900'}`}>
+            OpenLearnX
+          </span>
+          {subtext && (
+            <span className={`text-xs ${lightText ? 'text-slate-400' : 'text-slate-500'}`}>
+              {subtext}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 };

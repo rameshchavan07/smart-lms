@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { 
-  Mail, Lock, Eye, EyeOff, GraduationCap, 
+  Mail, Lock, Eye, EyeOff, 
   BookOpen, Users, ShieldCheck, BarChart3,
   Sparkles, ArrowRight, CheckCircle2
 } from 'lucide-react';
