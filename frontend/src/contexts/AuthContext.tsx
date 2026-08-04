@@ -68,8 +68,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data) {
         subscribeToPushNotifications();
       }
-    } catch (error) {
-      console.error('Auth verification failed', error);
+    } catch (error: unknown) {
+      const status = typeof error === 'object' && error !== null && 'response' in error 
+        ? (error as { response?: { status?: number } }).response?.status 
+        : undefined;
+      if (status !== 401) {
+        console.error('Auth verification failed', error);
+      }
       setUser(null);
     } finally {
       setIsLoading(false);
