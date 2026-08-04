@@ -46,8 +46,8 @@ model Institute {
 
 model User {
   id                String             @id @default(uuid())
-  firstName         String             @db.VarChar(100)
-  lastName          String             @db.VarChar(100)
+  firstName         String             @default("") @db.VarChar(100)
+  lastName          String             @default("") @db.VarChar(100)
   email             String             @unique @db.VarChar(255)
   phoneNumber       String?            @db.VarChar(20)
   address           String?            @db.Text
@@ -67,7 +67,7 @@ model User {
   theme             String?            @default("system")
   notificationsEnabled Boolean         @default(true)
   createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  updatedAt         DateTime           @default(now()) @updatedAt
   deletedAt         DateTime?
   instituteId       String?
   institute         Institute?         @relation(fields: [instituteId], references: [id])
