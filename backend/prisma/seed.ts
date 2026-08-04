@@ -13,11 +13,11 @@ async function main() {
         lastName: 'Admin',
         email: adminEmail,
         passwordHash,
-        role: 'ADMIN',
+        role: 'SUPER_ADMIN',
         isEmailVerified: true,
       },
     });
-    console.log('Admin user created: admin@openlearnx.com / admin123');
+    console.log('Super Admin user created: admin@openlearnx.com / admin123');
   } else {
     console.log('Admin user already exists.');
   }
