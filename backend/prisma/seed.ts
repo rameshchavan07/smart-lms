@@ -83,10 +83,9 @@ async function main() {
     teacher = await prisma.teacher.create({
       data: {
         userId: teacherUser.id,
-        instituteId: institute.id,
-        bio: 'Senior Full-Stack Engineer with 10+ years teaching experience.',
-        title: 'Lead Technical Instructor',
-        expertise: 'React, Node.js, TypeScript, PostgreSQL',
+        employeeCode: 'EMP-2026-001',
+        specialization: 'Full-Stack Web Development',
+        qualification: 'M.S. Computer Science',
       },
     });
     console.log('✅ Teacher created: teacher@apextech.com / password123');
@@ -114,27 +113,22 @@ async function main() {
     student = await prisma.student.create({
       data: {
         userId: studentUser.id,
-        instituteId: institute.id,
-        studentIdNumber: 'STU-2026-001',
+        enrollmentNumber: 'STU-2026-001',
+        academicYear: '2026',
       },
     });
     console.log('✅ Student created: student@apextech.com / password123');
   }
 
   // 6. Sample Course
-  const courseSlug = 'full-stack-web-development-mastery';
-  let course = await prisma.course.findUnique({ where: { slug: courseSlug } });
+  const courseTitle = 'Full-Stack Web Development Mastery';
+  let course = await prisma.course.findFirst({ where: { title: courseTitle, instituteId: institute.id } });
   if (!course) {
     course = await prisma.course.create({
       data: {
-        title: 'Full-Stack Web Development Mastery',
-        slug: courseSlug,
+        title: courseTitle,
         description: 'Master modern frontend & backend skills using React, TypeScript, Express, and Prisma.',
-        category: 'Web Development',
-        level: 'INTERMEDIATE',
-        status: 'PUBLISHED',
-        isPublished: true,
-        price: 99.99,
+        status: 'ACTIVE',
         instituteId: institute.id,
         teacherId: teacher.id,
       },
@@ -143,8 +137,13 @@ async function main() {
   }
 
   // 7. Enrollment
-  const existingEnrollment = await prisma.enrollment.findFirst({
-    where: { studentId: student.id, courseId: course.id },
+  const existingEnrollment = await prisma.enrollment.findUnique({
+    where: {
+      studentId_courseId: {
+        studentId: student.id,
+        courseId: course.id,
+      },
+    },
   });
 
   if (!existingEnrollment) {
@@ -152,8 +151,6 @@ async function main() {
       data: {
         studentId: student.id,
         courseId: course.id,
-        status: 'ACTIVE',
-        progress: 25.0,
       },
     });
     console.log('✅ Student enrolled in course.');
