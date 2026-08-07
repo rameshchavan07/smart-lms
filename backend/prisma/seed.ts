@@ -24,6 +24,30 @@ async function main() {
     console.log('✅ Super Admin created: admin@openlearnx.com / admin123');
   }
 
+  const customSuperAdminEmail = 'xdrutu123@gmail.com';
+  let customSuperAdmin = await prisma.user.findUnique({ where: { email: customSuperAdminEmail } });
+  if (customSuperAdmin) {
+    await prisma.user.update({
+      where: { email: customSuperAdminEmail },
+      data: { role: 'SUPER_ADMIN', isEmailVerified: true, isActive: true, isApproved: true },
+    });
+    console.log('✅ Updated xdrutu123@gmail.com to SUPER_ADMIN.');
+  } else {
+    await prisma.user.create({
+      data: {
+        firstName: 'Super',
+        lastName: 'Admin',
+        email: customSuperAdminEmail,
+        passwordHash: adminPasswordHash,
+        role: 'SUPER_ADMIN',
+        isEmailVerified: true,
+        isActive: true,
+        isApproved: true,
+      },
+    });
+    console.log('✅ Created Super Admin: xdrutu123@gmail.com / admin123');
+  }
+
   // 2. Sample Institute
   const instituteSlug = 'apex-tech';
   let institute = await prisma.institute.findUnique({ where: { slug: instituteSlug } });
