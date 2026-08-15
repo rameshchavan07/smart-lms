@@ -42,7 +42,7 @@
     "@types/web-push": "^3.6.4",
     "@types/yamljs": "^0.2.34",
     "bcrypt": "^6.0.0",
-    "cloudinary": "^1.42.0",
+    "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "csrf-csrf": "^4.0.3",
