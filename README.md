@@ -1,4 +1,4 @@
-# 🎓 Smart LMS (OpenLearnX)
+﻿# 🎓 Smart LMS (OpenLearnX)
 
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D%2018.0.0-emerald.svg?style=for-the-badge&logo=node.js)](https://nodejs.org) [![React Version](https://img.shields.io/badge/react-19.0.0-blue.svg?style=for-the-badge&logo=react)](https://react.dev) [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue.svg?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg?style=for-the-badge&logo=postgresql)](https://www.postgresql.org) [![Prisma ORM](https://img.shields.io/badge/Prisma-7.0-indigo.svg?style=for-the-badge&logo=prisma)](https://www.prisma.io) [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4.0-38bdf8.svg?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
 
@@ -8,9 +8,9 @@
 
 ## 📖 Project Overview
 
-Smart LMS (OpenLearnX) is a feature-rich, **multi-tenant virtual learning portal**. It delivers real-time classrooms, centralized document storage via Google Drive, highly flexible user administration, and dynamic student dashboards wrapped in a stunning, performant UI.
+Smart LMS (OpenLearnX) is a feature-rich, **multi-tenant virtual learning portal** that provides real-time classrooms, centralized document storage (Google Drive integration), flexible user administration, and dynamic student dashboards — all in a fast, responsive UI.
 
-Built on a robust **Monorepo-style structure**, it marries a secure, strongly-typed **Express/TypeScript REST API** with a pixel-perfect, responsive **React 19 & Tailwind CSS v4** frontend application.
+Built in a monorepo-style structure, the project pairs a secure, strongly-typed Express + TypeScript REST API with a responsive **React 19** frontend styled with **Tailwind CSS v4**.
 
 ## ✨ Key Features
 
@@ -20,7 +20,7 @@ Built on a robust **Monorepo-style structure**, it marries a secure, strongly-ty
 - **📝 Interactive Assessments**: Dynamic quiz creation tools for teachers featuring automated grading and comprehensive student analytics.
 - **💬 Real-Time Communication**: Integrated WebSockets (`Socket.IO`) powering Chat Groups, Discussion Boards, and instant messaging between peers.
 - **☁️ Cloud Storage Integration**: Automated Google Drive folder creation and secure, direct link proxying for study materials, saving server bandwidth.
-- **🛡️ Enterprise-Grade Security**: JWT-based auth via strict `HttpOnly` cookies, Double CSRF Token validation, and API rate limiting.
+- **🛡️ Enterprise-Grade Security**: JWT-based authentication using strict `HttpOnly` cookies, double-submit CSRF token validation, and API rate limiting.
 - **📈 Horizontal Scalability**: Ready for scale with `@socket.io/redis-adapter` for multi-node WebSocket broadcasting and query caching.
 
 ## 💻 Tech Stack
@@ -155,7 +155,7 @@ smart-lms/
 PORT=5000
 NODE_ENV=development
 FRONTEND_URL="http://localhost:5173"
-DATABASE_URL="postgresql://user:password@localhost:5432/smart_lms?schema=public"
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/smart_lms?schema=public"
 SESSION_SECRET="your_session_secret"
 JWT_SECRET="your_jwt_secret"
 REDIS_URL="redis://localhost:6379"
@@ -182,3 +182,5 @@ Smart LMS is built to be deployed on modern serverless or containerized cloud pr
 This project is distributed under the **ISC License**.
 
 *Designed and developed by Ramesh Chavan*
+
+
